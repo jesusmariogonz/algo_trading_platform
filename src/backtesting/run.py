@@ -42,31 +42,49 @@ def load_universe() -> dict[str, pd.DataFrame]:
     return {f.stem: pd.read_parquet(f) for f in files}
 
 
-def run_backtest(strategy_key: str, fees: float, slippage: float):
+def backtest_symbol(df: pd.DataFrame, params, signal_fn, fees: float, slippage: float):
+    """Genera señales y corre vectorbt sobre un único símbolo.
+    Devuelve None si, tras recortar el período de calentamiento de los
+    indicadores, no queda suficiente historia para operar.
+    """
+    df = signal_fn(df, params)
+    df = df.dropna(subset=["sma_200", "atr_14"]).reset_index(drop=True)
+    if df.empty:
+        return None
+
+    close = df.set_index("date")["close"]
+    entries = df.set_index("date")["signal"] == 1
+    exits = df.set_index("date")["signal"] == -1
+
+    return vbt.Portfolio.from_signals(
+        close,
+        entries,
+        exits,
+        fees=fees,
+        slippage=slippage,
+        freq="1D",
+    )
+
+
+def run_backtest(
+    strategy_key: str,
+    fees: float,
+    slippage: float,
+    universe: dict[str, pd.DataFrame] | None = None,
+):
+    """Corre una estrategia sobre todo el universo (o uno ya recortado
+    por fecha, si `universe` viene dado — lo usa walk_forward.py).
+    """
     params_cls, signal_fn = STRATEGIES[strategy_key]
     params = params_cls()
-    universe = load_universe()
+    if universe is None:
+        universe = load_universe()
 
     results = {}
     for symbol, df in universe.items():
-        df = signal_fn(df, params)
-        df = df.dropna(subset=["sma_200", "atr_14"]).reset_index(drop=True)
-        if df.empty:
-            continue
-
-        close = df.set_index("date")["close"]
-        entries = df.set_index("date")["signal"] == 1
-        exits = df.set_index("date")["signal"] == -1
-
-        portfolio = vbt.Portfolio.from_signals(
-            close,
-            entries,
-            exits,
-            fees=fees,
-            slippage=slippage,
-            freq="1D",
-        )
-        results[symbol] = portfolio
+        portfolio = backtest_symbol(df, params, signal_fn, fees, slippage)
+        if portfolio is not None:
+            results[symbol] = portfolio
 
     return results, params
 

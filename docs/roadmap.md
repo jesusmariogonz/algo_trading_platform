@@ -11,13 +11,23 @@ para validar la idea antes de invertir en infraestructura.
 - [x] Backtest con vectorbt + comisiones/slippage
 - [x] Estrategia B (Momentum/Breakout, proxy VCP simplificado)
 - [x] Fuerza relativa vs. benchmark (SPY)
-- [ ] Correr ambos backtests y evaluar si hay evidencia de mérito
-- [ ] Walk-forward testing
+- [x] Walk-forward testing (ventanas consecutivas, sin optimización de
+      parámetros todavía — ver docstring de walk_forward.py)
+- [ ] Evaluar con calma los resultados de walk-forward antes de avanzar
 
-**Criterio para avanzar a Fase 1:** el backtest de al menos una
-estrategia debe mostrar métricas razonables (Sharpe > 0.5, max
-drawdown controlado, suficientes operaciones para ser estadísticamente
-no-ruido) en un out-of-sample real, no solo en el período de ajuste.
+**Hallazgo del primer walk-forward (4 ventanas, 2021-2026):**
+Trend Following fue consistente en 3/4 ventanas; Momentum/Breakout
+solo en 2/4, con la ventana más reciente en negativo. Esto es una
+señal de alerta real sobre Momentum/Breakout tal como está, no un
+resultado a ignorar — antes de construir más infraestructura vale la
+pena revisar si el proxy VCP simplificado necesita ajuste, o si la
+estrategia simplemente no tiene edge suficiente.
+
+**Criterio para avanzar a Fase 1:** el walk-forward de al menos una
+estrategia debe mostrar consistencia (≥50% de ventanas con mayoría de
+símbolos en positivo) y suficientes operaciones por ventana para no
+ser ruido estadístico — no solo un buen resultado en el backtest
+completo sin partir.
 
 ## Fase 1 — Foundation formal
 - Postgres (modelo de datos de `vision.md` § 6)

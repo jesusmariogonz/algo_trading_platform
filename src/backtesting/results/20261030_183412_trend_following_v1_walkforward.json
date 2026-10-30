@@ -1,0 +1,247 @@
+{
+  "run_id": "20261030_183412",
+  "strategy_id": "trend_following_v1",
+  "strategy_version": "0.1.0",
+  "params": {
+    "id": "trend_following_v1",
+    "name": "Trend Following (SMA alignment)",
+    "version": "0.1.0",
+    "atr_stop_multiple": 2.5,
+    "require_volume_confirmation": true
+  },
+  "n_windows": 4,
+  "fees": 0.0005,
+  "slippage": 0.0005,
+  "windows": [
+    {
+      "window": 1,
+      "start": "2021-11-01",
+      "end": "2023-01-30",
+      "symbols_with_trades": 1,
+      "total_trades": 1,
+      "avg_return_pct_per_trade_sum": 9.92,
+      "pct_symbols_profitable": 100.0,
+      "detail": [
+        {
+          "symbol": "LLY",
+          "trades": 1,
+          "total_return_pct_sum": 9.92,
+          "win_rate_pct": 100.0
+        }
+      ]
+    },
+    {
+      "window": 2,
+      "start": "2023-01-30",
+      "end": "2024-04-30",
+      "symbols_with_trades": 11,
+      "total_trades": 17,
+      "avg_return_pct_per_trade_sum": 51.45,
+      "pct_symbols_profitable": 81.82,
+      "detail": [
+        {
+          "symbol": "AAPL",
+          "trades": 3,
+          "total_return_pct_sum": -8.43,
+          "win_rate_pct": 33.33
+        },
+        {
+          "symbol": "AMZN",
+          "trades": 1,
+          "total_return_pct_sum": 31.63,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "AVGO",
+          "trades": 1,
+          "total_return_pct_sum": 123.43,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "GOOGL",
+          "trades": 3,
+          "total_return_pct_sum": 18.76,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "META",
+          "trades": 1,
+          "total_return_pct_sum": 77.43,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "MSFT",
+          "trades": 1,
+          "total_return_pct_sum": 23.38,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "NVDA",
+          "trades": 1,
+          "total_return_pct_sum": 217.55,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "QQQ",
+          "trades": 1,
+          "total_return_pct_sum": 27.91,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "SPY",
+          "trades": 1,
+          "total_return_pct_sum": 28.09,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "XLF",
+          "trades": 2,
+          "total_return_pct_sum": -0.7,
+          "win_rate_pct": 50.0
+        },
+        {
+          "symbol": "XLK",
+          "trades": 2,
+          "total_return_pct_sum": 26.86,
+          "win_rate_pct": 100.0
+        }
+      ]
+    },
+    {
+      "window": 3,
+      "start": "2024-04-30",
+      "end": "2025-07-30",
+      "symbols_with_trades": 10,
+      "total_trades": 16,
+      "avg_return_pct_per_trade_sum": 3.1,
+      "pct_symbols_profitable": 40.0,
+      "detail": [
+        {
+          "symbol": "AMZN",
+          "trades": 1,
+          "total_return_pct_sum": -6.7,
+          "win_rate_pct": 0.0
+        },
+        {
+          "symbol": "AVGO",
+          "trades": 1,
+          "total_return_pct_sum": 45.82,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "GOOGL",
+          "trades": 2,
+          "total_return_pct_sum": -20.86,
+          "win_rate_pct": 50.0
+        },
+        {
+          "symbol": "LLY",
+          "trades": 1,
+          "total_return_pct_sum": -1.44,
+          "win_rate_pct": 0.0
+        },
+        {
+          "symbol": "META",
+          "trades": 1,
+          "total_return_pct_sum": 40.31,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "MSFT",
+          "trades": 2,
+          "total_return_pct_sum": 4.2,
+          "win_rate_pct": 50.0
+        },
+        {
+          "symbol": "QQQ",
+          "trades": 2,
+          "total_return_pct_sum": -9.0,
+          "win_rate_pct": 50.0
+        },
+        {
+          "symbol": "SPY",
+          "trades": 2,
+          "total_return_pct_sum": -6.5,
+          "win_rate_pct": 50.0
+        },
+        {
+          "symbol": "XLF",
+          "trades": 2,
+          "total_return_pct_sum": 4.11,
+          "win_rate_pct": 50.0
+        },
+        {
+          "symbol": "XLK",
+          "trades": 2,
+          "total_return_pct_sum": -18.93,
+          "win_rate_pct": 0.0
+        }
+      ]
+    },
+    {
+      "window": 4,
+      "start": "2025-07-30",
+      "end": "2026-10-29",
+      "symbols_with_trades": 9,
+      "total_trades": 17,
+      "avg_return_pct_per_trade_sum": 13.77,
+      "pct_symbols_profitable": 77.78,
+      "detail": [
+        {
+          "symbol": "AAPL",
+          "trades": 2,
+          "total_return_pct_sum": 26.23,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "AMZN",
+          "trades": 2,
+          "total_return_pct_sum": 1.1,
+          "win_rate_pct": 50.0
+        },
+        {
+          "symbol": "AVGO",
+          "trades": 2,
+          "total_return_pct_sum": -14.88,
+          "win_rate_pct": 50.0
+        },
+        {
+          "symbol": "LLY",
+          "trades": 1,
+          "total_return_pct_sum": 29.21,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "MSFT",
+          "trades": 1,
+          "total_return_pct_sum": -2.55,
+          "win_rate_pct": 0.0
+        },
+        {
+          "symbol": "NVDA",
+          "trades": 1,
+          "total_return_pct_sum": 20.38,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "QQQ",
+          "trades": 2,
+          "total_return_pct_sum": 16.69,
+          "win_rate_pct": 50.0
+        },
+        {
+          "symbol": "SPY",
+          "trades": 3,
+          "total_return_pct_sum": 13.36,
+          "win_rate_pct": 100.0
+        },
+        {
+          "symbol": "XLK",
+          "trades": 3,
+          "total_return_pct_sum": 34.37,
+          "win_rate_pct": 100.0
+        }
+      ]
+    }
+  ]
+}

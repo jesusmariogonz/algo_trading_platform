@@ -51,6 +51,10 @@ python -m src.indicators.relative_strength --benchmark SPY
 # 4. Correr backtest de una estrategia
 python -m src.backtesting.run --strategy trend_following
 python -m src.backtesting.run --strategy momentum_breakout
+
+# 5. Walk-forward: la misma estrategia en N ventanas consecutivas,
+#    para ver si el rendimiento es consistente o depende de un período
+python -m src.backtesting.walk_forward --strategy trend_following --windows 4
 ```
 
 ## Estructura
