@@ -71,15 +71,23 @@ python -m src.screening.daily_signals --bucket mediano_plazo
 | Bucket | % | Estado |
 |---|---|---|
 | Largo plazo | 40% | Sin estrategia todavía (propuesta: buy & hold en ETFs amplios) |
-| Mediano plazo | 30% | **Único bucket con estrategia real** — Trend Following + Momentum/Breakout (swing trading) |
-| Riesgo alto | 20% | Sin definir (propuesta: mismo tipo de estrategia sobre small/mid caps) |
-| Muy alta volatilidad | 10% | Sin definir (propuesta: criptomonedas, requiere su propio motor de datos) |
+| Mediano plazo | 30% | Trend Following + Momentum/Breakout · universo `config/universe.txt` · 1% riesgo/operación |
+| Riesgo alto | 20% | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` (small/mid-cap, sin cripto) · 2% riesgo/operación |
+| Muy alta volatilidad | 10% | Sin construir — criptomonedas, requiere su propio motor de datos (API distinta, calendario 24/7) |
+
+Ver `docs/adr/0003-buckets-y-escalamiento.md` para la definición
+completa y la regla de cuándo se le inyecta más capital al bucket de
+Riesgo Alto (cuando el rendimiento total anualizado llegue a ≥10% —
+condición documentada pero que todavía no se puede evaluar
+automáticamente, porque requiere valuación de portafolio en vivo que
+no existe hasta Fase 6).
 
 `src/portfolio/allocation.py` es un libro de **contribuciones** (cuánto
 le has inyectado a cada bucket), no un portafolio con valuación en
 vivo — eso requiere Postgres y reconciliación real (Fase 1+). El
-screener diario (`src/screening/daily_signals.py`) solo opera sobre
-el bucket de Mediano Plazo, que es el único con estrategia construida.
+screener diario (`src/screening/daily_signals.py`) opera sobre
+Mediano Plazo y Riesgo Alto (`--bucket`), cada uno con su propio
+universo y nivel de riesgo.
 
 **No ejecuta nada.** Te dice qué símbolos cumplen la regla hoy y
 cuánto comprar respetando el 1% de riesgo máximo por operación — tú

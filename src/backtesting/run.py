@@ -31,7 +31,10 @@ STRATEGIES = {
 }
 
 
-def load_universe() -> dict[str, pd.DataFrame]:
+def load_universe(symbols: list[str] | None = None) -> dict[str, pd.DataFrame]:
+    """Si `symbols` se da, solo carga esos símbolos (deben tener Parquet
+    ya procesado) — lo usa daily_signals.py para limitar el universo
+    por bucket (ej. Riesgo Alto vs. Mediano Plazo)."""
     files = sorted(PROCESSED_DIR.glob("*.parquet"))
     if not files:
         raise SystemExit(
@@ -39,7 +42,16 @@ def load_universe() -> dict[str, pd.DataFrame]:
             "  python -m src.data.download\n"
             "  python -m src.indicators.compute"
         )
-    return {f.stem: pd.read_parquet(f) for f in files}
+    universe = {f.stem: pd.read_parquet(f) for f in files}
+    if symbols is not None:
+        faltantes = set(symbols) - set(universe)
+        if faltantes:
+            raise SystemExit(
+                f"Faltan datos procesados para: {', '.join(sorted(faltantes))}. "
+                "Corre src.data.download con ese universo primero."
+            )
+        universe = {s: universe[s] for s in symbols}
+    return universe
 
 
 def backtest_symbol(df: pd.DataFrame, params, signal_fn, fees: float, slippage: float):

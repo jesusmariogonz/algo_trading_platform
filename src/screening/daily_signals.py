@@ -25,10 +25,33 @@ import pandas as pd
 
 from src.backtesting.run import STRATEGIES, load_universe
 from src.portfolio.allocation import get_balances
-from src.strategies.momentum_breakout import MomentumBreakoutParams
-from src.strategies.trend_following import TrendFollowingParams
 
-RISK_PCT_PER_TRADE = 0.01  # 1% del capital del bucket, por operación — ver docs/vision.md § 4.4
+ROOT = Path(__file__).resolve().parents[2]
+
+# Configuración por bucket: qué universo opera y cuánto riesgo por
+# operación se permite. Ver docs/adr/0003-buckets-y-escalamiento.md.
+# "largo_plazo" y "muy_alta_volatilidad" no tienen entrada aquí porque
+# todavía no tienen estrategia construida (ver README.md).
+BUCKET_CONFIG = {
+    "mediano_plazo": {
+        "universe_file": ROOT / "config" / "universe.txt",
+        "risk_pct": 0.01,  # 1% — regla base del master prompt
+    },
+    "riesgo_alto": {
+        "universe_file": ROOT / "config" / "universe_riesgo_alto.txt",
+        "risk_pct": 0.02,  # 2% — deliberadamente más laxo, decisión del usuario
+    },
+}
+
+
+def read_universe_file(path: Path) -> list[str]:
+    symbols = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                symbols.append(line)
+    return symbols
 
 
 def resolve_capital(args) -> float:
@@ -45,10 +68,13 @@ def resolve_capital(args) -> float:
     return capital
 
 
-def today_signals(strategy_key: str, capital: float) -> pd.DataFrame:
+def today_signals(strategy_key: str, capital: float, bucket: str) -> pd.DataFrame:
     params_cls, signal_fn = STRATEGIES[strategy_key]
     params = params_cls()
-    universe = load_universe()
+    config = BUCKET_CONFIG[bucket]
+    symbols = read_universe_file(config["universe_file"])
+    risk_pct = config["risk_pct"]
+    universe = load_universe(symbols=symbols)
 
     rows = []
     for symbol, df in universe.items():
@@ -67,15 +93,9 @@ def today_signals(strategy_key: str, capital: float) -> pd.DataFrame:
         if risk_per_share <= 0:
             continue  # dato inconsistente, no sugerir una operación con riesgo cero o negativo
 
-        risk_amount = capital * RISK_PCT_PER_TRADE
+        risk_amount = capital * risk_pct
         suggested_shares = int(risk_amount // risk_per_share)
         position_value = suggested_shares * entry_price
-
-        if suggested_shares < 1:
-            # El capital del bucket es tan chico que ni una acción cumple
-            # el límite de riesgo del 1% — se reporta igual, en 0, para
-            # que quede explícito por qué no hay operación sugerida.
-            pass
 
         rows.append(
             {
@@ -95,8 +115,8 @@ def today_signals(strategy_key: str, capital: float) -> pd.DataFrame:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--capital", type=float, default=None, help="capital a usar (ignora --bucket si se da)")
-    parser.add_argument("--bucket", default="mediano_plazo", choices=["largo_plazo", "mediano_plazo", "riesgo_alto", "muy_alta_volatilidad"])
+    parser.add_argument("--capital", type=float, default=None, help="capital a usar (ignora el libro de allocation.py si se da)")
+    parser.add_argument("--bucket", default="mediano_plazo", choices=list(BUCKET_CONFIG.keys()))
     parser.add_argument(
         "--strategy",
         choices=list(STRATEGIES.keys()) + ["all"],
@@ -105,14 +125,15 @@ def main():
     args = parser.parse_args()
 
     capital = resolve_capital(args)
+    risk_pct = BUCKET_CONFIG[args.bucket]["risk_pct"]
     strategies_to_run = list(STRATEGIES.keys()) if args.strategy == "all" else [args.strategy]
 
-    print(f"\n=== Screener diario — capital: ${capital:.2f} · riesgo máx. por operación: {RISK_PCT_PER_TRADE*100:.0f}% ===")
+    print(f"\n=== Screener diario [{args.bucket}] — capital: ${capital:.2f} · riesgo máx. por operación: {risk_pct*100:.0f}% ===")
     print("Esto es información para decidir, no una orden. Nada se ejecuta automáticamente.\n")
 
     any_signal = False
     for key in strategies_to_run:
-        df = today_signals(key, capital)
+        df = today_signals(key, capital, args.bucket)
         print(f"--- {key} ---")
         if df.empty:
             print("  Sin señales hoy.\n")
@@ -123,7 +144,7 @@ def main():
         if not sin_tamano.empty:
             print(
                 f"\n  ⚠ {len(sin_tamano)} símbolo(s) con señal pero capital insuficiente "
-                f"para respetar el {RISK_PCT_PER_TRADE*100:.0f}% de riesgo máximo con al menos 1 acción."
+                f"para respetar el {risk_pct*100:.0f}% de riesgo máximo con al menos 1 acción."
             )
         print()
 
