@@ -1,0 +1,41 @@
+{
+  "largo_plazo": {
+    "starting_capital": 400.0,
+    "start_date": "2026-10-30",
+    "cash": 295.65,
+    "open_positions": [
+      {
+        "symbol": "EFA",
+        "strategy": "time_series_momentum",
+        "entry_date": "2026-10-29",
+        "entry_price": 104.35,
+        "stop_price": 101.66,
+        "shares": 1
+      }
+    ],
+    "closed_positions": []
+  },
+  "mediano_plazo": {
+    "starting_capital": 300.0,
+    "start_date": "2026-10-30",
+    "cash": 243.06,
+    "open_positions": [
+      {
+        "symbol": "XLF",
+        "strategy": "trend_following",
+        "entry_date": "2026-10-29",
+        "entry_price": 56.94,
+        "stop_price": 55.14,
+        "shares": 1
+      }
+    ],
+    "closed_positions": []
+  },
+  "riesgo_alto": {
+    "starting_capital": 200.0,
+    "start_date": "2026-10-30",
+    "cash": 200.0,
+    "open_positions": [],
+    "closed_positions": []
+  }
+}

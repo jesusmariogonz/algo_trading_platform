@@ -1,0 +1,40 @@
+[
+  {
+    "date": "2026-10-29",
+    "buckets": {
+      "largo_plazo": {
+        "date": "2026-10-29",
+        "equity": 400.0,
+        "cash": 295.65,
+        "unrealized_pnl": -0.0,
+        "open_count": 1,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": 0.0,
+        "closed_today_detail": []
+      },
+      "mediano_plazo": {
+        "date": "2026-10-29",
+        "equity": 300.0,
+        "cash": 243.06,
+        "unrealized_pnl": -0.0,
+        "open_count": 1,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": 0.0,
+        "closed_today_detail": []
+      },
+      "riesgo_alto": {
+        "date": "2026-10-29",
+        "equity": 200.0,
+        "cash": 200.0,
+        "unrealized_pnl": 0.0,
+        "open_count": 0,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": 0.0,
+        "closed_today_detail": []
+      }
+    }
+  }
+]

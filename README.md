@@ -102,6 +102,32 @@ disponible en tiempo real sobre un universo neutral (ej. todo el S&P
 500 de hace 5 años). Pendiente: correr sobre un universo histórico sin
 sesgo antes de confiar en estos números — ver `docs/roadmap.md`.
 
+## Paper Trading (en curso — 3-4 semanas antes de evaluar dinero real)
+
+```bash
+# Corre esto cada día de mercado (lo normal es vía la Routine diaria):
+python -m src.data.download --universe config/universe.txt --years 2
+python -m src.data.download --universe config/universe_riesgo_alto.txt --years 2
+python -m src.data.download --universe config/universe_largo_plazo.txt --years 2
+python -m src.indicators.compute
+python -m src.indicators.relative_strength --benchmark SPY
+python -m src.paper_trading.run_daily_tick
+python -m src.paper_trading.export ../jesus-site/lib/paper-trading-snapshot.json
+```
+
+`src/paper_trading/engine.py` simula, día tras día, abrir y cerrar
+posiciones con las MISMAS reglas que `daily_signals.py` — pero lo
+hace solo (no es dinero real, no hace falta que decidas cada vez).
+Estado en `data/paper_trading/state.json` (posiciones abiertas) y
+`data/paper_trading/history.json` (snapshot diario, histórico
+completo, nunca se sobrescribe). El dashboard en jgonzalez.app/trading
+lo lee desde el JSON exportado.
+
+El capital inicial de cada bucket se congela la primera vez que corre
+el motor (snapshot de `allocation.py` en ese momento) — inyecciones
+posteriores durante la ventana de prueba se ignoran a propósito, para
+que el % de retorno mida la estrategia, no "metí más dinero".
+
 ## Robustez (Monte Carlo + stress testing)
 
 - `src/backtesting/monte_carlo.py`: remuestrea las operaciones del

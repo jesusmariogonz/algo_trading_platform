@@ -86,9 +86,14 @@ completo sin partir.
 - Kill Switch
 
 ## Fase 6 — Execution (Paper primero)
-- Adaptador de broker (Alpaca para paper trading)
-- Order Management, reconciliación
-- Modos RESEARCH / BACKTEST / PAPER — LIVE permanece deshabilitado
+- [x] Paper trading SIMULADO (src/paper_trading/), sin broker real
+      todavía — abre/cierra posiciones con las reglas del screener,
+      guarda historial diario, exportado al dashboard de jgonzalez.app
+- [ ] **En curso: 3-4 semanas de paper trading antes de evaluar
+      dinero real** (iniciado 2026-10-30, ver data/paper_trading/history.json)
+- [ ] Adaptador de broker real (Alpaca) para PAPER vía su API
+- [ ] Order Management, reconciliación contra broker real
+- [ ] Modos RESEARCH / BACKTEST / PAPER — LIVE permanece deshabilitado
 
 ## Fase 7 — Monitoring
 - API (FastAPI)
