@@ -9,9 +9,10 @@ para validar la idea antes de invertir en infraestructura.
 - [x] Indicadores (SMA, RSI, ATR, volumen)
 - [x] Estrategia A (Trend Following) como reglas configurables
 - [x] Backtest con vectorbt + comisiones/slippage
-- [ ] Correr el backtest y evaluar si hay evidencia de mérito
-- [ ] Estrategia B (Momentum/Breakout)
-- [ ] Walk-forward testing, benchmark SPY
+- [x] Estrategia B (Momentum/Breakout, proxy VCP simplificado)
+- [x] Fuerza relativa vs. benchmark (SPY)
+- [ ] Correr ambos backtests y evaluar si hay evidencia de mérito
+- [ ] Walk-forward testing
 
 **Criterio para avanzar a Fase 1:** el backtest de al menos una
 estrategia debe mostrar métricas razonables (Sharpe > 0.5, max

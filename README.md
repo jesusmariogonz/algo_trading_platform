@@ -16,8 +16,10 @@ para las fases.
   acciones/ETFs de EE.UU. vía `yfinance`.
 - Calcula indicadores técnicos (SMA 20/50/150/200, RSI 14, ATR 14,
   volumen promedio 20 sesiones).
-- Implementa la Estrategia A (Trend Following) como reglas de
+- Implementa la Estrategia A (Trend Following) y la Estrategia B
+  (Momentum/Breakout con proxy VCP simplificado) como reglas de
   señal, configurables.
+- Fuerza relativa contra un benchmark (SPY por defecto).
 - Backtest con `vectorbt`, incluyendo comisiones y slippage básicos.
 - Resultados reproducibles: cada corrida guarda sus parámetros.
 
@@ -43,8 +45,12 @@ python -m src.data.download --universe config/universe.txt --years 5
 # 2. Calcular indicadores
 python -m src.indicators.compute
 
-# 3. Correr backtest de la Estrategia A
+# 3. Calcular fuerza relativa vs. benchmark (requiere SPY en el universo)
+python -m src.indicators.relative_strength --benchmark SPY
+
+# 4. Correr backtest de una estrategia
 python -m src.backtesting.run --strategy trend_following
+python -m src.backtesting.run --strategy momentum_breakout
 ```
 
 ## Estructura

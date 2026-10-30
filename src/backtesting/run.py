@@ -17,13 +17,17 @@ from pathlib import Path
 import pandas as pd
 import vectorbt as vbt
 
-from src.strategies.trend_following import TrendFollowingParams, generate_signals
+from src.strategies.momentum_breakout import MomentumBreakoutParams
+from src.strategies.momentum_breakout import generate_signals as momentum_breakout_signals
+from src.strategies.trend_following import TrendFollowingParams
+from src.strategies.trend_following import generate_signals as trend_following_signals
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
 
 STRATEGIES = {
-    "trend_following": (TrendFollowingParams, generate_signals),
+    "trend_following": (TrendFollowingParams, trend_following_signals),
+    "momentum_breakout": (MomentumBreakoutParams, momentum_breakout_signals),
 }
 
 

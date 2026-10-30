@@ -60,6 +60,18 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df["vol_avg_20"] = df["volume"].rolling(window=20, min_periods=20).mean()
     df["sma_200_slope_20d"] = df["sma_200"] - df["sma_200"].shift(20)
 
+    # --- Estrategia B (Momentum/Breakout) ---
+    # Máximos previos (shift(1): el máximo de las N sesiones ANTERIORES
+    # a la actual, nunca incluye el precio de hoy — evita look-ahead).
+    df["high_20"] = df["high"].rolling(window=20, min_periods=20).max().shift(1)
+    df["high_55"] = df["high"].rolling(window=55, min_periods=55).max().shift(1)
+    df["volume_relative"] = df["volume"] / df["vol_avg_20"]
+
+    # Proxy de contracción de volatilidad (VCP simplificado): compara el
+    # ATR actual contra el de 20 sesiones atrás. < 1 => la volatilidad
+    # se está contrayendo, condición típica antes de una ruptura válida.
+    df["atr_contraction_20d"] = df["atr_14"] / df["atr_14"].shift(20)
+
     return df
 
 
