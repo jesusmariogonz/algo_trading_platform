@@ -1,40 +1,24 @@
 {
   "largo_plazo": {
-    "starting_capital": 1200.0,
+    "starting_capital": 400.0,
     "start_date": "2026-10-30",
-    "cash": 120.35,
+    "cash": 295.65,
     "open_positions": [
-      {
-        "symbol": "VTI",
-        "strategy": "time_series_momentum",
-        "entry_date": "2026-10-29",
-        "entry_price": 378.24,
-        "stop_price": 367.62,
-        "shares": 1
-      },
-      {
-        "symbol": "IWM",
-        "strategy": "time_series_momentum",
-        "entry_date": "2026-10-29",
-        "entry_price": 284.01,
-        "stop_price": 273.17,
-        "shares": 1
-      },
       {
         "symbol": "EFA",
         "strategy": "time_series_momentum",
         "entry_date": "2026-10-29",
         "entry_price": 104.35,
         "stop_price": 101.66,
-        "shares": 4
+        "shares": 1
       }
     ],
     "closed_positions": []
   },
   "mediano_plazo": {
-    "starting_capital": 900.0,
+    "starting_capital": 300.0,
     "start_date": "2026-10-30",
-    "cash": 672.24,
+    "cash": 243.06,
     "open_positions": [
       {
         "symbol": "XLF",
@@ -42,31 +26,22 @@
         "entry_date": "2026-10-29",
         "entry_price": 56.94,
         "stop_price": 55.14,
-        "shares": 4
+        "shares": 1
       }
     ],
     "closed_positions": []
   },
   "riesgo_alto": {
-    "starting_capital": 600.0,
+    "starting_capital": 200.0,
     "start_date": "2026-10-30",
-    "cash": 287.34,
-    "open_positions": [
-      {
-        "symbol": "ROKU",
-        "strategy": "trend_following",
-        "entry_date": "2026-10-29",
-        "entry_price": 156.33,
-        "stop_price": 151.46,
-        "shares": 2
-      }
-    ],
+    "cash": 200.0,
+    "open_positions": [],
     "closed_positions": []
   },
   "muy_alta_volatilidad": {
-    "starting_capital": 300.0,
+    "starting_capital": 100.0,
     "start_date": "2026-10-30",
-    "cash": 300.0,
+    "cash": 100.0,
     "open_positions": [],
     "closed_positions": []
   }

@@ -90,10 +90,12 @@ completo sin partir.
       todavía — abre/cierra posiciones con las reglas del screener,
       guarda historial diario, exportado al dashboard de jgonzalez.app
 - [ ] **En curso: 3-4 semanas de paper trading antes de evaluar
-      dinero real** (reiniciado 2026-10-30 con base de $3,000 USD —
-      el primer intento con $1,000 se descartó el mismo día, antes de
-      que importara para el historial, por corrección explícita del
-      usuario. Ver data/paper_trading/history.json)
+      dinero real** (base final: **$1,000 USD** — se probó con $3,000
+      el mismo día por una aclaración del usuario sobre el monto, pero
+      se corrigió de vuelta a $1,000 minutos después, también el mismo
+      día, antes de que afectara el historial de evaluación. A partir
+      de aquí el usuario inyecta/retira capital el mismo avisándolo
+      explícitamente — ver data/paper_trading/history.json)
 - [x] Conversión MXN->USD automática (`allocation.py inject-mxn`),
       vía open.er-api.com (gratuita, sin key). El tipo de cambio usado
       se guarda en el ledger para auditoría — nunca se oculta.
