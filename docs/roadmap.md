@@ -90,7 +90,14 @@ completo sin partir.
       todavía — abre/cierra posiciones con las reglas del screener,
       guarda historial diario, exportado al dashboard de jgonzalez.app
 - [ ] **En curso: 3-4 semanas de paper trading antes de evaluar
-      dinero real** (iniciado 2026-10-30, ver data/paper_trading/history.json)
+      dinero real** (reiniciado 2026-10-30 con base de $3,000 USD —
+      el primer intento con $1,000 se descartó el mismo día, antes de
+      que importara para el historial, por corrección explícita del
+      usuario. Ver data/paper_trading/history.json)
+- [ ] **Pendiente de aclarar**: el usuario planea inyectar ~$3,000
+      MXN mensuales, pero el sistema opera en USD. No se ha definido
+      cómo convertir (tipo de cambio al momento de la inyección,
+      manual o automático) — no implementado todavía, ver conversación.
 - [ ] Adaptador de broker real (Alpaca) para PAPER vía su API
 - [ ] Order Management, reconciliación contra broker real
 - [ ] Modos RESEARCH / BACKTEST / PAPER — LIVE permanece deshabilitado
