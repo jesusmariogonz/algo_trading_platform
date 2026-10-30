@@ -13,7 +13,15 @@ para validar la idea antes de invertir en infraestructura.
 - [x] Fuerza relativa vs. benchmark (SPY)
 - [x] Walk-forward testing (ventanas consecutivas, sin optimización de
       parámetros todavía — ver docstring de walk_forward.py)
+- [x] Reparto de capital en 4 buckets (40/30/20/10 — ver README.md)
+- [x] Screener diario (señales de hoy + position sizing por 1% de riesgo),
+      limitado al bucket Mediano Plazo (el único con estrategia real)
 - [ ] Evaluar con calma los resultados de walk-forward antes de avanzar
+- [ ] Definir estrategia para Riesgo Alto y Muy Alta Volatilidad (hoy
+      son buckets de capital sin lógica de inversión detrás)
+- [ ] Definir la condición mencionada por el usuario de "escalar
+      riesgo alto solo si el rendimiento anual supera 10%" — quedó
+      pendiente de precisar, no implementada todavía
 
 **Hallazgo del primer walk-forward (4 ventanas, 2021-2026):**
 Trend Following fue consistente en 3/4 ventanas; Momentum/Breakout

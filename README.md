@@ -55,7 +55,35 @@ python -m src.backtesting.run --strategy momentum_breakout
 # 5. Walk-forward: la misma estrategia en N ventanas consecutivas,
 #    para ver si el rendimiento es consistente o depende de un período
 python -m src.backtesting.walk_forward --strategy trend_following --windows 4
+
+# 6. Registra el capital que vas inyectando (se reparte 40/30/20/10
+#    entre los 4 buckets — ver docs/vision.md "Reparto de capital")
+python -m src.portfolio.allocation inject 1000
+
+# 7. Screener diario: qué símbolos cumplen HOY las condiciones de
+#    entrada, y cuánto comprar según el 1% de riesgo máximo. Requiere
+#    haber corrido 1-3 el mismo día para tener datos frescos.
+python -m src.screening.daily_signals --bucket mediano_plazo
 ```
+
+## Reparto de capital (4 buckets)
+
+| Bucket | % | Estado |
+|---|---|---|
+| Largo plazo | 40% | Sin estrategia todavía (propuesta: buy & hold en ETFs amplios) |
+| Mediano plazo | 30% | **Único bucket con estrategia real** — Trend Following + Momentum/Breakout (swing trading) |
+| Riesgo alto | 20% | Sin definir (propuesta: mismo tipo de estrategia sobre small/mid caps) |
+| Muy alta volatilidad | 10% | Sin definir (propuesta: criptomonedas, requiere su propio motor de datos) |
+
+`src/portfolio/allocation.py` es un libro de **contribuciones** (cuánto
+le has inyectado a cada bucket), no un portafolio con valuación en
+vivo — eso requiere Postgres y reconciliación real (Fase 1+). El
+screener diario (`src/screening/daily_signals.py`) solo opera sobre
+el bucket de Mediano Plazo, que es el único con estrategia construida.
+
+**No ejecuta nada.** Te dice qué símbolos cumplen la regla hoy y
+cuánto comprar respetando el 1% de riesgo máximo por operación — tú
+decides y ejecutas manualmente en tu broker.
 
 ## Estructura
 

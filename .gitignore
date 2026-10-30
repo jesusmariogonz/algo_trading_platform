@@ -7,5 +7,7 @@ data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 .DS_Store
+# Montos de capital reales — no se versionan aunque el repo sea privado.
+data/portfolio/ledger.json
 .ruff_cache/
 .pytest_cache/
