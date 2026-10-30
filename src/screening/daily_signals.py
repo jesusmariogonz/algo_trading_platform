@@ -28,18 +28,27 @@ from src.portfolio.allocation import get_balances
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# Configuración por bucket: qué universo opera y cuánto riesgo por
-# operación se permite. Ver docs/adr/0003-buckets-y-escalamiento.md.
-# "largo_plazo" y "muy_alta_volatilidad" no tienen entrada aquí porque
-# todavía no tienen estrategia construida (ver README.md).
+# Configuración por bucket: universo, riesgo por operación, y QUÉ
+# estrategias corren ahí (Largo Plazo solo usa Time-Series Momentum,
+# un horizonte de meses — correrle Trend Following/Momentum Breakout
+# encima no tendría sentido, son estrategias de swing diario). Ver
+# docs/adr/0003-buckets-y-escalamiento.md.
+# "muy_alta_volatilidad" no tiene entrada: sin estrategia construida.
 BUCKET_CONFIG = {
+    "largo_plazo": {
+        "universe_file": ROOT / "config" / "universe_largo_plazo.txt",
+        "risk_pct": 0.01,
+        "strategies": ["time_series_momentum"],
+    },
     "mediano_plazo": {
         "universe_file": ROOT / "config" / "universe.txt",
         "risk_pct": 0.01,  # 1% — regla base del master prompt
+        "strategies": ["trend_following", "momentum_breakout"],
     },
     "riesgo_alto": {
         "universe_file": ROOT / "config" / "universe_riesgo_alto.txt",
         "risk_pct": 0.02,  # 2% — deliberadamente más laxo, decisión del usuario
+        "strategies": ["trend_following", "momentum_breakout"],
     },
 }
 
@@ -121,12 +130,23 @@ def main():
         "--strategy",
         choices=list(STRATEGIES.keys()) + ["all"],
         default="all",
+        help="limita a una estrategia específica (debe ser una de las que corren en ese bucket)",
     )
     args = parser.parse_args()
 
     capital = resolve_capital(args)
-    risk_pct = BUCKET_CONFIG[args.bucket]["risk_pct"]
-    strategies_to_run = list(STRATEGIES.keys()) if args.strategy == "all" else [args.strategy]
+    config = BUCKET_CONFIG[args.bucket]
+    risk_pct = config["risk_pct"]
+    bucket_strategies = config["strategies"]
+    if args.strategy == "all":
+        strategies_to_run = bucket_strategies
+    elif args.strategy not in bucket_strategies:
+        raise SystemExit(
+            f"La estrategia '{args.strategy}' no corre en el bucket '{args.bucket}' "
+            f"(ahí corren: {', '.join(bucket_strategies)})"
+        )
+    else:
+        strategies_to_run = [args.strategy]
 
     print(f"\n=== Screener diario [{args.bucket}] — capital: ${capital:.2f} · riesgo máx. por operación: {risk_pct*100:.0f}% ===")
     print("Esto es información para decidir, no una orden. Nada se ejecuta automáticamente.\n")

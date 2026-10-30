@@ -1,0 +1,256 @@
+{
+  "run_id": "20261030_204505",
+  "strategy_id": "time_series_momentum_v1",
+  "strategy_version": "0.1.0",
+  "params": {
+    "id": "time_series_momentum_v1",
+    "name": "Time-Series Momentum (12m/6m, solo largo)",
+    "version": "0.1.0",
+    "atr_stop_multiple": 3.0
+  },
+  "fees": 0.0005,
+  "slippage": 0.0005,
+  "universe_size": 30,
+  "summary": [
+    {
+      "symbol": "PLTR",
+      "total_return_pct": 1381.5,
+      "sharpe_ratio": 1.71,
+      "max_drawdown_pct": 42.28,
+      "win_rate_pct": 50.0,
+      "total_trades": 3
+    },
+    {
+      "symbol": "NVDA",
+      "total_return_pct": 724.53,
+      "sharpe_ratio": 1.65,
+      "max_drawdown_pct": 36.89,
+      "win_rate_pct": 20.0,
+      "total_trades": 6
+    },
+    {
+      "symbol": "CVNA",
+      "total_return_pct": 698.26,
+      "sharpe_ratio": 1.27,
+      "max_drawdown_pct": 53.47,
+      "win_rate_pct": 40.0,
+      "total_trades": 10
+    },
+    {
+      "symbol": "AVGO",
+      "total_return_pct": 513.29,
+      "sharpe_ratio": 1.44,
+      "max_drawdown_pct": 41.48,
+      "win_rate_pct": 33.33,
+      "total_trades": 3
+    },
+    {
+      "symbol": "IONQ",
+      "total_return_pct": 215.02,
+      "sharpe_ratio": 0.89,
+      "max_drawdown_pct": 70.87,
+      "win_rate_pct": 57.14,
+      "total_trades": 7
+    },
+    {
+      "symbol": "LLY",
+      "total_return_pct": 149.03,
+      "sharpe_ratio": 1.08,
+      "max_drawdown_pct": 38.0,
+      "win_rate_pct": 33.33,
+      "total_trades": 4
+    },
+    {
+      "symbol": "XLK",
+      "total_return_pct": 119.01,
+      "sharpe_ratio": 1.24,
+      "max_drawdown_pct": 19.16,
+      "win_rate_pct": 33.33,
+      "total_trades": 4
+    },
+    {
+      "symbol": "SMCI",
+      "total_return_pct": 94.25,
+      "sharpe_ratio": 0.69,
+      "max_drawdown_pct": 88.24,
+      "win_rate_pct": 50.0,
+      "total_trades": 6
+    },
+    {
+      "symbol": "QQQ",
+      "total_return_pct": 89.13,
+      "sharpe_ratio": 1.19,
+      "max_drawdown_pct": 21.87,
+      "win_rate_pct": 66.67,
+      "total_trades": 4
+    },
+    {
+      "symbol": "GOOGL",
+      "total_return_pct": 83.32,
+      "sharpe_ratio": 0.82,
+      "max_drawdown_pct": 29.51,
+      "win_rate_pct": 66.67,
+      "total_trades": 4
+    },
+    {
+      "symbol": "AAPL",
+      "total_return_pct": 66.79,
+      "sharpe_ratio": 0.77,
+      "max_drawdown_pct": 33.43,
+      "win_rate_pct": 28.57,
+      "total_trades": 8
+    },
+    {
+      "symbol": "META",
+      "total_return_pct": 62.19,
+      "sharpe_ratio": 0.66,
+      "max_drawdown_pct": 51.68,
+      "win_rate_pct": 33.33,
+      "total_trades": 9
+    },
+    {
+      "symbol": "AFRM",
+      "total_return_pct": 59.47,
+      "sharpe_ratio": 0.58,
+      "max_drawdown_pct": 55.85,
+      "win_rate_pct": 27.78,
+      "total_trades": 18
+    },
+    {
+      "symbol": "SPY",
+      "total_return_pct": 56.38,
+      "sharpe_ratio": 1.16,
+      "max_drawdown_pct": 19.82,
+      "win_rate_pct": 66.67,
+      "total_trades": 4
+    },
+    {
+      "symbol": "SOFI",
+      "total_return_pct": 55.92,
+      "sharpe_ratio": 0.56,
+      "max_drawdown_pct": 52.96,
+      "win_rate_pct": 20.0,
+      "total_trades": 5
+    },
+    {
+      "symbol": "VTI",
+      "total_return_pct": 51.0,
+      "sharpe_ratio": 1.07,
+      "max_drawdown_pct": 18.29,
+      "win_rate_pct": 33.33,
+      "total_trades": 4
+    },
+    {
+      "symbol": "XLF",
+      "total_return_pct": 49.49,
+      "sharpe_ratio": 0.94,
+      "max_drawdown_pct": 15.85,
+      "win_rate_pct": 50.0,
+      "total_trades": 7
+    },
+    {
+      "symbol": "AMZN",
+      "total_return_pct": 48.53,
+      "sharpe_ratio": 0.6,
+      "max_drawdown_pct": 31.6,
+      "win_rate_pct": 58.33,
+      "total_trades": 13
+    },
+    {
+      "symbol": "MSFT",
+      "total_return_pct": 37.03,
+      "sharpe_ratio": 0.63,
+      "max_drawdown_pct": 25.73,
+      "win_rate_pct": 37.5,
+      "total_trades": 8
+    },
+    {
+      "symbol": "EFA",
+      "total_return_pct": 27.71,
+      "sharpe_ratio": 0.61,
+      "max_drawdown_pct": 13.89,
+      "win_rate_pct": 33.33,
+      "total_trades": 4
+    },
+    {
+      "symbol": "DIA",
+      "total_return_pct": 23.31,
+      "sharpe_ratio": 0.61,
+      "max_drawdown_pct": 15.37,
+      "win_rate_pct": 22.22,
+      "total_trades": 10
+    },
+    {
+      "symbol": "CELH",
+      "total_return_pct": 22.21,
+      "sharpe_ratio": 0.39,
+      "max_drawdown_pct": 61.32,
+      "win_rate_pct": 33.33,
+      "total_trades": 3
+    },
+    {
+      "symbol": "IWM",
+      "total_return_pct": 18.51,
+      "sharpe_ratio": 0.4,
+      "max_drawdown_pct": 18.92,
+      "win_rate_pct": 45.45,
+      "total_trades": 12
+    },
+    {
+      "symbol": "DKNG",
+      "total_return_pct": 12.47,
+      "sharpe_ratio": 0.3,
+      "max_drawdown_pct": 46.71,
+      "win_rate_pct": 28.57,
+      "total_trades": 7
+    },
+    {
+      "symbol": "VWO",
+      "total_return_pct": 11.94,
+      "sharpe_ratio": 0.32,
+      "max_drawdown_pct": 19.38,
+      "win_rate_pct": 28.57,
+      "total_trades": 8
+    },
+    {
+      "symbol": "AGG",
+      "total_return_pct": -2.48,
+      "sharpe_ratio": -0.15,
+      "max_drawdown_pct": 6.01,
+      "win_rate_pct": 28.57,
+      "total_trades": 7
+    },
+    {
+      "symbol": "ROKU",
+      "total_return_pct": -28.86,
+      "sharpe_ratio": -0.01,
+      "max_drawdown_pct": 71.34,
+      "win_rate_pct": 25.0,
+      "total_trades": 13
+    },
+    {
+      "symbol": "UPST",
+      "total_return_pct": -35.69,
+      "sharpe_ratio": 0.21,
+      "max_drawdown_pct": 73.52,
+      "win_rate_pct": 25.0,
+      "total_trades": 8
+    },
+    {
+      "symbol": "RIVN",
+      "total_return_pct": -39.36,
+      "sharpe_ratio": -0.16,
+      "max_drawdown_pct": 44.3,
+      "win_rate_pct": 28.57,
+      "total_trades": 7
+    },
+    {
+      "symbol": "PINS",
+      "total_return_pct": -58.01,
+      "sharpe_ratio": -0.61,
+      "max_drawdown_pct": 64.96,
+      "win_rate_pct": 33.33,
+      "total_trades": 15
+    }
+  ]
+}

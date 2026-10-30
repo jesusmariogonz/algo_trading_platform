@@ -1,0 +1,26 @@
+{
+  "run_id": "20261030_204918",
+  "strategy_id": "trend_following_v1",
+  "strategy_version": "0.1.0",
+  "seed": 42,
+  "fees": 0.0005,
+  "slippage": 0.0005,
+  "position_size_pct": 0.1,
+  "simulation": {
+    "n_trades_in_sample": 118,
+    "n_simulations": 2000,
+    "total_return_pct": {
+      "p5": 438.6,
+      "p25": 1018.01,
+      "p50_mediana": 1861.22,
+      "p75": 3447.0,
+      "p95": 9445.07,
+      "pct_simulaciones_positivas": 100.0
+    },
+    "max_drawdown_pct": {
+      "p5_peor_caso": -15.5,
+      "p50_mediana": -8.73,
+      "p95_mejor_caso": -5.36
+    }
+  }
+}

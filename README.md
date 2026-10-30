@@ -64,16 +64,58 @@ python -m src.portfolio.allocation inject 1000
 #    entrada, y cuánto comprar según el 1% de riesgo máximo. Requiere
 #    haber corrido 1-3 el mismo día para tener datos frescos.
 python -m src.screening.daily_signals --bucket mediano_plazo
+
+# 8. Cross-Sectional Momentum: ranking + rebalanceo mensual de una
+#    canasta (no es una estrategia con señal por símbolo como las demás)
+python -m src.backtesting.cross_sectional_backtest
+
+# 9. Monte Carlo: ¿qué tan sensible es el resultado al orden de las
+#    operaciones? Y stress test: costos elevados + peor caída real de SPY
+python -m src.backtesting.monte_carlo --strategy trend_following --simulations 2000
+python -m src.backtesting.stress_test --strategy trend_following
 ```
 
 ## Reparto de capital (4 buckets)
 
 | Bucket | % | Estado |
 |---|---|---|
-| Largo plazo | 40% | Sin estrategia todavía (propuesta: buy & hold en ETFs amplios) |
+| Largo plazo | 40% | Time-Series Momentum (12m/6m) · universo `config/universe_largo_plazo.txt` (ETFs amplios) · 1% riesgo/operación |
 | Mediano plazo | 30% | Trend Following + Momentum/Breakout · universo `config/universe.txt` · 1% riesgo/operación |
 | Riesgo alto | 20% | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` (small/mid-cap, sin cripto) · 2% riesgo/operación |
 | Muy alta volatilidad | 10% | Sin construir — criptomonedas, requiere su propio motor de datos (API distinta, calendario 24/7) |
+
+## Estrategias (4 implementadas, 1 método de selección)
+
+| Estrategia | Investigación base | Bucket | Estado |
+|---|---|---|---|
+| Trend Following (SMA) | — | Mediano/Riesgo Alto | Walk-forward 3/4 ventanas consistente |
+| Momentum/Breakout (VCP simplificado) | — | Mediano/Riesgo Alto | Walk-forward 2/4 — inconsistente, en revisión |
+| Time-Series Momentum | Moskowitz, Ooi & Pedersen (2012) | Largo Plazo | Walk-forward 3/4 ventanas consistente |
+| Cross-Sectional Momentum | Jegadeesh & Titman (1993) | Selección entre buckets | **Resultado del backtest inflado por sesgo de supervivencia en el universo — ver advertencia abajo** |
+
+**⚠ Sesgo de supervivencia**: nuestro universo (`config/universe*.txt`)
+son símbolos elegidos a mano porque HOY sabemos que les fue bien
+(NVDA, SMCI, AVGO, PLTR...). Cualquier backtest sobre este universo
+—especialmente Cross-Sectional Momentum, que selecciona "ganadores"— está
+inflado frente a lo que habría pasado operando con información
+disponible en tiempo real sobre un universo neutral (ej. todo el S&P
+500 de hace 5 años). Pendiente: correr sobre un universo histórico sin
+sesgo antes de confiar en estos números — ver `docs/roadmap.md`.
+
+## Robustez (Monte Carlo + stress testing)
+
+- `src/backtesting/monte_carlo.py`: remuestrea las operaciones del
+  backtest para ver qué tan sensible es el resultado al ORDEN en que
+  cayeron. Asume ~10 posiciones concurrentes (configurable con
+  `--position-size-pct`) — sin esto, componer el retorno completo de
+  cada operación como si fuera el 100% de la cuenta da números sin
+  sentido (lo verificamos: literalmente millones de %, bug real que
+  corregimos).
+- `src/backtesting/stress_test.py`: 2 pruebas — comisión/slippage 3x-5x
+  más altos, y la peor caída real de SPY DENTRO de los datos
+  descargados (calculada, no asumida). Con ~5 años de historia no
+  cubre crisis mayores (2008, COVID 2020) — se documenta, no se finge
+  cobertura que no existe.
 
 Ver `docs/adr/0003-buckets-y-escalamiento.md` para la definición
 completa y la regla de cuándo se le inyecta más capital al bucket de

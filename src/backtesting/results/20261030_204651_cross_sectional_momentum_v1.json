@@ -1,0 +1,855 @@
+{
+  "run_id": "20261030_204651",
+  "strategy_id": "cross_sectional_momentum_v1",
+  "strategy_version": "0.1.0",
+  "params": {
+    "id": "cross_sectional_momentum_v1",
+    "name": "Cross-Sectional Momentum (ranking 6m, top 20%)",
+    "version": "0.1.0",
+    "lookback_days": 126,
+    "top_pct": 0.2
+  },
+  "turnover_cost_pct": 0.002,
+  "summary": {
+    "n_months": 59,
+    "total_return_pct": 591.67,
+    "cagr_pct": 48.19,
+    "max_drawdown_pct": -37.59,
+    "sharpe_ratio_annualized": 1.05,
+    "avg_positions_per_month": 4.8
+  },
+  "benchmark_spy": {
+    "total_return_pct": 78.81,
+    "cagr_pct": 12.35
+  },
+  "monthly_returns": [
+    {
+      "date": "2021-11-01",
+      "return": 0.0,
+      "n_positions": 0
+    },
+    {
+      "date": "2021-12-01",
+      "return": 0.0,
+      "n_positions": 0
+    },
+    {
+      "date": "2022-01-03",
+      "return": 0.0,
+      "n_positions": 0
+    },
+    {
+      "date": "2022-02-01",
+      "return": 0.0,
+      "n_positions": 0
+    },
+    {
+      "date": "2022-03-01",
+      "return": 0.0,
+      "n_positions": 0
+    },
+    {
+      "date": "2022-04-01",
+      "return": 0.0,
+      "n_positions": 0
+    },
+    {
+      "date": "2022-05-02",
+      "return": 0.0,
+      "n_positions": 0
+    },
+    {
+      "date": "2022-06-01",
+      "return": 0.0,
+      "n_positions": 0
+    },
+    {
+      "date": "2022-07-01",
+      "return": 0.0,
+      "n_positions": 0
+    },
+    {
+      "date": "2022-08-01",
+      "return": 0.0,
+      "n_positions": 0
+    },
+    {
+      "date": "2022-09-01",
+      "return": -0.0576671182710734,
+      "n_positions": 6
+    },
+    {
+      "date": "2022-10-03",
+      "return": 0.08037534449764183,
+      "n_positions": 4
+    },
+    {
+      "date": "2022-11-01",
+      "return": 0.11105656901508236,
+      "n_positions": 5
+    },
+    {
+      "date": "2022-12-01",
+      "return": -0.07060842254606636,
+      "n_positions": 5
+    },
+    {
+      "date": "2023-01-03",
+      "return": 0.032996782113048406,
+      "n_positions": 6
+    },
+    {
+      "date": "2023-02-01",
+      "return": 0.018224176539521172,
+      "n_positions": 6
+    },
+    {
+      "date": "2023-03-01",
+      "return": 0.10002596133572705,
+      "n_positions": 6
+    },
+    {
+      "date": "2023-04-03",
+      "return": 0.018208717451154675,
+      "n_positions": 6
+    },
+    {
+      "date": "2023-05-01",
+      "return": 0.3487669065115165,
+      "n_positions": 6
+    },
+    {
+      "date": "2023-06-01",
+      "return": 0.19034885464597784,
+      "n_positions": 6
+    },
+    {
+      "date": "2023-07-03",
+      "return": 0.4982306006923892,
+      "n_positions": 6
+    },
+    {
+      "date": "2023-08-01",
+      "return": -0.1665870204694815,
+      "n_positions": 6
+    },
+    {
+      "date": "2023-09-01",
+      "return": -0.08422074212491887,
+      "n_positions": 6
+    },
+    {
+      "date": "2023-10-02",
+      "return": -0.18227213211735435,
+      "n_positions": 6
+    },
+    {
+      "date": "2023-11-01",
+      "return": 0.47822166563640756,
+      "n_positions": 4
+    },
+    {
+      "date": "2023-12-01",
+      "return": 0.044714137751083995,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-01-02",
+      "return": 0.011535748251041832,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-02-01",
+      "return": 0.18738653260242563,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-03-01",
+      "return": 0.02359598118305012,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-04-01",
+      "return": -0.10687014185018667,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-05-01",
+      "return": 0.052829887081256154,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-06-03",
+      "return": 0.07567633967822542,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-07-01",
+      "return": -0.05223427891635096,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-08-01",
+      "return": -0.005141770602058336,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-09-03",
+      "return": 0.06840940174371789,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-10-01",
+      "return": 0.14589644148449873,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-11-01",
+      "return": 0.4497626712775787,
+      "n_positions": 6
+    },
+    {
+      "date": "2024-12-02",
+      "return": -0.007994837943187911,
+      "n_positions": 6
+    },
+    {
+      "date": "2025-01-02",
+      "return": 0.06860060886933413,
+      "n_positions": 6
+    },
+    {
+      "date": "2025-02-03",
+      "return": -0.11593851850033904,
+      "n_positions": 6
+    },
+    {
+      "date": "2025-03-03",
+      "return": -0.11094421188836306,
+      "n_positions": 6
+    },
+    {
+      "date": "2025-04-01",
+      "return": 0.16283946528744925,
+      "n_positions": 5
+    },
+    {
+      "date": "2025-05-01",
+      "return": 0.21172903389065642,
+      "n_positions": 6
+    },
+    {
+      "date": "2025-06-02",
+      "return": 0.03605304526889874,
+      "n_positions": 6
+    },
+    {
+      "date": "2025-07-01",
+      "return": 0.08817795162519426,
+      "n_positions": 6
+    },
+    {
+      "date": "2025-08-01",
+      "return": 0.01867211292973433,
+      "n_positions": 6
+    },
+    {
+      "date": "2025-09-02",
+      "return": 0.13372203491409876,
+      "n_positions": 6
+    },
+    {
+      "date": "2025-10-01",
+      "return": 0.042622583816662805,
+      "n_positions": 6
+    },
+    {
+      "date": "2025-11-03",
+      "return": -0.11915952246296264,
+      "n_positions": 6
+    },
+    {
+      "date": "2025-12-01",
+      "return": -0.009593685330448666,
+      "n_positions": 6
+    },
+    {
+      "date": "2026-01-02",
+      "return": -0.07635573159878074,
+      "n_positions": 6
+    },
+    {
+      "date": "2026-02-02",
+      "return": -0.019573047889099228,
+      "n_positions": 6
+    },
+    {
+      "date": "2026-03-02",
+      "return": -0.04807351674740976,
+      "n_positions": 6
+    },
+    {
+      "date": "2026-04-01",
+      "return": 0.10776069303262514,
+      "n_positions": 5
+    },
+    {
+      "date": "2026-05-01",
+      "return": 0.03895706441711231,
+      "n_positions": 6
+    },
+    {
+      "date": "2026-06-01",
+      "return": -0.1304822715730787,
+      "n_positions": 6
+    },
+    {
+      "date": "2026-07-01",
+      "return": -0.04499722469820089,
+      "n_positions": 6
+    },
+    {
+      "date": "2026-08-03",
+      "return": -0.012802089491645092,
+      "n_positions": 6
+    },
+    {
+      "date": "2026-09-01",
+      "return": 0.023615391318646727,
+      "n_positions": 6
+    }
+  ],
+  "holdings_log": [
+    {
+      "date": "2022-09-01",
+      "selected": [
+        "CELH",
+        "SMCI",
+        "LLY",
+        "AAPL",
+        "DIA",
+        "AGG"
+      ]
+    },
+    {
+      "date": "2022-10-03",
+      "selected": [
+        "CELH",
+        "SMCI",
+        "LLY",
+        "AGG"
+      ]
+    },
+    {
+      "date": "2022-11-01",
+      "selected": [
+        "CELH",
+        "SMCI",
+        "LLY",
+        "DKNG",
+        "PINS"
+      ]
+    },
+    {
+      "date": "2022-12-01",
+      "selected": [
+        "CELH",
+        "SMCI",
+        "PINS",
+        "LLY",
+        "DIA"
+      ]
+    },
+    {
+      "date": "2023-01-03",
+      "selected": [
+        "SMCI",
+        "CELH",
+        "AVGO",
+        "PINS",
+        "LLY",
+        "XLF"
+      ]
+    },
+    {
+      "date": "2023-02-01",
+      "selected": [
+        "SMCI",
+        "PINS",
+        "AVGO",
+        "SOFI",
+        "NVDA",
+        "EFA"
+      ]
+    },
+    {
+      "date": "2023-03-01",
+      "selected": [
+        "SMCI",
+        "NVDA",
+        "AVGO",
+        "EFA",
+        "DKNG",
+        "PINS"
+      ]
+    },
+    {
+      "date": "2023-04-03",
+      "selected": [
+        "NVDA",
+        "SMCI",
+        "META",
+        "AVGO",
+        "EFA",
+        "XLK"
+      ]
+    },
+    {
+      "date": "2023-05-01",
+      "selected": [
+        "META",
+        "NVDA",
+        "SMCI",
+        "DKNG",
+        "AVGO",
+        "MSFT"
+      ]
+    },
+    {
+      "date": "2023-06-01",
+      "selected": [
+        "NVDA",
+        "SMCI",
+        "META",
+        "IONQ",
+        "CVNA",
+        "PLTR"
+      ]
+    },
+    {
+      "date": "2023-07-03",
+      "selected": [
+        "CVNA",
+        "IONQ",
+        "SMCI",
+        "NVDA",
+        "UPST",
+        "PLTR"
+      ]
+    },
+    {
+      "date": "2023-08-01",
+      "selected": [
+        "CVNA",
+        "SMCI",
+        "IONQ",
+        "UPST",
+        "PLTR",
+        "NVDA"
+      ]
+    },
+    {
+      "date": "2023-09-01",
+      "selected": [
+        "CVNA",
+        "IONQ",
+        "SMCI",
+        "CELH",
+        "NVDA",
+        "PLTR"
+      ]
+    },
+    {
+      "date": "2023-10-02",
+      "selected": [
+        "CVNA",
+        "SMCI",
+        "IONQ",
+        "PLTR",
+        "CELH",
+        "AFRM"
+      ]
+    },
+    {
+      "date": "2023-11-01",
+      "selected": [
+        "CVNA",
+        "PLTR",
+        "AFRM",
+        "SMCI"
+      ]
+    },
+    {
+      "date": "2023-12-01",
+      "selected": [
+        "AFRM",
+        "CVNA",
+        "ROKU",
+        "DKNG",
+        "PINS",
+        "IONQ"
+      ]
+    },
+    {
+      "date": "2024-01-02",
+      "selected": [
+        "AFRM",
+        "CVNA",
+        "ROKU",
+        "PINS",
+        "LLY",
+        "DKNG"
+      ]
+    },
+    {
+      "date": "2024-02-01",
+      "selected": [
+        "AFRM",
+        "SMCI",
+        "LLY",
+        "NVDA",
+        "AVGO",
+        "PINS"
+      ]
+    },
+    {
+      "date": "2024-03-01",
+      "selected": [
+        "SMCI",
+        "AFRM",
+        "META",
+        "NVDA",
+        "CVNA",
+        "AVGO"
+      ]
+    },
+    {
+      "date": "2024-04-01",
+      "selected": [
+        "SMCI",
+        "CVNA",
+        "NVDA",
+        "AFRM",
+        "AVGO",
+        "META"
+      ]
+    },
+    {
+      "date": "2024-05-01",
+      "selected": [
+        "CVNA",
+        "SMCI",
+        "NVDA",
+        "AFRM",
+        "PINS",
+        "DKNG"
+      ]
+    },
+    {
+      "date": "2024-06-03",
+      "selected": [
+        "CVNA",
+        "SMCI",
+        "NVDA",
+        "CELH",
+        "META",
+        "AVGO"
+      ]
+    },
+    {
+      "date": "2024-07-01",
+      "selected": [
+        "SMCI",
+        "NVDA",
+        "CVNA",
+        "LLY",
+        "PLTR",
+        "AVGO"
+      ]
+    },
+    {
+      "date": "2024-08-01",
+      "selected": [
+        "CVNA",
+        "NVDA",
+        "PLTR",
+        "LLY",
+        "META",
+        "SMCI"
+      ]
+    },
+    {
+      "date": "2024-09-03",
+      "selected": [
+        "CVNA",
+        "UPST",
+        "AAPL",
+        "PLTR",
+        "NVDA",
+        "LLY"
+      ]
+    },
+    {
+      "date": "2024-10-01",
+      "selected": [
+        "CVNA",
+        "PLTR",
+        "UPST",
+        "AAPL",
+        "NVDA",
+        "AVGO"
+      ]
+    },
+    {
+      "date": "2024-11-01",
+      "selected": [
+        "UPST",
+        "CVNA",
+        "PLTR",
+        "IONQ",
+        "SOFI",
+        "NVDA"
+      ]
+    },
+    {
+      "date": "2024-12-02",
+      "selected": [
+        "IONQ",
+        "PLTR",
+        "UPST",
+        "CVNA",
+        "AFRM",
+        "SOFI"
+      ]
+    },
+    {
+      "date": "2025-01-02",
+      "selected": [
+        "IONQ",
+        "PLTR",
+        "UPST",
+        "SOFI",
+        "AFRM",
+        "CVNA"
+      ]
+    },
+    {
+      "date": "2025-02-03",
+      "selected": [
+        "IONQ",
+        "PLTR",
+        "UPST",
+        "AFRM",
+        "SOFI",
+        "CVNA"
+      ]
+    },
+    {
+      "date": "2025-03-03",
+      "selected": [
+        "IONQ",
+        "PLTR",
+        "AFRM",
+        "SOFI",
+        "UPST",
+        "CVNA"
+      ]
+    },
+    {
+      "date": "2025-04-01",
+      "selected": [
+        "IONQ",
+        "PLTR",
+        "SOFI",
+        "CVNA",
+        "RIVN"
+      ]
+    },
+    {
+      "date": "2025-05-01",
+      "selected": [
+        "PLTR",
+        "IONQ",
+        "RIVN",
+        "CVNA",
+        "AFRM",
+        "AVGO"
+      ]
+    },
+    {
+      "date": "2025-06-02",
+      "selected": [
+        "PLTR",
+        "AVGO",
+        "CELH",
+        "IONQ",
+        "CVNA",
+        "RIVN"
+      ]
+    },
+    {
+      "date": "2025-07-01",
+      "selected": [
+        "CELH",
+        "PLTR",
+        "CVNA",
+        "SMCI",
+        "META",
+        "PINS"
+      ]
+    },
+    {
+      "date": "2025-08-01",
+      "selected": [
+        "SMCI",
+        "PLTR",
+        "CELH",
+        "CVNA",
+        "NVDA",
+        "AVGO"
+      ]
+    },
+    {
+      "date": "2025-09-02",
+      "selected": [
+        "CELH",
+        "PLTR",
+        "IONQ",
+        "SOFI",
+        "CVNA",
+        "AVGO"
+      ]
+    },
+    {
+      "date": "2025-10-01",
+      "selected": [
+        "IONQ",
+        "PLTR",
+        "SOFI",
+        "AVGO",
+        "CVNA",
+        "NVDA"
+      ]
+    },
+    {
+      "date": "2025-11-03",
+      "selected": [
+        "SOFI",
+        "IONQ",
+        "NVDA",
+        "AVGO",
+        "ROKU",
+        "CELH"
+      ]
+    },
+    {
+      "date": "2025-12-01",
+      "selected": [
+        "SOFI",
+        "GOOGL",
+        "AVGO",
+        "LLY",
+        "AAPL",
+        "ROKU"
+      ]
+    },
+    {
+      "date": "2026-01-02",
+      "selected": [
+        "GOOGL",
+        "RIVN",
+        "SOFI",
+        "LLY",
+        "AAPL",
+        "AVGO"
+      ]
+    },
+    {
+      "date": "2026-02-02",
+      "selected": [
+        "GOOGL",
+        "LLY",
+        "AAPL",
+        "IWM",
+        "ROKU",
+        "EFA"
+      ]
+    },
+    {
+      "date": "2026-03-02",
+      "selected": [
+        "GOOGL",
+        "LLY",
+        "EFA",
+        "AAPL",
+        "VWO",
+        "IWM"
+      ]
+    },
+    {
+      "date": "2026-04-01",
+      "selected": [
+        "LLY",
+        "GOOGL",
+        "EFA",
+        "IWM",
+        "VWO"
+      ]
+    },
+    {
+      "date": "2026-05-01",
+      "selected": [
+        "GOOGL",
+        "ROKU",
+        "LLY",
+        "AMZN",
+        "IWM",
+        "AVGO"
+      ]
+    },
+    {
+      "date": "2026-06-01",
+      "selected": [
+        "IONQ",
+        "SMCI",
+        "XLK",
+        "ROKU",
+        "NVDA",
+        "QQQ"
+      ]
+    },
+    {
+      "date": "2026-07-01",
+      "selected": [
+        "XLK",
+        "ROKU",
+        "IWM",
+        "QQQ",
+        "GOOGL",
+        "IONQ"
+      ]
+    },
+    {
+      "date": "2026-08-03",
+      "selected": [
+        "ROKU",
+        "AFRM",
+        "XLK",
+        "AVGO",
+        "AMZN",
+        "AAPL"
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "selected": [
+        "ROKU",
+        "AFRM",
+        "XLK",
+        "MSFT",
+        "AAPL",
+        "PLTR"
+      ]
+    }
+  ]
+}

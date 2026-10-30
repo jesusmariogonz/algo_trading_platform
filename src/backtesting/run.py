@@ -19,6 +19,8 @@ import vectorbt as vbt
 
 from src.strategies.momentum_breakout import MomentumBreakoutParams
 from src.strategies.momentum_breakout import generate_signals as momentum_breakout_signals
+from src.strategies.time_series_momentum import TimeSeriesMomentumParams
+from src.strategies.time_series_momentum import generate_signals as time_series_momentum_signals
 from src.strategies.trend_following import TrendFollowingParams
 from src.strategies.trend_following import generate_signals as trend_following_signals
 
@@ -28,6 +30,7 @@ RESULTS_DIR = Path(__file__).resolve().parent / "results"
 STRATEGIES = {
     "trend_following": (TrendFollowingParams, trend_following_signals),
     "momentum_breakout": (MomentumBreakoutParams, momentum_breakout_signals),
+    "time_series_momentum": (TimeSeriesMomentumParams, time_series_momentum_signals),
 }
 
 

@@ -1,0 +1,40 @@
+{
+  "run_id": "20261030_204950",
+  "strategy_id": "trend_following",
+  "elevated_costs": [
+    {
+      "fees": 0.0005,
+      "slippage": 0.0005,
+      "multiplier": 1,
+      "symbols_profitable": 26,
+      "symbols_total": 30,
+      "avg_return_pct": 131.53
+    },
+    {
+      "fees": 0.0015,
+      "slippage": 0.0015,
+      "multiplier": 3,
+      "symbols_profitable": 26,
+      "symbols_total": 30,
+      "avg_return_pct": 128.81
+    },
+    {
+      "fees": 0.0025,
+      "slippage": 0.0025,
+      "multiplier": 5,
+      "symbols_profitable": 26,
+      "symbols_total": 30,
+      "avg_return_pct": 126.14
+    }
+  ],
+  "worst_window": {
+    "window": {
+      "peak_date": "2022-01-03",
+      "trough_date": "2022-10-12",
+      "drawdown_pct": -24.5
+    },
+    "total_trades": 2,
+    "symbols_with_trades": 2,
+    "avg_return_pct_per_symbol": -5.59
+  }
+}

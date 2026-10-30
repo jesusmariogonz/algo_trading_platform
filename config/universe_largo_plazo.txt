@@ -1,0 +1,10 @@
+# Universo del bucket "Largo Plazo" — ETFs de índice amplio y
+# diversificado, donde corre Time-Series Momentum (12m/6m).
+SPY
+QQQ
+VTI
+DIA
+IWM
+EFA
+VWO
+AGG

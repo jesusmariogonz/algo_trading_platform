@@ -72,6 +72,12 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     # se está contrayendo, condición típica antes de una ruptura válida.
     df["atr_contraction_20d"] = df["atr_14"] / df["atr_14"].shift(20)
 
+    # --- Estrategia C (Time-Series Momentum) ---
+    # Retorno de 12 y 6 meses en sesiones de trading (252 ≈ 1 año,
+    # 126 ≈ 6 meses). Moskowitz, Ooi & Pedersen (2012).
+    df["return_252d"] = price / price.shift(252) - 1
+    df["return_126d"] = price / price.shift(126) - 1
+
     return df
 
 
