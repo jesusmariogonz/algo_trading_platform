@@ -112,7 +112,17 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
     strategies = config["strategies"]
     universe = load_universe(symbols=symbols)
 
+    # Fecha del día: del universo, no de si hubo actividad — un bucket
+    # sin posiciones ni señales hoy (ej. sin capital, o sin que nada
+    # cumpliera la regla) sigue siendo "hoy" en el historial, no debe
+    # quedar con fecha nula (bug real: pasaba antes de este fix).
     today_label = None
+    for df in universe.values():
+        last = _last_row_as_of(df, as_of)
+        if last is not None:
+            today_label = str(last["date"].date())
+            break
+
     cash = bucket_state["cash"]
     open_positions = bucket_state["open_positions"]
     closed_today = []

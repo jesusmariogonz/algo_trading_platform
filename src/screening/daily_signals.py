@@ -50,6 +50,16 @@ BUCKET_CONFIG = {
         "risk_pct": 0.02,  # 2% — deliberadamente más laxo, decisión del usuario
         "strategies": ["trend_following", "momentum_breakout"],
     },
+    "muy_alta_volatilidad": {
+        "universe_file": ROOT / "config" / "universe_cripto.txt",
+        # 2% — asumido igual a Riesgo Alto, el usuario no definió un
+        # número distinto para cripto. AJUSTABLE: si quieres algo
+        # distinto (ej. más conservador, dado que cripto ya es más
+        # volátil de por sí que las acciones de Riesgo Alto), cambia
+        # este valor.
+        "risk_pct": 0.02,
+        "strategies": ["trend_following", "momentum_breakout"],
+    },
 }
 
 

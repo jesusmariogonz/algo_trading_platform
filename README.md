@@ -39,14 +39,18 @@ cp .env.example .env
 ## Uso
 
 ```bash
-# 1. Descargar datos históricos
+# 1. Descargar datos históricos (acciones/ETFs vía yfinance, cripto vía Kraken)
 python -m src.data.download --universe config/universe.txt --years 5
+python -m src.data.download_crypto  # BTC, ETH, SOL... ~2 años (límite de Kraken)
 
 # 2. Calcular indicadores
 python -m src.indicators.compute
 
-# 3. Calcular fuerza relativa vs. benchmark (requiere SPY en el universo)
+# 3. Calcular fuerza relativa vs. benchmark (requiere SPY en el universo).
+#    IMPORTANTE: el benchmark de cripto es BTC, no SPY — usa --universe
+#    para no sobrescribir la fuerza relativa de las acciones.
 python -m src.indicators.relative_strength --benchmark SPY
+python -m src.indicators.relative_strength --benchmark BTC --universe config/universe_cripto.txt
 
 # 4. Correr backtest de una estrategia
 python -m src.backtesting.run --strategy trend_following
@@ -82,7 +86,7 @@ python -m src.backtesting.stress_test --strategy trend_following
 | Largo plazo | 40% | Time-Series Momentum (12m/6m) · universo `config/universe_largo_plazo.txt` (ETFs amplios) · 1% riesgo/operación |
 | Mediano plazo | 30% | Trend Following + Momentum/Breakout · universo `config/universe.txt` · 1% riesgo/operación |
 | Riesgo alto | 20% | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` (small/mid-cap, sin cripto) · 2% riesgo/operación |
-| Muy alta volatilidad | 10% | Sin construir — criptomonedas, requiere su propio motor de datos (API distinta, calendario 24/7) |
+| Muy alta volatilidad | 10% | Trend Following + Momentum/Breakout · universo `config/universe_cripto.txt` (datos de Kraken) · 2% riesgo/operación · **backtest negativo, ver ADR 0004** |
 
 ## Estrategias (4 implementadas, 1 método de selección)
 

@@ -37,5 +37,12 @@
     "cash": 200.0,
     "open_positions": [],
     "closed_positions": []
+  },
+  "muy_alta_volatilidad": {
+    "starting_capital": 100.0,
+    "start_date": "2026-10-30",
+    "cash": 100.0,
+    "open_positions": [],
+    "closed_positions": []
   }
 }

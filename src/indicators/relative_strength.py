@@ -12,6 +12,13 @@ relative_strength_63 = retorno 63 sesiones (~3 meses) del símbolo
 
 Debe correr DESPUÉS de src/indicators/compute.py (requiere que
 data/processed/<BENCHMARK>.parquet ya exista).
+
+IMPORTANTE: pasa --universe para limitar qué símbolos se actualizan.
+Sin esto, correr el script una vez con --benchmark SPY (acciones) y
+otra con --benchmark BTC (cripto) haría que la segunda corrida
+SOBRESCRIBA relative_strength_63 de TODOS los símbolos, incluidas las
+acciones que ya estaban comparadas contra SPY — un bug real que se
+encontró y corrigió al agregar el bucket de cripto.
 """
 
 import argparse
@@ -20,6 +27,16 @@ from pathlib import Path
 import pandas as pd
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
+
+
+def read_universe_file(path: str) -> list[str]:
+    symbols = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                symbols.append(line)
+    return symbols
 
 
 def compute_relative_strength(df: pd.DataFrame, benchmark: pd.DataFrame, window: int = 63) -> pd.DataFrame:
@@ -38,6 +55,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--benchmark", default="SPY")
     parser.add_argument("--window", type=int, default=63)
+    parser.add_argument(
+        "--universe",
+        default=None,
+        help="archivo de universo (ej. config/universe_cripto.txt) para limitar qué símbolos se actualizan. "
+        "Sin esto, actualiza TODO data/processed/ — solo seguro si todo comparte el mismo benchmark.",
+    )
     args = parser.parse_args()
 
     bench_path = PROCESSED_DIR / f"{args.benchmark}.parquet"
@@ -49,7 +72,12 @@ def main():
         )
     benchmark = pd.read_parquet(bench_path)
 
-    files = sorted(PROCESSED_DIR.glob("*.parquet"))
+    if args.universe:
+        symbols = set(read_universe_file(args.universe))
+        files = [p for p in sorted(PROCESSED_DIR.glob("*.parquet")) if p.stem in symbols]
+    else:
+        files = sorted(PROCESSED_DIR.glob("*.parquet"))
+
     for path in files:
         df = pd.read_parquet(path)
         df = compute_relative_strength(df, benchmark, window=args.window)

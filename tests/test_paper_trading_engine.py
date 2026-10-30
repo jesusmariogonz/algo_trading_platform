@@ -38,6 +38,41 @@ def test_history_is_idempotent_for_same_date():
     assert result[0]["buckets"] == {"x": 1}
 
 
+def test_run_bucket_tick_sets_date_even_with_no_activity(monkeypatch, tmp_path):
+    """Bug real que se corrigió: un bucket sin posiciones ni señales
+    (ej. sin capital suficiente, o ningún símbolo cumple la regla ese
+    día) quedaba con date=None en el historial en vez de la fecha real."""
+    import pandas as pd
+
+    fake_universe = {
+        "XYZ": pd.DataFrame(
+            {
+                "date": [pd.Timestamp("2026-10-29")],
+                "close": [100.0],
+                "sma_200": [90.0],
+                "atr_14": [1.0],
+            }
+        )
+    }
+    monkeypatch.setattr(engine, "load_universe", lambda symbols=None: fake_universe)
+    monkeypatch.setattr(engine, "BUCKET_CONFIG", {
+        "test_bucket": {
+            "universe_file": tmp_path / "universe.txt",
+            "risk_pct": 0.01,
+            "strategies": ["trend_following"],
+        }
+    })
+    monkeypatch.setattr(engine, "read_universe_file", lambda path: ["XYZ"])
+    # signal_fn que nunca genera señal de entrada ni requiere salida
+    monkeypatch.setitem(engine.SIGNAL_FNS, "trend_following", lambda df: df.assign(signal=0, stop_price=df["close"] - 5))
+
+    bucket_state = engine.init_bucket_state("test_bucket", 100.0)
+    result = engine.run_bucket_tick("test_bucket", bucket_state)
+
+    assert result["date"] == "2026-10-29"
+    assert result["open_count"] == 0
+
+
 def test_closing_a_position_never_creates_money_from_nothing():
     """La suma de cash + valor de posiciones abiertas antes de cerrar
     debe ser igual a cash + P&L después de cerrar — cerrar una posición

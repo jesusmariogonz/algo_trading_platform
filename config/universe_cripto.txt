@@ -1,0 +1,12 @@
+# Universo del bucket "Muy Alta Volatilidad" — criptomonedas líquidas
+# en Kraken (datos públicos, sin API key). Símbolos "amigables"; el
+# mapeo a pares de Kraken vive en src/data/download_crypto.py.
+BTC
+ETH
+SOL
+XRP
+ADA
+AVAX
+DOT
+LINK
+LTC
