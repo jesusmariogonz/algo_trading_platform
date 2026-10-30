@@ -29,6 +29,10 @@ import json
 from datetime import date
 from pathlib import Path
 
+import requests
+
+EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD"
+
 BUCKETS = {
     "largo_plazo": 0.40,
     "mediano_plazo": 0.30,
@@ -52,9 +56,32 @@ def save_ledger(entries: list[dict]) -> None:
     LEDGER_PATH.write_text(json.dumps(entries, indent=2, ensure_ascii=False))
 
 
-def record_injection(amount: float, injection_date: str | None = None) -> dict:
-    """Registra una inyección de capital y su reparto proporcional
-    entre los 4 buckets. No toca el dinero ya repartido antes."""
+def get_usd_mxn_rate() -> float:
+    """Tipo de cambio USD->MXN del día, vía open.er-api.com (gratuita,
+    sin API key). Si falla, no inventa un número — propaga el error."""
+    resp = requests.get(EXCHANGE_RATE_URL, timeout=15)
+    resp.raise_for_status()
+    data = resp.json()
+    if data.get("result") != "success":
+        raise RuntimeError(f"La API de tipo de cambio no respondió 'success': {data}")
+    rate = data["rates"].get("MXN")
+    if not rate:
+        raise RuntimeError("La respuesta de la API no trae MXN.")
+    return float(rate)
+
+
+def record_injection(
+    amount: float,
+    injection_date: str | None = None,
+    original_currency: str | None = None,
+    original_amount: float | None = None,
+    exchange_rate: float | None = None,
+) -> dict:
+    """Registra una inyección de capital (en USD) y su reparto
+    proporcional entre los 4 buckets. No toca el dinero ya repartido
+    antes. Si la inyección se originó en otra moneda (ej. MXN
+    convertido), guarda el monto y tipo de cambio originales para
+    auditoría — ver record_injection_mxn()."""
     if amount <= 0:
         raise ValueError("El monto debe ser positivo")
 
@@ -63,10 +90,30 @@ def record_injection(amount: float, injection_date: str | None = None) -> dict:
         "amount": round(amount, 2),
         "split": {bucket: round(amount * pct, 2) for bucket, pct in BUCKETS.items()},
     }
+    if original_currency:
+        entry["original_currency"] = original_currency
+        entry["original_amount"] = original_amount
+        entry["exchange_rate"] = exchange_rate
+
     ledger = load_ledger()
     ledger.append(entry)
     save_ledger(ledger)
     return entry
+
+
+def record_injection_mxn(amount_mxn: float, injection_date: str | None = None) -> dict:
+    """Convierte MXN -> USD al tipo de cambio del día y registra la
+    inyección. El tipo de cambio usado queda guardado en el ledger,
+    nunca oculto."""
+    rate = get_usd_mxn_rate()
+    amount_usd = amount_mxn / rate
+    return record_injection(
+        amount_usd,
+        injection_date,
+        original_currency="MXN",
+        original_amount=round(amount_mxn, 2),
+        exchange_rate=round(rate, 4),
+    )
 
 
 def get_balances() -> dict:
@@ -84,9 +131,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
-    inject = sub.add_parser("inject", help="Registra una inyección de capital")
+    inject = sub.add_parser("inject", help="Registra una inyección de capital en USD")
     inject.add_argument("amount", type=float)
     inject.add_argument("--date", default=None)
+
+    inject_mxn = sub.add_parser(
+        "inject-mxn", help="Registra una inyección en MXN, convertida a USD al tipo de cambio del día"
+    )
+    inject_mxn.add_argument("amount_mxn", type=float)
+    inject_mxn.add_argument("--date", default=None)
 
     sub.add_parser("balances", help="Muestra el total inyectado por bucket")
 
@@ -94,7 +147,15 @@ def main():
 
     if args.command == "inject":
         entry = record_injection(args.amount, args.date)
-        print(f"Inyección registrada: ${entry['amount']} el {entry['date']}")
+        print(f"Inyección registrada: ${entry['amount']} USD el {entry['date']}")
+        for bucket, amount in entry["split"].items():
+            print(f"  {bucket}: ${amount} ({BUCKETS[bucket]*100:.0f}%)")
+    elif args.command == "inject-mxn":
+        entry = record_injection_mxn(args.amount_mxn, args.date)
+        print(
+            f"Inyección registrada: ${entry['original_amount']} MXN -> "
+            f"${entry['amount']} USD (tipo de cambio: {entry['exchange_rate']}) el {entry['date']}"
+        )
         for bucket, amount in entry["split"].items():
             print(f"  {bucket}: ${amount} ({BUCKETS[bucket]*100:.0f}%)")
     elif args.command == "balances":

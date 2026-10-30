@@ -55,3 +55,42 @@ def test_ledger_never_overwrites_previous_entries():
     assert len(ledger) == 2
     assert ledger[0]["amount"] == 100.0
     assert ledger[1]["amount"] == 200.0
+
+
+def test_record_injection_mxn_converts_and_records_rate(monkeypatch):
+    monkeypatch.setattr(allocation, "get_usd_mxn_rate", lambda: 20.0)
+    entry = allocation.record_injection_mxn(3000, "2026-01-01")
+
+    assert entry["original_currency"] == "MXN"
+    assert entry["original_amount"] == 3000.0
+    assert entry["exchange_rate"] == 20.0
+    assert entry["amount"] == pytest.approx(150.0)  # 3000 / 20
+    assert entry["split"]["largo_plazo"] == pytest.approx(60.0)  # 40% de 150
+
+
+def test_record_injection_without_mxn_has_no_currency_fields():
+    entry = allocation.record_injection(100, "2026-01-01")
+    assert "original_currency" not in entry
+
+
+def test_get_usd_mxn_rate_raises_on_api_failure(monkeypatch):
+    class FakeResponse:
+        def raise_for_status(self):
+            raise ConnectionError("simulated network failure")
+
+    monkeypatch.setattr(allocation.requests, "get", lambda *a, **k: FakeResponse())
+    with pytest.raises(ConnectionError):
+        allocation.get_usd_mxn_rate()
+
+
+def test_get_usd_mxn_rate_raises_if_mxn_missing(monkeypatch):
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"result": "success", "rates": {"EUR": 0.9}}
+
+    monkeypatch.setattr(allocation.requests, "get", lambda *a, **k: FakeResponse())
+    with pytest.raises(RuntimeError):
+        allocation.get_usd_mxn_rate()

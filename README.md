@@ -62,7 +62,9 @@ python -m src.backtesting.walk_forward --strategy trend_following --windows 4
 
 # 6. Registra el capital que vas inyectando (se reparte 40/30/20/10
 #    entre los 4 buckets — ver docs/vision.md "Reparto de capital")
-python -m src.portfolio.allocation inject 1000
+python -m src.portfolio.allocation inject 1000       # ya en USD
+python -m src.portfolio.allocation inject-mxn 3000    # convierte MXN->USD al tipo de cambio del día (open.er-api.com), guarda el tipo de cambio usado
+python -m src.portfolio.allocation balances
 
 # 7. Screener diario: qué símbolos cumplen HOY las condiciones de
 #    entrada, y cuánto comprar según el 1% de riesgo máximo. Requiere

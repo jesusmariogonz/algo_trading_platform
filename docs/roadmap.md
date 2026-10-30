@@ -94,10 +94,15 @@ completo sin partir.
       el primer intento con $1,000 se descartó el mismo día, antes de
       que importara para el historial, por corrección explícita del
       usuario. Ver data/paper_trading/history.json)
-- [ ] **Pendiente de aclarar**: el usuario planea inyectar ~$3,000
-      MXN mensuales, pero el sistema opera en USD. No se ha definido
-      cómo convertir (tipo de cambio al momento de la inyección,
-      manual o automático) — no implementado todavía, ver conversación.
+- [x] Conversión MXN->USD automática (`allocation.py inject-mxn`),
+      vía open.er-api.com (gratuita, sin key). El tipo de cambio usado
+      se guarda en el ledger para auditoría — nunca se oculta.
+      $3,000 MXN de referencia ≈ $159 USD al tipo de cambio del
+      2026-10-30 (18.83 MXN/USD).
+- [ ] Pendiente: ¿automatizar la inyección mensual con una Routine
+      (ej. día 1 de cada mes), o el usuario prefiere registrarla a
+      mano cada vez? No implementado todavía — preguntar antes de
+      programar algo que mueve (aunque sea simulado) capital solo.
 - [ ] Adaptador de broker real (Alpaca) para PAPER vía su API
 - [ ] Order Management, reconciliación contra broker real
 - [ ] Modos RESEARCH / BACKTEST / PAPER — LIVE permanece deshabilitado
