@@ -1,0 +1,14 @@
+# Universo inicial de investigación — acciones/ETFs líquidos de EE.UU.
+# Un símbolo por línea. Edítalo libremente; no afecta ningún código.
+SPY
+QQQ
+AAPL
+MSFT
+NVDA
+AMZN
+GOOGL
+META
+AVGO
+LLY
+XLK
+XLF

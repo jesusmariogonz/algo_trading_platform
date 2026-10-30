@@ -1,0 +1,113 @@
+{
+  "run_id": "20261030_182702",
+  "strategy_id": "trend_following_v1",
+  "strategy_version": "0.1.0",
+  "params": {
+    "id": "trend_following_v1",
+    "name": "Trend Following (SMA alignment)",
+    "version": "0.1.0",
+    "atr_stop_multiple": 2.5,
+    "require_volume_confirmation": true
+  },
+  "fees": 0.0005,
+  "slippage": 0.0005,
+  "universe_size": 12,
+  "summary": [
+    {
+      "symbol": "NVDA",
+      "total_return_pct": 423.16,
+      "sharpe_ratio": 1.45,
+      "max_drawdown_pct": 27.05,
+      "win_rate_pct": 100.0,
+      "total_trades": 2
+    },
+    {
+      "symbol": "AVGO",
+      "total_return_pct": 410.21,
+      "sharpe_ratio": 1.36,
+      "max_drawdown_pct": 43.07,
+      "win_rate_pct": 100.0,
+      "total_trades": 4
+    },
+    {
+      "symbol": "LLY",
+      "total_return_pct": 248.61,
+      "sharpe_ratio": 1.52,
+      "max_drawdown_pct": 29.6,
+      "win_rate_pct": 50.0,
+      "total_trades": 3
+    },
+    {
+      "symbol": "META",
+      "total_return_pct": 138.33,
+      "sharpe_ratio": 1.08,
+      "max_drawdown_pct": 34.21,
+      "win_rate_pct": 100.0,
+      "total_trades": 2
+    },
+    {
+      "symbol": "QQQ",
+      "total_return_pct": 70.22,
+      "sharpe_ratio": 1.05,
+      "max_drawdown_pct": 17.02,
+      "win_rate_pct": 75.0,
+      "total_trades": 5
+    },
+    {
+      "symbol": "XLK",
+      "total_return_pct": 68.53,
+      "sharpe_ratio": 0.88,
+      "max_drawdown_pct": 26.02,
+      "win_rate_pct": 66.67,
+      "total_trades": 7
+    },
+    {
+      "symbol": "SPY",
+      "total_return_pct": 63.29,
+      "sharpe_ratio": 1.28,
+      "max_drawdown_pct": 13.71,
+      "win_rate_pct": 80.0,
+      "total_trades": 6
+    },
+    {
+      "symbol": "GOOGL",
+      "total_return_pct": 59.83,
+      "sharpe_ratio": 0.66,
+      "max_drawdown_pct": 30.13,
+      "win_rate_pct": 80.0,
+      "total_trades": 5
+    },
+    {
+      "symbol": "AAPL",
+      "total_return_pct": 39.61,
+      "sharpe_ratio": 0.62,
+      "max_drawdown_pct": 28.88,
+      "win_rate_pct": 75.0,
+      "total_trades": 5
+    },
+    {
+      "symbol": "XLF",
+      "total_return_pct": 30.89,
+      "sharpe_ratio": 0.72,
+      "max_drawdown_pct": 15.23,
+      "win_rate_pct": 33.33,
+      "total_trades": 4
+    },
+    {
+      "symbol": "AMZN",
+      "total_return_pct": 18.05,
+      "sharpe_ratio": 0.34,
+      "max_drawdown_pct": 39.78,
+      "win_rate_pct": 33.33,
+      "total_trades": 4
+    },
+    {
+      "symbol": "MSFT",
+      "total_return_pct": 9.97,
+      "sharpe_ratio": 0.27,
+      "max_drawdown_pct": 27.05,
+      "win_rate_pct": 33.33,
+      "total_trades": 4
+    }
+  ]
+}
