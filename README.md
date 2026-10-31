@@ -88,11 +88,15 @@ ADR 0006. Su 10% se repartió EQUITATIVAMENTE entre los 3 restantes
 (+3.33 puntos cada uno), decisión explícita del usuario tras comparar
 backtests reales de 6/22/34 meses (sin cripto rindió mejor en las 3).
 
-| Bucket | % | Estado |
-|---|---|---|
-| Largo plazo | 43.33% | Time-Series Momentum (12m/6m) · universo `config/universe_largo_plazo.txt` (ETFs amplios) · 1% riesgo/operación |
-| Mediano plazo | 33.33% | Trend Following + Momentum/Breakout · universo `config/universe.txt` · 1% riesgo/operación |
-| Riesgo alto | 23.33% | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` (small/mid-cap) · 2% riesgo/operación |
+| Bucket | % | Universo | Estado |
+|---|---|---|---|
+| Largo plazo | 43.33% | 13 ETFs | Time-Series Momentum (12m/6m) · `config/universe_largo_plazo.txt` · 1% riesgo/operación |
+| Mediano plazo | 33.33% | 74 símbolos | Trend Following + Momentum/Breakout · `config/universe.txt` · 1% riesgo/operación |
+| Riesgo alto | 23.33% | 30 símbolos | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` · 2% riesgo/operación |
+
+Universos ampliados el 31-oct-2026 (de 32 a 117 símbolos en total) —
+ver ADR 0010. Más candidatos = más operaciones (99 → 309 en 34 meses
+de backtest), sin relajar ningún criterio de entrada.
 
 Los 3 buckets usan **trailing stop** (el stop sube con el precio,
 nunca baja) y el cash ocioso se invierte en SPY en vez de quedarse

@@ -5,9 +5,9 @@
       "largo_plazo": {
         "date": "2026-10-30",
         "equity": 433.33,
-        "cash": 329.96,
+        "cash": 256.63,
         "unrealized_pnl": 0.0,
-        "open_count": 1,
+        "open_count": 2,
         "closed_today": 0,
         "realized_pnl_today": 0,
         "cumulative_return_pct": 0.0,
@@ -22,9 +22,9 @@
       "mediano_plazo": {
         "date": "2026-10-30",
         "equity": 333.33,
-        "cash": 276.82,
+        "cash": 215.78,
         "unrealized_pnl": -0.0,
-        "open_count": 1,
+        "open_count": 2,
         "closed_today": 0,
         "realized_pnl_today": 0,
         "cumulative_return_pct": 0.0,

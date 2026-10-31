@@ -1,5 +1,8 @@
-# Universo inicial de investigación — acciones/ETFs líquidos de EE.UU.
-# Un símbolo por línea. Edítalo libremente; no afecta ningún código.
+# Universo del bucket "Mediano Plazo" — ampliado de 12 a 74 símbolos
+# (31-oct-2026, ver docs/adr/0010-amplia-universo.md) con nombres
+# diversos por sector, incluyendo algunos históricamente mediocres
+# (IBM, T, VZ, GE) a propósito, para no empeorar el sesgo de
+# supervivencia. Edítalo libremente.
 SPY
 QQQ
 AAPL
@@ -12,3 +15,65 @@ AVGO
 LLY
 XLK
 XLF
+JPM
+BAC
+XOM
+CVX
+JNJ
+PG
+KO
+PEP
+WMT
+HD
+DIS
+NFLX
+CRM
+ADBE
+ORCL
+CSCO
+INTC
+AMD
+QCOM
+TXN
+IBM
+GE
+CAT
+BA
+UNH
+V
+MA
+PYPL
+T
+VZ
+WFC
+GS
+MS
+C
+AXP
+MRK
+ABBV
+PFE
+TMO
+ABT
+COST
+MCD
+NKE
+SBUX
+LOW
+TJX
+UPS
+HON
+MMM
+LMT
+RTX
+DE
+EMR
+ETN
+SO
+DUK
+NEE
+XLE
+XLV
+XLI
+XLY
+XLP

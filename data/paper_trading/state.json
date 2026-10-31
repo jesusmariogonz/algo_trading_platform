@@ -3,7 +3,7 @@
     "starting_capital": 433.33,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 0.43661674964924085,
+    "bench_shares": 0.3395834507107092,
     "open_positions": [
       {
         "symbol": "EFA",
@@ -11,6 +11,14 @@
         "entry_date": "2026-10-30",
         "entry_price": 103.37,
         "stop_price": 100.42,
+        "shares": 1
+      },
+      {
+        "symbol": "IJH",
+        "strategy": "time_series_momentum",
+        "entry_date": "2026-10-30",
+        "entry_price": 73.33,
+        "stop_price": 70.43,
         "shares": 1
       }
     ],
@@ -25,7 +33,7 @@
     "starting_capital": 333.33,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 0.36629970413632484,
+    "bench_shares": 0.2855290439951942,
     "open_positions": [
       {
         "symbol": "XLF",
@@ -34,6 +42,14 @@
         "entry_price": 56.51,
         "stop_price": 54.63142817361014,
         "shares": 1
+      },
+      {
+        "symbol": "PFE",
+        "strategy": "trend_following",
+        "entry_date": "2026-10-30",
+        "entry_price": 30.52,
+        "stop_price": 29.01,
+        "shares": 2
       }
     ],
     "closed_positions": [],

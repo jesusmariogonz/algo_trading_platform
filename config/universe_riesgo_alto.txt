@@ -1,6 +1,6 @@
-# Universo del bucket "Riesgo Alto" — acciones small/mid-cap de alta
-# volatilidad, SIN exposición a criptomonedas (eso vive en el bucket
-# Muy Alta Volatilidad, aparte). Edítalo libremente.
+# Universo del bucket "Riesgo Alto" — ampliado de 12 a 30 símbolos
+# (31-oct-2026, ver docs/adr/0010-amplia-universo.md). Small/mid-cap
+# de alta volatilidad, SIN cripto. Edítalo libremente.
 PLTR
 RIVN
 SOFI
@@ -13,3 +13,21 @@ IONQ
 CELH
 ROKU
 PINS
+COIN
+MARA
+RBLX
+SNAP
+LYFT
+CHWY
+FUBO
+OPEN
+HOOD
+U
+PATH
+AI
+NET
+DDOG
+ZS
+CRWD
+S
+PTON

@@ -121,6 +121,17 @@ completo sin partir.
       revisión (6%/10%/15%), llevado desde el diseño de los Quant
       Portfolios antes de eliminarlos — ver ADR 0008. Nunca liquida
       posiciones existentes, solo bloquea abrir nuevas.
+- [x] **Amplía el universo de los 3 buckets (31-oct-2026)**: de 32 a
+      117 símbolos, probado contra 34 meses con fricción real —
+      309 operaciones cerradas (antes 99), retorno neto +32.22%
+      (antes +30.50%). Se probaron y DESCARTARON (empeoraron el
+      resultado): trailing stop más ancho en Riesgo Alto, filtro de
+      régimen para el cash-en-benchmark — ver ADR 0010.
+- [ ] Pendiente: agregar fricción real (comisión + slippage) al motor
+      de `src/paper_trading/engine.py` — hoy solo la tiene el backtest
+      formal. Medida en el ejercicio exploratorio (-0.44 puntos sobre
+      el universo original), pero no incluida todavía en producción
+      por decisión explícita del usuario.
 - [ ] Adaptador de broker real (Alpaca) para PAPER vía su API
 - [ ] Order Management, reconciliación contra broker real
 - [ ] Modos RESEARCH / BACKTEST / PAPER — LIVE permanece deshabilitado
