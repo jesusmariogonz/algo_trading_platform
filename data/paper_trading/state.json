@@ -18,7 +18,7 @@
         "strategy": "time_series_momentum",
         "entry_date": "2026-10-30",
         "entry_price": 73.33,
-        "stop_price": 70.43,
+        "stop_price": 70.43286296299526,
         "shares": 1
       }
     ],
@@ -48,7 +48,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-10-30",
         "entry_price": 30.52,
-        "stop_price": 29.01,
+        "stop_price": 29.011071750095912,
         "shares": 2
       }
     ],

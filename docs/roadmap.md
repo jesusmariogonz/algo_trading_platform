@@ -127,11 +127,14 @@ completo sin partir.
       (antes +30.50%). Se probaron y DESCARTARON (empeoraron el
       resultado): trailing stop más ancho en Riesgo Alto, filtro de
       régimen para el cash-en-benchmark — ver ADR 0010.
-- [ ] Pendiente: agregar fricción real (comisión + slippage) al motor
-      de `src/paper_trading/engine.py` — hoy solo la tiene el backtest
-      formal. Medida en el ejercicio exploratorio (-0.44 puntos sobre
-      el universo original), pero no incluida todavía en producción
-      por decisión explícita del usuario.
+- [x] **Fricción real en el motor + amplía Riesgo Alto a 45 símbolos
+      (31-oct-2026)**: `src/paper_trading/engine.py` ya cobra 0.05%
+      comisión + 0.05% slippage por lado en cada entrada/salida,
+      igual que el backtest formal. Riesgo Alto pasó de 30 a 45
+      símbolos (era el bucket con más margen relativo). Resultado
+      final validado: 336 operaciones cerradas, **+32.76% neto** en
+      34 meses (sube pese a la fricción nueva) — ver ADR 0011. Cierra
+      esta ronda de mejoras del modelo de buckets.
 - [ ] Adaptador de broker real (Alpaca) para PAPER vía su API
 - [ ] Order Management, reconciliación contra broker real
 - [ ] Modos RESEARCH / BACKTEST / PAPER — LIVE permanece deshabilitado

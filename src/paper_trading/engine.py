@@ -51,6 +51,15 @@ y docs/adr/0007-trailing-stop-y-cash-en-benchmark.md):
         reautorización manual (`python -m src.paper_trading.reauthorize
         <bucket>`) — nunca liquida posiciones existentes, solo bloquea
         aumentar exposición.
+  - FRICCIÓN REAL (comisión + slippage), igual que el backtest formal
+    (src/backtesting/run.py: fees=0.0005, slippage=0.0005): cada
+    entrada sube su costo 0.1% y cada salida baja su producto 0.1%
+    (ver ADR 0011). Antes de esto, el motor de paper trading ejecutaba
+    a precio de cierre exacto, sin ninguna fricción — un hueco real
+    frente al backtest formal, que ya lo tenía. Medido su efecto en el
+    ejercicio exploratorio: -0.44 puntos sobre 34 meses.
+  - UNIVERSO AMPLIADO de 32 a 117+15 símbolos (ver ADR 0010 y 0011):
+    más candidatos de entrada sin relajar ningún criterio.
 
 IMPORTANTE: el capital "starting_capital" de cada bucket se fija la
 PRIMERA vez que se corre el motor (snapshot del libro de
@@ -104,6 +113,12 @@ RISK_LIMITS = {
 }
 
 ACTIVE_BUCKETS = list(BUCKET_CONFIG.keys())  # buckets con estrategia real — ver BUCKET_CONFIG
+
+# Fricción real por lado (comisión + slippage) — misma magnitud que
+# src/backtesting/run.py (fees=0.0005, slippage=0.0005), para que el
+# paper trading no reporte un retorno más optimista que el backtest
+# formal. Ver ADR 0011.
+FRICCION_POR_LADO = 0.0005 + 0.0005
 
 
 def load_state() -> dict:
@@ -225,8 +240,8 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
 
         if stop_hit or exit_signal:
             exit_price = pos["stop_price"] if stop_hit else close_price
-            proceeds = exit_price * pos["shares"]
-            pnl = proceeds - pos["entry_price"] * pos["shares"]
+            proceeds = exit_price * pos["shares"] * (1 - FRICCION_POR_LADO)  # fricción de salida
+            pnl = proceeds - pos["entry_price"] * pos["shares"]  # entry_price ya incluye fricción de entrada
             if bench_price:
                 bench_shares += proceeds / bench_price
             else:
@@ -236,7 +251,7 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
                 "exit_date": today_label,
                 "exit_price": round(exit_price, 2),
                 "pnl": round(pnl, 2),
-                "pnl_pct": round((exit_price / pos["entry_price"] - 1) * 100, 2),
+                "pnl_pct": round((proceeds / (pos["entry_price"] * pos["shares"]) - 1) * 100, 2),
                 "reason": "stop_hit" if stop_hit else "signal_exit",
             }
             closed_today.append(closed)
@@ -304,14 +319,15 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
                 continue
             today_label = str(last["date"].date())
 
-            entry_price = float(last["close"])
+            entry_price_bruto = float(last["close"])
             stop_price = float(last["stop_price"])
-            risk_per_share = entry_price - stop_price
+            risk_per_share = entry_price_bruto - stop_price
             if risk_per_share <= 0:
                 continue
 
             risk_amount = bucket_state["starting_capital"] * risk_pct
             shares = int(risk_amount // risk_per_share)
+            entry_price = entry_price_bruto * (1 + FRICCION_POR_LADO)  # fricción de entrada
             cost = shares * entry_price
             if shares < 1 or cost > disponible():
                 continue

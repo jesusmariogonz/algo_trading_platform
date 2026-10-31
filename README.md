@@ -92,15 +92,18 @@ backtests reales de 6/22/34 meses (sin cripto rindió mejor en las 3).
 |---|---|---|---|
 | Largo plazo | 43.33% | 13 ETFs | Time-Series Momentum (12m/6m) · `config/universe_largo_plazo.txt` · 1% riesgo/operación |
 | Mediano plazo | 33.33% | 74 símbolos | Trend Following + Momentum/Breakout · `config/universe.txt` · 1% riesgo/operación |
-| Riesgo alto | 23.33% | 30 símbolos | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` · 2% riesgo/operación |
+| Riesgo alto | 23.33% | 45 símbolos | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` · 2% riesgo/operación |
 
-Universos ampliados el 31-oct-2026 (de 32 a 117 símbolos en total) —
-ver ADR 0010. Más candidatos = más operaciones (99 → 309 en 34 meses
-de backtest), sin relajar ningún criterio de entrada.
+Universos ampliados el 31-oct-2026 (de 32 a 146 símbolos en total) —
+ver ADR 0010 y 0011. Más candidatos = más operaciones (99 → 336 en 34
+meses de backtest), sin relajar ningún criterio de entrada. Retorno
+neto validado: **+32.76%** en 34 meses, con fricción real incluida.
 
 Los 3 buckets usan **trailing stop** (el stop sube con el precio,
-nunca baja) y el cash ocioso se invierte en SPY en vez de quedarse
-parado — ver ADR 0007.
+nunca baja), el cash ocioso se invierte en SPY en vez de quedarse
+parado (ADR 0007), y desde ADR 0011 el motor aplica **fricción real**
+(0.05% comisión + 0.05% slippage por lado, igual que el backtest
+formal) — ya no ejecuta a precio de cierre exacto sin costo.
 
 ## Estrategias (4 implementadas, 1 método de selección)
 
