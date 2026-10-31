@@ -2,7 +2,8 @@
 y guarda el resultado en data/processed/<symbol>.parquet.
 
 Indicadores (Estrategia A — Trend Following):
-  SMA 20, 50, 150, 200 · RSI 14 · ATR 14 · volumen promedio 20 sesiones.
+  SMA 20, 50, 150, 200 · EMA 20, 50 (para Aggressive Momentum) · RSI 14
+  · ATR 14 · volumen promedio 20 sesiones.
 
 Usa `adj_close` (ajustado por splits/dividendos) como precio base para
 evitar distorsiones — ver sección "Data Engineering" del documento de
@@ -15,6 +16,10 @@ import pandas as pd
 
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
+
+
+def ema(series: pd.Series, window: int) -> pd.Series:
+    return series.ewm(span=window, min_periods=window, adjust=False).mean()
 
 
 def sma(series: pd.Series, window: int) -> pd.Series:
@@ -55,6 +60,8 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     df["sma_50"] = sma(price, 50)
     df["sma_150"] = sma(price, 150)
     df["sma_200"] = sma(price, 200)
+    df["ema_20"] = ema(price, 20)
+    df["ema_50"] = ema(price, 50)
     df["rsi_14"] = rsi(price, 14)
     df["atr_14"] = atr(df, 14)
     df["vol_avg_20"] = df["volume"].rolling(window=20, min_periods=20).mean()
@@ -77,6 +84,7 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
     # 126 ≈ 6 meses). Moskowitz, Ooi & Pedersen (2012).
     df["return_252d"] = price / price.shift(252) - 1
     df["return_126d"] = price / price.shift(126) - 1
+    df["return_63d"] = price / price.shift(63) - 1
 
     return df
 

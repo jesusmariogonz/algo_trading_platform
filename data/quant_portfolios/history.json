@@ -1,0 +1,96 @@
+[
+  {
+    "date": "2026-10-30",
+    "portfolios": {
+      "conservative_alpha": {
+        "date": "2026-10-30",
+        "equity": 333.33,
+        "cash": 75.0,
+        "holdings": {
+          "SGOV": 0.992743,
+          "VOO": 0.119936,
+          "BND": 0.465805,
+          "VXUS": 0.303506,
+          "GLDM": 0.216927
+        },
+        "daily_loss_pct": 0.0,
+        "drawdown_pct": 0.0,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false,
+        "rebalanced_today": true,
+        "cumulative_return_pct": 0.0,
+        "trend_status": {
+          "SGOV": true,
+          "VOO": true,
+          "BND": false,
+          "VXUS": false,
+          "GLDM": false
+        }
+      },
+      "balanced_growth": {
+        "date": "2026-10-30",
+        "equity": 333.33,
+        "cash": 50.0,
+        "holdings": {
+          "VOO": 0.143923,
+          "QQQM": 0.175844,
+          "VXUS": 0.607011,
+          "BND": 0.279483,
+          "SGOV": 0.330914,
+          "GLDM": 0.173542,
+          "IWM": 0.058683
+        },
+        "daily_loss_pct": 0.0,
+        "drawdown_pct": 0.0,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false,
+        "rebalanced_today": true,
+        "cumulative_return_pct": 0.0,
+        "trend_status": {
+          "VOO": true,
+          "QQQM": true,
+          "VXUS": true,
+          "BND": false,
+          "SGOV": true,
+          "GLDM": false,
+          "IWM": true
+        }
+      },
+      "aggressive_momentum": {
+        "date": "2026-10-30",
+        "equity": 333.34,
+        "cash": 253.33,
+        "holdings": {
+          "VOO": 0.023987,
+          "QQQM": 0.058615,
+          "IWM": 0.03521,
+          "SMH": 0.012759,
+          "VXUS": 0.080935,
+          "BTC": 8.7e-05,
+          "SGOV": 0.165457
+        },
+        "daily_loss_pct": 0.0,
+        "drawdown_pct": 0.0,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false,
+        "rebalanced_today": true,
+        "cumulative_return_pct": 0.0,
+        "trend_status": {
+          "VOO": false,
+          "QQQM": false,
+          "IWM": false,
+          "SMH": false,
+          "VXUS": false,
+          "BTC": false,
+          "SGOV": true
+        }
+      }
+    }
+  }
+]

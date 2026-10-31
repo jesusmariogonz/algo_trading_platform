@@ -134,6 +134,31 @@ el motor (snapshot de `allocation.py` en ese momento) — inyecciones
 posteriores durante la ventana de prueba se ignoran a propósito, para
 que el % de retorno mida la estrategia, no "metí más dinero".
 
+## Quant Portfolios (3 productos con identidad propia — coexiste con buckets)
+
+Modelo alternativo al de 4 buckets por horizonte, propuesto por el
+usuario: 3 portafolios con motor, reglas de rebalanceo y límites de
+riesgo propios — ver `docs/adr/0005-quant-portfolios.md`.
+
+```bash
+python -m src.data.download --universe config/universe_quant_portfolios.txt --years 2
+python -m src.indicators.compute   # agrega EMA 20/50 también
+python -m src.quant_portfolios.run_daily_tick
+python -m src.quant_portfolios.export ../jesus-site/lib/quant-portfolios-snapshot.json
+
+# Si un portafolio se suspendió por drawdown, reautorizar manualmente:
+python -m src.quant_portfolios.reauthorize conservative_alpha
+```
+
+| Portafolio | Riesgo | Rebalanceo | Vol. objetivo (diseño) |
+|---|---|---|---|
+| Conservative Alpha | Bajo | Mensual | 6–9% |
+| Balanced Growth | Medio | Mensual | 10–13% |
+| Aggressive Momentum | Alto | Diario | 16–22% |
+
+Dashboard: jgonzalez.app/trading/portafolios (separado del dashboard
+de buckets en /trading).
+
 ## Robustez (Monte Carlo + stress testing)
 
 - `src/backtesting/monte_carlo.py`: remuestrea las operaciones del

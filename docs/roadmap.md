@@ -101,10 +101,20 @@ completo sin partir.
       se guarda en el ledger para auditoría — nunca se oculta.
       $3,000 MXN de referencia ≈ $159 USD al tipo de cambio del
       2026-10-30 (18.83 MXN/USD).
-- [ ] Pendiente: ¿automatizar la inyección mensual con una Routine
-      (ej. día 1 de cada mes), o el usuario prefiere registrarla a
-      mano cada vez? No implementado todavía — preguntar antes de
-      programar algo que mueve (aunque sea simulado) capital solo.
+- [x] Inyección mensual: el usuario decidió registrarla a mano, no
+      automatizada — no se construyó una Routine para esto.
+- [x] **Quant Portfolios** (src/quant_portfolios/): modelo alternativo
+      de 3 productos con identidad propia (Conservative Alpha /
+      Balanced Growth / Aggressive Momentum), coexistiendo con los 4
+      buckets por decisión explícita del usuario. Risk Engine real
+      (circuit breakers de pérdida diaria y drawdown) construido junto
+      con esto, no pospuesto — ver ADR 0005.
+- [ ] Pendiente: correr ambos modelos (buckets vs. quant portfolios)
+      en paralelo durante la ventana de paper trading y comparar cuál
+      conviene seguir, como el propio usuario propuso.
+- [ ] Pendiente: integrar el Risk Engine real (circuit breakers) al
+      modelo de buckets también — hoy solo lo tienen los Quant
+      Portfolios.
 - [ ] Adaptador de broker real (Alpaca) para PAPER vía su API
 - [ ] Order Management, reconciliación contra broker real
 - [ ] Modos RESEARCH / BACKTEST / PAPER — LIVE permanece deshabilitado

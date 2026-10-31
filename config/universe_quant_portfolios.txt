@@ -1,0 +1,11 @@
+# Universo de instrumentos para los 3 "Quant Portfolios" (Conservative
+# Alpha, Balanced Growth, Aggressive Momentum). Incluye solo los
+# símbolos NUEVOS que no estaban ya en otros universos — IWM y BTC se
+# reusan de config/universe_riesgo_alto.txt y config/universe_cripto.txt.
+SGOV
+VOO
+BND
+VXUS
+GLDM
+QQQM
+SMH
