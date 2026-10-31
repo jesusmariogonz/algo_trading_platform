@@ -115,6 +115,14 @@ completo sin partir.
 - [ ] Pendiente: integrar el Risk Engine real (circuit breakers) al
       modelo de buckets también — hoy solo lo tienen los Quant
       Portfolios.
+- [x] **Rediseño del modelo de buckets (31-oct-2026)**: tras comparar
+      backtests reales con capital simulado sobre 3 ventanas (6, 22 y
+      34 meses), se eliminó el bucket de cripto (rindió peor en las 3
+      ventanas sin excepción — ver ADR 0006) y se agregó trailing stop
+      + cash ocioso invertido en SPY a los 3 buckets restantes (ver
+      ADR 0007). Nuevo split: 43.33% / 33.33% / 23.33%. Se reinició
+      `data/portfolio/ledger.json` y `data/paper_trading/*.json` para
+      arrancar limpio con el modelo nuevo.
 - [ ] Adaptador de broker real (Alpaca) para PAPER vía su API
 - [ ] Order Management, reconciliación contra broker real
 - [ ] Modos RESEARCH / BACKTEST / PAPER — LIVE permanece deshabilitado

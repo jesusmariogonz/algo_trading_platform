@@ -11,10 +11,13 @@ def isolated_paths(tmp_path, monkeypatch):
     yield
 
 
-def test_init_bucket_state_starts_with_full_cash():
+def test_init_bucket_state_invests_full_capital_in_benchmark():
+    # Desde ADR 0007: el capital inicial se invierte en el benchmark
+    # (SPY) del bucket, no se queda en cash parado.
     state = engine.init_bucket_state("mediano_plazo", 300.0)
-    assert state["cash"] == 300.0
     assert state["starting_capital"] == 300.0
+    assert state["bench_shares"] > 0
+    assert state["cash"] == 0.0
     assert state["open_positions"] == []
     assert state["closed_positions"] == []
 

@@ -81,14 +81,22 @@ python -m src.backtesting.monte_carlo --strategy trend_following --simulations 2
 python -m src.backtesting.stress_test --strategy trend_following
 ```
 
-## Reparto de capital (4 buckets)
+## Reparto de capital (3 buckets)
+
+El bucket de cripto (Muy Alta Volatilidad, 10%) se ELIMINÓ — ver
+ADR 0006. Su 10% se repartió EQUITATIVAMENTE entre los 3 restantes
+(+3.33 puntos cada uno), decisión explícita del usuario tras comparar
+backtests reales de 6/22/34 meses (sin cripto rindió mejor en las 3).
 
 | Bucket | % | Estado |
 |---|---|---|
-| Largo plazo | 40% | Time-Series Momentum (12m/6m) · universo `config/universe_largo_plazo.txt` (ETFs amplios) · 1% riesgo/operación |
-| Mediano plazo | 30% | Trend Following + Momentum/Breakout · universo `config/universe.txt` · 1% riesgo/operación |
-| Riesgo alto | 20% | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` (small/mid-cap, sin cripto) · 2% riesgo/operación |
-| Muy alta volatilidad | 10% | Trend Following + Momentum/Breakout · universo `config/universe_cripto.txt` (datos de Kraken) · 2% riesgo/operación · **backtest negativo, ver ADR 0004** |
+| Largo plazo | 43.33% | Time-Series Momentum (12m/6m) · universo `config/universe_largo_plazo.txt` (ETFs amplios) · 1% riesgo/operación |
+| Mediano plazo | 33.33% | Trend Following + Momentum/Breakout · universo `config/universe.txt` · 1% riesgo/operación |
+| Riesgo alto | 23.33% | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` (small/mid-cap) · 2% riesgo/operación |
+
+Los 3 buckets usan **trailing stop** (el stop sube con el precio,
+nunca baja) y el cash ocioso se invierte en SPY en vez de quedarse
+parado — ver ADR 0007.
 
 ## Estrategias (4 implementadas, 1 método de selección)
 
@@ -120,6 +128,10 @@ python -m src.indicators.relative_strength --benchmark SPY
 python -m src.paper_trading.run_daily_tick
 python -m src.paper_trading.export ../jesus-site/lib/paper-trading-snapshot.json
 ```
+
+El cash ocioso de cada bucket se invierte automáticamente en SPY
+(trailing stop + cash-en-benchmark, ver ADR 0007) — no hace falta un
+paso extra, ya está dentro de `run_daily_tick`.
 
 `src/paper_trading/engine.py` simula, día tras día, abrir y cerrar
 posiciones con las MISMAS reglas que `daily_signals.py` — pero lo

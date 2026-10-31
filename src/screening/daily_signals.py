@@ -33,7 +33,11 @@ ROOT = Path(__file__).resolve().parents[2]
 # un horizonte de meses — correrle Trend Following/Momentum Breakout
 # encima no tendría sentido, son estrategias de swing diario). Ver
 # docs/adr/0003-buckets-y-escalamiento.md.
-# "muy_alta_volatilidad" no tiene entrada: sin estrategia construida.
+#
+# El bucket "muy_alta_volatilidad" (cripto) se ELIMINÓ — ver
+# docs/adr/0006-elimina-bucket-cripto.md. Cada bucket que queda usa
+# BENCHMARK_SYMBOL (SPY) para invertir el cash ocioso en vez de dejarlo
+# parado — ver paper_trading/engine.py.
 BUCKET_CONFIG = {
     "largo_plazo": {
         "universe_file": ROOT / "config" / "universe_largo_plazo.txt",
@@ -48,16 +52,6 @@ BUCKET_CONFIG = {
     "riesgo_alto": {
         "universe_file": ROOT / "config" / "universe_riesgo_alto.txt",
         "risk_pct": 0.02,  # 2% — deliberadamente más laxo, decisión del usuario
-        "strategies": ["trend_following", "momentum_breakout"],
-    },
-    "muy_alta_volatilidad": {
-        "universe_file": ROOT / "config" / "universe_cripto.txt",
-        # 2% — asumido igual a Riesgo Alto, el usuario no definió un
-        # número distinto para cripto. AJUSTABLE: si quieres algo
-        # distinto (ej. más conservador, dado que cripto ya es más
-        # volátil de por sí que las acciones de Riesgo Alto), cambia
-        # este valor.
-        "risk_pct": 0.02,
         "strategies": ["trend_following", "momentum_breakout"],
     },
 }

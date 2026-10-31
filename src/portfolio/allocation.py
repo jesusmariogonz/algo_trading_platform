@@ -1,9 +1,17 @@
-"""Reparto del capital inyectado entre los 4 buckets de inversión.
+"""Reparto del capital inyectado entre los 3 buckets de inversión.
 
-    Largo plazo            40%
-    Mediano plazo           30%
-    Riesgo alto             20%
-    Muy alta volatilidad    10%
+    Largo plazo             43.33%
+    Mediano plazo           33.33%
+    Riesgo alto             23.33%
+
+Se eliminó el bucket "Muy alta volatilidad" (cripto, 10%) por decisión
+explícita del usuario tras comparar backtests de 2025-2026: el
+backtest con cripto rindió consistentemente peor que sin él (ver
+docs/adr/0006-elimina-bucket-cripto.md) en las 3 ventanas probadas
+(6, 22 y 34 meses). El 10% liberado se repartió EQUITATIVAMENTE entre
+los 3 buckets restantes (+3.33 puntos cada uno), no proporcional a su
+tamaño — decisión explícita del usuario, distinta de la alternativa
+"proporcional" que también se probó.
 
 IMPORTANTE — qué es y qué NO es este módulo todavía:
 
@@ -34,10 +42,9 @@ import requests
 EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD"
 
 BUCKETS = {
-    "largo_plazo": 0.40,
-    "mediano_plazo": 0.30,
-    "riesgo_alto": 0.20,
-    "muy_alta_volatilidad": 0.10,
+    "largo_plazo": 13.0 / 30.0,     # 40% + 10%/3, redondeado exacto como fracción
+    "mediano_plazo": 10.0 / 30.0,   # 30% + 10%/3
+    "riesgo_alto": 7.0 / 30.0,      # 20% + 10%/3
 }
 
 assert abs(sum(BUCKETS.values()) - 1.0) < 1e-9, "Los buckets deben sumar 100%"
