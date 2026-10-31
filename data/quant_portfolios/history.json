@@ -4,14 +4,14 @@
     "portfolios": {
       "conservative_alpha": {
         "date": "2026-10-30",
-        "equity": 333.33,
-        "cash": 75.0,
+        "equity": 450.0,
+        "cash": 101.25,
         "holdings": {
-          "SGOV": 0.992743,
-          "VOO": 0.119936,
-          "BND": 0.465805,
-          "VXUS": 0.303506,
-          "GLDM": 0.216927
+          "SGOV": 1.340216,
+          "VOO": 0.161915,
+          "BND": 0.628843,
+          "VXUS": 0.409737,
+          "GLDM": 0.292854
         },
         "daily_loss_pct": 0.0,
         "drawdown_pct": 0.0,
@@ -31,16 +31,16 @@
       },
       "balanced_growth": {
         "date": "2026-10-30",
-        "equity": 333.33,
-        "cash": 50.0,
+        "equity": 350.0,
+        "cash": 52.5,
         "holdings": {
-          "VOO": 0.143923,
-          "QQQM": 0.175844,
-          "VXUS": 0.607011,
-          "BND": 0.279483,
-          "SGOV": 0.330914,
-          "GLDM": 0.173542,
-          "IWM": 0.058683
+          "VOO": 0.15112,
+          "QQQM": 0.184638,
+          "VXUS": 0.637368,
+          "BND": 0.29346,
+          "SGOV": 0.347464,
+          "GLDM": 0.18222,
+          "IWM": 0.061618
         },
         "daily_loss_pct": 0.0,
         "drawdown_pct": 0.0,
@@ -49,7 +49,7 @@
         "suspended_reason": null,
         "newly_suspended_today": false,
         "rebalanced_today": true,
-        "cumulative_return_pct": 0.0,
+        "cumulative_return_pct": -0.0,
         "trend_status": {
           "VOO": true,
           "QQQM": true,
@@ -62,16 +62,16 @@
       },
       "aggressive_momentum": {
         "date": "2026-10-30",
-        "equity": 333.34,
-        "cash": 253.33,
+        "equity": 199.99,
+        "cash": 152.0,
         "holdings": {
-          "VOO": 0.023987,
-          "QQQM": 0.058615,
-          "IWM": 0.03521,
-          "SMH": 0.012759,
-          "VXUS": 0.080935,
-          "BTC": 8.7e-05,
-          "SGOV": 0.165457
+          "VOO": 0.014392,
+          "QQQM": 0.035169,
+          "IWM": 0.021126,
+          "SMH": 0.007656,
+          "VXUS": 0.048561,
+          "BTC": 5.2e-05,
+          "SGOV": 0.099275
         },
         "daily_loss_pct": 0.0,
         "drawdown_pct": 0.0,
@@ -80,7 +80,7 @@
         "suspended_reason": null,
         "newly_suspended_today": false,
         "rebalanced_today": true,
-        "cumulative_return_pct": 0.0,
+        "cumulative_return_pct": -0.01,
         "trend_status": {
           "VOO": false,
           "QQQM": false,

@@ -150,11 +150,11 @@ python -m src.quant_portfolios.export ../jesus-site/lib/quant-portfolios-snapsho
 python -m src.quant_portfolios.reauthorize conservative_alpha
 ```
 
-| Portafolio | Riesgo | Rebalanceo | Vol. objetivo (diseño) |
-|---|---|---|---|
-| Conservative Alpha | Bajo | Mensual | 6–9% |
-| Balanced Growth | Medio | Mensual | 10–13% |
-| Aggressive Momentum | Alto | Diario | 16–22% |
+| Portafolio | Riesgo | Rebalanceo | Vol. objetivo (diseño) | Capital |
+|---|---|---|---|---|
+| Conservative Alpha | Bajo | Mensual | 6–9% | 45% |
+| Balanced Growth | Medio | Mensual | 10–13% | 35% |
+| Aggressive Momentum | Alto | Diario | 16–22% | 20% |
 
 Dashboard: jgonzalez.app/trading/portafolios (separado del dashboard
 de buckets en /trading).

@@ -80,11 +80,13 @@ existentes.
 ## Decisión — capital
 
 Los 3 portafolios parten del mismo $1,000 de referencia del proyecto,
-repartido en partes iguales (~$333 cada uno) — siguiendo la propia
-recomendación del usuario (sección 6 de su propuesta): "usaría los
-tres portafolios como modelos alternativos... probaría cada modelo
-con el mismo capital virtual... después seleccionaría el que
-demuestre mejor comportamiento fuera de muestra."
+repartido 45% / 35% / 20% (Conservative Alpha / Balanced Growth /
+Aggressive Momentum — de menor a mayor riesgo recibe más capital),
+por decisión explícita del usuario — reemplaza el split inicial en
+partes iguales (~$333 cada uno, usado el primer día). Ver
+`CAPITAL_SPLIT` en `src/quant_portfolios/engine.py`. Al cambiar el
+split se reinició `data/quant_portfolios/{state,history}.json` desde
+cero (solo había 1 día de historial real, nada que se perdiera).
 
 ## Pendiente
 

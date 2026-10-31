@@ -213,18 +213,23 @@ def run_portfolio_tick(portfolio_id: str, state: dict, as_of: pd.Timestamp | Non
     }
 
 
+# Split de capital entre los 3 portafolios sobre el mismo $1,000 de
+# referencia — decidido por el usuario (45/35/20), no partes iguales.
+# Menor riesgo recibe más capital, mayor riesgo menos.
+CAPITAL_SPLIT = {
+    "conservative_alpha": 0.45,
+    "balanced_growth": 0.35,
+    "aggressive_momentum": 0.20,
+}
+
+
 def run_daily_tick_all(as_of: pd.Timestamp | None = None) -> dict:
     state = load_state()
     snapshot = {"date": None, "portfolios": {}}
 
     for portfolio_id, portfolio_def in PORTFOLIOS.items():
         if portfolio_id not in state:
-            # Capital inicial: parte en partes iguales entre los 3
-            # portafolios desde el mismo $1,000 de referencia del
-            # proyecto — el usuario los definió como modelos a
-            # comparar con el MISMO capital, no 3 cuentas financiadas
-            # por separado (ver su propia recomendación, sección 6).
-            state[portfolio_id] = init_portfolio_state(1000.0 / len(PORTFOLIOS))
+            state[portfolio_id] = init_portfolio_state(1000.0 * CAPITAL_SPLIT[portfolio_id])
 
         result = run_portfolio_tick(portfolio_id, state[portfolio_id], as_of)
         snapshot["portfolios"][portfolio_id] = result
