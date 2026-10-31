@@ -105,3 +105,91 @@ def test_closing_a_position_never_creates_money_from_nothing():
 
     # El valor total cambió exactamente por el P&L de la operación, ni un centavo más.
     assert valor_despues - valor_antes == pytest.approx(pnl)
+
+
+def test_drawdown_circuit_breaker_suspends_without_liquidating(monkeypatch):
+    """Desde ADR 0008: si el equity cae más del límite de drawdown
+    desde su máximo histórico, el bucket queda suspendido — pero las
+    posiciones abiertas se mantienen intactas, nunca se liquidan."""
+    fake_universe = {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [50.0], "sma_200": [90.0], "atr_14": [1.0]}
+        ),
+        "SPY": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [10.0], "sma_200": [9.0], "atr_14": [0.1]}
+        ),
+    }
+    monkeypatch.setattr(engine, "load_universe", lambda symbols=None: fake_universe)
+    monkeypatch.setattr(engine, "BUCKET_CONFIG", {
+        "largo_plazo": {
+            "universe_file": None,
+            "risk_pct": 0.01,
+            "strategies": ["time_series_momentum"],
+        }
+    })
+    monkeypatch.setattr(engine, "read_universe_file", lambda path: ["VOO"])
+    monkeypatch.setitem(
+        engine.SIGNAL_FNS, "time_series_momentum",
+        lambda df: df.assign(signal=0, stop_price=df["close"] - 40),
+    )
+
+    bucket_state = engine.init_bucket_state("largo_plazo", 1000.0)
+    bucket_state["bench_shares"] = 0.0
+    bucket_state["cash"] = 0.0
+    bucket_state["open_positions"] = [
+        {"symbol": "VOO", "strategy": "time_series_momentum", "entry_date": "2025-01-01",
+         "entry_price": 100.0, "stop_price": 10.0, "shares": 10}
+    ]  # entró a $1000 (10 acciones a $100); hoy vale 10*$50=$500 -> 50% drawdown
+    bucket_state["peak_equity"] = 1000.0
+    bucket_state["day_start_equity"] = 1000.0
+    bucket_state["day_start_date"] = None
+
+    result = engine.run_bucket_tick("largo_plazo", bucket_state)
+
+    assert result["suspended"] is True
+    assert result["newly_suspended_today"] is True
+    assert bucket_state["suspended"] is True
+    # La posición NO se liquidó — sigue abierta con las mismas acciones.
+    assert bucket_state["open_positions"] == [
+        {"symbol": "VOO", "strategy": "time_series_momentum", "entry_date": "2025-01-01",
+         "entry_price": 100.0, "stop_price": 10.0, "shares": 10}
+    ]
+
+
+def test_blocked_bucket_never_opens_new_positions(monkeypatch):
+    """Un bucket con la pérdida diaria ya disparada no debe abrir
+    posiciones nuevas aunque haya una señal de entrada válida."""
+    fake_universe = {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [50.0], "sma_200": [40.0], "atr_14": [1.0]}
+        ),
+        "SPY": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [10.0], "sma_200": [9.0], "atr_14": [0.1]}
+        ),
+    }
+    monkeypatch.setattr(engine, "load_universe", lambda symbols=None: fake_universe)
+    monkeypatch.setattr(engine, "BUCKET_CONFIG", {
+        "largo_plazo": {
+            "universe_file": None,
+            "risk_pct": 0.01,
+            "strategies": ["time_series_momentum"],
+        }
+    })
+    monkeypatch.setattr(engine, "read_universe_file", lambda path: ["VOO"])
+    monkeypatch.setitem(
+        engine.SIGNAL_FNS, "time_series_momentum",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 5),  # señal de entrada válida
+    )
+
+    bucket_state = engine.init_bucket_state("largo_plazo", 1000.0)
+    bucket_state["bench_shares"] = 0.0
+    bucket_state["cash"] = 1000.0
+    bucket_state["open_positions"] = []
+    bucket_state["peak_equity"] = 1000.0
+    bucket_state["day_start_equity"] = 1200.0  # ya cayó >1% hoy desde el inicio del día
+    bucket_state["day_start_date"] = "2026-01-01"  # mismo día: no se resetea el breaker
+
+    result = engine.run_bucket_tick("largo_plazo", bucket_state)
+
+    assert result["daily_loss_breaker_tripped"] is True
+    assert result["open_count"] == 0  # no se abrió nada pese a la señal

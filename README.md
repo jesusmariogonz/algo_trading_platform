@@ -146,30 +146,31 @@ el motor (snapshot de `allocation.py` en ese momento) — inyecciones
 posteriores durante la ventana de prueba se ignoran a propósito, para
 que el % de retorno mida la estrategia, no "metí más dinero".
 
-## Quant Portfolios (3 productos con identidad propia — coexiste con buckets)
+## Risk Engine real (circuit breakers) en los 3 buckets
 
-Modelo alternativo al de 4 buckets por horizonte, propuesto por el
-usuario: 3 portafolios con motor, reglas de rebalanceo y límites de
-riesgo propios — ver `docs/adr/0005-quant-portfolios.md`.
+Desde el 31-oct-2026 (ver `docs/adr/0008-circuit-breakers-en-buckets.md`),
+los 3 buckets tienen el mismo tipo de circuit breakers reales que antes
+solo existían en Quant Portfolios (ya eliminados — ver nota abajo):
+
+- **Pérdida diaria** (1%/1.5%/2% según el bucket): bloquea NUEVAS
+  entradas por el resto del día si se toca. Se resetea solo al día
+  siguiente.
+- **Drawdown de revisión** (6%/10%/15% según el bucket): suspende el
+  bucket hasta reautorización manual. Nunca liquida posiciones ya
+  abiertas, solo bloquea abrir nuevas.
 
 ```bash
-python -m src.data.download --universe config/universe_quant_portfolios.txt --years 2
-python -m src.indicators.compute   # agrega EMA 20/50 también
-python -m src.quant_portfolios.run_daily_tick
-python -m src.quant_portfolios.export ../jesus-site/lib/quant-portfolios-snapshot.json
-
-# Si un portafolio se suspendió por drawdown, reautorizar manualmente:
-python -m src.quant_portfolios.reauthorize conservative_alpha
+# Si un bucket se suspendió por drawdown, reautorizar manualmente:
+python -m src.paper_trading.reauthorize largo_plazo
 ```
 
-| Portafolio | Riesgo | Rebalanceo | Vol. objetivo (diseño) | Capital |
-|---|---|---|---|---|
-| Conservative Alpha | Bajo | Mensual | 6–9% | 45% |
-| Balanced Growth | Medio | Mensual | 10–13% | 35% |
-| Aggressive Momentum | Alto | Diario | 16–22% | 20% |
-
-Dashboard: jgonzalez.app/trading/portafolios (separado del dashboard
-de buckets en /trading).
+**Nota — Quant Portfolios eliminados (31-oct-2026):** el modelo
+alternativo de 3 productos (Conservative Alpha / Balanced Growth /
+Aggressive Momentum, `src/quant_portfolios/`) se eliminó por decisión
+explícita del usuario. Coexistió con el modelo de buckets durante la
+ventana de paper trading pero no llegó a usarse — ver
+`docs/adr/0005-quant-portfolios.md` (historia) y
+`docs/adr/0009-elimina-quant-portfolios.md` (por qué se eliminó).
 
 ## Robustez (Monte Carlo + stress testing)
 

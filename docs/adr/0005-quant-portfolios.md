@@ -1,10 +1,16 @@
 # ADR 0005 — Quant Portfolios: 3 productos con identidad propia
 
 ## Estado
-Aceptado. **Coexiste a propósito** con el modelo de 4 buckets por
-horizonte (`src/portfolio/allocation.py`, `src/paper_trading/`) —
-decisión explícita del usuario de comparar ambos enfoques en paralelo,
-no una migración.
+**SUPERSEDED por ADR 0009** (31-oct-2026) — los Quant Portfolios se
+eliminaron por completo. Este ADR se conserva como registro histórico
+de por qué y cómo se construyeron; el código que describe ya no existe
+en el repo.
+
+Estado original (ya no vigente): Aceptado. **Coexiste a propósito**
+con el modelo de 4 buckets por horizonte
+(`src/portfolio/allocation.py`, `src/paper_trading/`) — decisión
+explícita del usuario de comparar ambos enfoques en paralelo, no una
+migración.
 
 ## Contexto
 El usuario propuso rediseñar el reparto de capital no como "4 buckets

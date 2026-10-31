@@ -32,6 +32,9 @@ def build_export() -> dict:
             "open_positions": bucket_state["open_positions"],
             "closed_positions": bucket_state["closed_positions"],
             "daily_history": history_for_bucket,
+            "suspended": bucket_state.get("suspended", False),
+            "suspended_reason": bucket_state.get("suspended_reason"),
+            "suspended_since": bucket_state.get("suspended_since"),
         }
 
     return {

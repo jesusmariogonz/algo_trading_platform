@@ -103,18 +103,11 @@ completo sin partir.
       2026-10-30 (18.83 MXN/USD).
 - [x] Inyección mensual: el usuario decidió registrarla a mano, no
       automatizada — no se construyó una Routine para esto.
-- [x] **Quant Portfolios** (src/quant_portfolios/): modelo alternativo
-      de 3 productos con identidad propia (Conservative Alpha /
-      Balanced Growth / Aggressive Momentum), coexistiendo con los 4
-      buckets por decisión explícita del usuario. Risk Engine real
-      (circuit breakers de pérdida diaria y drawdown) construido junto
-      con esto, no pospuesto — ver ADR 0005.
-- [ ] Pendiente: correr ambos modelos (buckets vs. quant portfolios)
-      en paralelo durante la ventana de paper trading y comparar cuál
-      conviene seguir, como el propio usuario propuso.
-- [ ] Pendiente: integrar el Risk Engine real (circuit breakers) al
-      modelo de buckets también — hoy solo lo tienen los Quant
-      Portfolios.
+- [x] ~~Quant Portfolios (src/quant_portfolios/)~~ — se construyeron
+      (ver ADR 0005) y luego se **ELIMINARON por completo el
+      31-oct-2026** (ver ADR 0009), decisión explícita del usuario. La
+      comparación "buckets vs. quant portfolios" que estaba pendiente
+      quedó cerrada al eliminar uno de los dos lados.
 - [x] **Rediseño del modelo de buckets (31-oct-2026)**: tras comparar
       backtests reales con capital simulado sobre 3 ventanas (6, 22 y
       34 meses), se eliminó el bucket de cripto (rindió peor en las 3
@@ -123,6 +116,11 @@ completo sin partir.
       ADR 0007). Nuevo split: 43.33% / 33.33% / 23.33%. Se reinició
       `data/portfolio/ledger.json` y `data/paper_trading/*.json` para
       arrancar limpio con el modelo nuevo.
+- [x] **Risk Engine real (circuit breakers) en los 3 buckets
+      (31-oct-2026)**: pérdida diaria (1%/1.5%/2%) y drawdown de
+      revisión (6%/10%/15%), llevado desde el diseño de los Quant
+      Portfolios antes de eliminarlos — ver ADR 0008. Nunca liquida
+      posiciones existentes, solo bloquea abrir nuevas.
 - [ ] Adaptador de broker real (Alpaca) para PAPER vía su API
 - [ ] Order Management, reconciliación contra broker real
 - [ ] Modos RESEARCH / BACKTEST / PAPER — LIVE permanece deshabilitado

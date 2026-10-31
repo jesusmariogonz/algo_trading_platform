@@ -14,7 +14,12 @@
         "shares": 1
       }
     ],
-    "closed_positions": []
+    "closed_positions": [],
+    "day_start_equity": 433.33,
+    "day_start_date": "2026-10-30",
+    "daily_loss_tripped_today": false,
+    "peak_equity": 433.33,
+    "last_equity": 433.33
   },
   "mediano_plazo": {
     "starting_capital": 333.33,
@@ -27,11 +32,16 @@
         "strategy": "trend_following",
         "entry_date": "2026-10-30",
         "entry_price": 56.51,
-        "stop_price": 54.63,
+        "stop_price": 54.63142817361014,
         "shares": 1
       }
     ],
-    "closed_positions": []
+    "closed_positions": [],
+    "day_start_equity": 333.33,
+    "day_start_date": "2026-10-30",
+    "daily_loss_tripped_today": false,
+    "peak_equity": 333.33,
+    "last_equity": 333.33
   },
   "riesgo_alto": {
     "starting_capital": 233.33,
@@ -39,6 +49,11 @@
     "cash": 0.0,
     "bench_shares": 0.30875193066938383,
     "open_positions": [],
-    "closed_positions": []
+    "closed_positions": [],
+    "day_start_equity": 233.33,
+    "day_start_date": "2026-10-30",
+    "daily_loss_tripped_today": false,
+    "peak_equity": 233.33000000000004,
+    "last_equity": 233.33000000000004
   }
 }

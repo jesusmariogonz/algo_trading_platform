@@ -40,6 +40,17 @@ y docs/adr/0007-trailing-stop-y-cash-en-benchmark.md):
     cripto rindió peor en las 3 ventanas probadas (6, 22 y 34 meses).
     El 10% que tenía se repartió EQUITATIVAMENTE entre los 3 buckets
     restantes (decisión explícita del usuario) — ver allocation.py.
+  - RISK ENGINE REAL (circuit breakers), llevado desde los Quant
+    Portfolios (ver docs/adr/0008-circuit-breakers-en-buckets.md):
+      * Pérdida diaria: si el equity cae más del límite desde el
+        inicio del día, se bloquean NUEVAS entradas por el resto del
+        día (se resetea solo al día siguiente). Las posiciones ya
+        abiertas se revisan igual (stop/señal de salida no se bloquea).
+      * Drawdown de revisión: si el equity cae más del límite desde su
+        máximo histórico, el bucket queda SUSPENDIDO hasta
+        reautorización manual (`python -m src.paper_trading.reauthorize
+        <bucket>`) — nunca liquida posiciones existentes, solo bloquea
+        aumentar exposición.
 
 IMPORTANTE: el capital "starting_capital" de cada bucket se fija la
 PRIMERA vez que se corre el motor (snapshot del libro de
@@ -80,6 +91,16 @@ BENCHMARK_SYMBOL = {
     "largo_plazo": "SPY",
     "mediano_plazo": "SPY",
     "riesgo_alto": "SPY",
+}
+
+# Circuit breakers por bucket — misma mecánica que src/quant_portfolios
+# (ver ADR 0008), con límites crecientes según el riesgo de cada
+# bucket (1%/1.5%/2% riesgo por operación -> límites de pérdida diaria
+# y drawdown también crecientes).
+RISK_LIMITS = {
+    "largo_plazo": {"daily_loss_limit_pct": 0.01, "drawdown_review_pct": 0.06},
+    "mediano_plazo": {"daily_loss_limit_pct": 0.015, "drawdown_review_pct": 0.10},
+    "riesgo_alto": {"daily_loss_limit_pct": 0.02, "drawdown_review_pct": 0.15},
 }
 
 ACTIVE_BUCKETS = list(BUCKET_CONFIG.keys())  # buckets con estrategia real — ver BUCKET_CONFIG
@@ -128,6 +149,13 @@ def init_bucket_state(bucket: str, starting_capital: float, as_of: pd.Timestamp 
         "bench_shares": bench_shares,
         "open_positions": [],
         "closed_positions": [],
+        "peak_equity": round(starting_capital, 2),
+        "day_start_equity": round(starting_capital, 2),
+        "day_start_date": None,
+        "suspended": False,
+        "suspended_reason": None,
+        "suspended_since": None,
+        "daily_loss_tripped_today": False,
     }
 
 
@@ -217,8 +245,52 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
 
     open_positions = still_open
 
+    # --- 1.5. Circuit breakers (Risk Engine real) — se evalúan con el
+    # equity YA con los cierres de hoy aplicados, antes de decidir
+    # entradas nuevas. Nunca bloquean ni revierten un cierre. ---
+    limits = RISK_LIMITS.get(bucket)
+    blocked = False
+    daily_loss_pct = 0.0
+    drawdown_pct = 0.0
+    newly_suspended = False
+    if limits is not None and today_label is not None:
+        if bucket_state.get("day_start_date") != today_label:
+            bucket_state["day_start_equity"] = bucket_state.get("last_equity", bucket_state["starting_capital"])
+            bucket_state["day_start_date"] = today_label
+            bucket_state["daily_loss_tripped_today"] = False
+
+        unrealized_now = sum(
+            float(_last_row_as_of(universe[p["symbol"]], as_of)["close"]) * p["shares"]
+            for p in open_positions
+            if universe.get(p["symbol"]) is not None and _last_row_as_of(universe[p["symbol"]], as_of) is not None
+        )
+        equity_now = (bench_shares * bench_price if bench_price else bucket_state.get("cash", 0.0)) + unrealized_now
+
+        day_start_equity = bucket_state.get("day_start_equity") or bucket_state["starting_capital"]
+        daily_loss_pct = (day_start_equity - equity_now) / day_start_equity if day_start_equity else 0.0
+        if daily_loss_pct >= limits["daily_loss_limit_pct"]:
+            bucket_state["daily_loss_tripped_today"] = True
+
+        bucket_state["peak_equity"] = max(bucket_state.get("peak_equity", 0.0), equity_now)
+        peak_equity = bucket_state["peak_equity"]
+        drawdown_pct = (peak_equity - equity_now) / peak_equity if peak_equity else 0.0
+        if drawdown_pct >= limits["drawdown_review_pct"] and not bucket_state.get("suspended"):
+            bucket_state["suspended"] = True
+            bucket_state["suspended_reason"] = (
+                f"Drawdown {drawdown_pct*100:.1f}% alcanzó el límite de revisión "
+                f"({limits['drawdown_review_pct']*100:.0f}%)"
+            )
+            bucket_state["suspended_since"] = today_label
+            newly_suspended = True
+
+        blocked = bucket_state.get("suspended", False) or bucket_state.get("daily_loss_tripped_today", False)
+
     # --- 2. Señales de entrada de hoy (financiadas vendiendo benchmark si aplica) ---
+    # Si está bloqueado (pérdida diaria o suspendido por drawdown), no
+    # se abre NADA nuevo hoy — nunca liquida lo que ya está abierto.
     open_symbols = {p["symbol"] for p in open_positions}
+    if blocked:
+        strategies = []
     for strategy_key in strategies:
         for symbol in symbols:
             if symbol in open_symbols:
@@ -280,6 +352,9 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
     bucket_state["cash"] = round(bucket_state.get("cash", 0.0), 2)
     bucket_state["open_positions"] = open_positions
     bucket_state["closed_positions"].extend(closed_today)
+    if limits is not None:
+        bucket_state["peak_equity"] = max(bucket_state.get("peak_equity", 0.0), equity)
+        bucket_state["last_equity"] = equity
 
     return {
         "date": today_label,
@@ -291,6 +366,12 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
         "realized_pnl_today": round(realized_pnl_today, 2),
         "cumulative_return_pct": round((equity / bucket_state["starting_capital"] - 1) * 100, 2),
         "closed_today_detail": closed_today,
+        "daily_loss_pct": round(daily_loss_pct * 100, 2),
+        "drawdown_pct": round(drawdown_pct * 100, 2),
+        "daily_loss_breaker_tripped": bucket_state.get("daily_loss_tripped_today", False),
+        "suspended": bucket_state.get("suspended", False),
+        "suspended_reason": bucket_state.get("suspended_reason"),
+        "newly_suspended_today": newly_suspended,
     }
 
 
