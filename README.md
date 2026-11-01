@@ -97,11 +97,14 @@ backtests reales de 6/22/34 meses (sin cripto rindió mejor en las 3).
 Universos ampliados el 31-oct-2026 (de 32 a 146 símbolos en total) —
 ver ADR 0010 y 0011. Riesgo por operación subido el 1-nov-2026
 (1%→2%, 2%→3%) y sizing calculado sobre el equity actual, no el
-capital inicial fijo — ver ADR 0012. Retorno neto validado (con datos
-congelados, reproducibles — ver corrección en ADR 0012): **+22.07%**
-en 36 meses, con fricción real incluida — a cambio de un drawdown
-máximo más alto (13.63% vs 7.44% antes), decisión explícita de
-apetito de riesgo del usuario.
+capital inicial fijo — ver ADR 0012.
+
+**Cifra oficial de referencia del proyecto (ADR 0015, reemplaza todas
+las anteriores)**: con la configuración exacta de producción (146
+símbolos, riesgo 2%/2%/3%, equity actual, cash en blend 50% SPY / 50%
+GLD, fricción real), validada con una sola descarga de datos
+congelada — **+31.07% acumulado en 36 meses, ≈9.44% anual
+compuesto**, drawdown máximo 13.83%.
 
 **Nota sobre reproducibilidad**: `yfinance` revisa precios ajustados
 en cada descarga (dividendos aplicados retroactivamente), así que

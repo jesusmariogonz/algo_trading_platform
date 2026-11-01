@@ -165,6 +165,13 @@ completo sin partir.
       se desplomara -75% en un tick (reinterpretación de unidades, no
       un movimiento de mercado real) — corregido con una migración
       explícita que preservó el valor en dólares exacto. Ver ADR 0014.
+- [x] **Validación oficial de la configuración actual (1-nov-2026)**:
+      corrida única, con la configuración EXACTA de producción y una
+      descarga de datos congelada — **+31.07% acumulado en 36 meses,
+      ≈9.44% anual compuesto**, drawdown máximo 13.83%. Esta cifra
+      reemplaza todas las anteriores (32.76%, 37.21%, 48.25%, 22.07%,
+      17.53%) como la referencia oficial del proyecto. Ver ADR 0015.
+      Cierra esta ronda de validación.
 - [ ] Mejora de infraestructura pendiente: el pipeline de descarga no
       cachea datos entre corridas exploratorias — automatizar un modo
       "congelado" para sesiones de backtest comparativo evitaría este
