@@ -17,11 +17,13 @@ def test_buckets_sum_to_100_percent():
 
 
 def test_record_injection_splits_proportionally():
-    # 3 buckets desde ADR 0006 (se eliminó cripto): 43.33% / 33.33% / 23.33%
+    # 4 buckets desde ADR 0019: 65% repartido 13/10/7 entre los 3 de
+    # siempre (28.17% / 21.67% / 15.17%), 35% a mean_reversion.
     entry = allocation.record_injection(1000, "2026-01-01")
-    assert entry["split"]["largo_plazo"] == pytest.approx(433.33, abs=0.01)
-    assert entry["split"]["mediano_plazo"] == pytest.approx(333.33, abs=0.01)
-    assert entry["split"]["riesgo_alto"] == pytest.approx(233.33, abs=0.01)
+    assert entry["split"]["largo_plazo"] == pytest.approx(281.67, abs=0.01)
+    assert entry["split"]["mediano_plazo"] == pytest.approx(216.67, abs=0.01)
+    assert entry["split"]["riesgo_alto"] == pytest.approx(151.67, abs=0.01)
+    assert entry["split"]["mean_reversion"] == pytest.approx(350.0, abs=0.01)
     assert sum(entry["split"].values()) == pytest.approx(1000.0, abs=0.01)
 
 
@@ -36,8 +38,8 @@ def test_get_balances_accumulates_across_injections():
     allocation.record_injection(1000, "2026-01-01")
     allocation.record_injection(500, "2026-02-01")
     balances = allocation.get_balances()
-    assert balances["largo_plazo"] == pytest.approx(650.0)  # 43.33% de 1500
-    assert balances["mediano_plazo"] == pytest.approx(500.0)  # 33.33% de 1500
+    assert balances["largo_plazo"] == pytest.approx(422.5)  # 28.17% de 1500
+    assert balances["mediano_plazo"] == pytest.approx(325.0)  # 21.67% de 1500
 
 
 def test_ledger_persists_to_disk(temp_ledger):
@@ -65,7 +67,7 @@ def test_record_injection_mxn_converts_and_records_rate(monkeypatch):
     assert entry["original_amount"] == 3000.0
     assert entry["exchange_rate"] == 20.0
     assert entry["amount"] == pytest.approx(150.0)  # 3000 / 20
-    assert entry["split"]["largo_plazo"] == pytest.approx(65.0, abs=0.01)  # 43.33% de 150
+    assert entry["split"]["largo_plazo"] == pytest.approx(42.25, abs=0.01)  # 28.17% de 150
 
 
 def test_record_injection_without_mxn_has_no_currency_fields():

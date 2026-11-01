@@ -81,18 +81,23 @@ python -m src.backtesting.monte_carlo --strategy trend_following --simulations 2
 python -m src.backtesting.stress_test --strategy trend_following
 ```
 
-## Reparto de capital (3 buckets)
+## Reparto de capital (4 buckets)
 
 El bucket de cripto (Muy Alta Volatilidad, 10%) se ELIMINÓ — ver
 ADR 0006. Su 10% se repartió EQUITATIVAMENTE entre los 3 restantes
 (+3.33 puntos cada uno), decisión explícita del usuario tras comparar
 backtests reales de 6/22/34 meses (sin cripto rindió mejor en las 3).
 
+El 1-nov-2026 se agregó un 4to bucket, **Mean Reversion RSI(2)**
+(ADR 0019): 35% del capital, con los 3 buckets originales escalados a
+65% MANTENIENDO su proporción interna de siempre (13/10/7).
+
 | Bucket | % | Universo | Estado |
 |---|---|---|---|
-| Largo plazo | 43.33% | 26 ETFs | Time-Series Momentum (12m/6m) · `config/universe_largo_plazo.txt` · 2% riesgo/operación |
-| Mediano plazo | 33.33% | 74 símbolos | Trend Following + Momentum/Breakout · `config/universe.txt` · 2% riesgo/operación |
-| Riesgo alto | 23.33% | 45 símbolos | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` · 3% riesgo/operación |
+| Largo plazo | 28.17% | 26 ETFs | Time-Series Momentum (12m/6m) · `config/universe_largo_plazo.txt` · 2% riesgo/operación |
+| Mediano plazo | 21.67% | 74 símbolos | Trend Following + Momentum/Breakout · `config/universe.txt` · 2% riesgo/operación |
+| Riesgo alto | 15.17% | 45 símbolos | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` · 3% riesgo/operación |
+| Mean Reversion | 35.00% | 119 símbolos | RSI(2) sobrevendido en tendencia alcista · `config/universe_mean_reversion.txt` · 2% riesgo/operación |
 
 Universos ampliados el 31-oct-2026 (de 32 a 146 símbolos) y Largo
 Plazo ampliado de nuevo el 1-nov-2026 (13→26 ETFs, ADR 0016, 159
@@ -100,14 +105,21 @@ símbolos en total). Riesgo por operación subido el 1-nov-2026
 (1%→2%, 2%→3%) y sizing calculado sobre el equity actual, no el
 capital inicial fijo — ver ADR 0012.
 
-**Cifra oficial de referencia del proyecto (ADR 0016, reemplaza
-ADR 0015 y todas las anteriores)**: con la configuración exacta de
-producción (159 símbolos, riesgo 2%/2%/3%, equity actual, cash en
-blend 50% SPY / 50% GLD, fricción real), validada con una sola
-descarga de datos congelada — **+34.00% acumulado en 36 meses**,
-drawdown máximo 12.91%.
+**Cifra oficial de referencia del proyecto (ADR 0016, 3 buckets,
+reemplaza ADR 0015 y todas las anteriores)**: con la configuración
+exacta de producción previa a agregar Mean Reversion (159 símbolos,
+riesgo 2%/2%/3%, equity actual, cash en blend 50% SPY / 50% GLD,
+fricción real), validada con una sola descarga de datos congelada —
+**+34.00% acumulado en 36 meses**, drawdown máximo 12.91%.
 
-Por bucket (mismo período, misma corrida):
+**Con Mean Reversion agregado al 35% (ADR 0019, datos reales
+congelados, 36 meses)**: **+43.61%**, drawdown máximo **11.75%** —
+mejora ambas métricas simultáneamente frente al control, por su baja
+correlación (0.142) con el resto del sistema. Pendiente de validación
+oficial con la configuración real completa (equivalente a ADR 0015
+para la versión de 3 buckets).
+
+Por bucket (3-buckets, ADR 0016, antes de Mean Reversion):
 
 | Bucket | Retorno | Operaciones |
 |---|---|---|
@@ -121,20 +133,21 @@ cualquier comparación de variantes debe hacerse con UNA sola descarga
 congelada, nunca descargando de nuevo entre corridas — ver la sección
 "Corrección de reproducibilidad" en ADR 0012.
 
-Los 3 buckets usan **trailing stop** (el stop sube con el precio,
+Los 4 buckets usan **trailing stop** (el stop sube con el precio,
 nunca baja), el cash ocioso se invierte en un **blend 50% SPY / 50%
 GLD (oro)** en vez de quedarse parado (ADR 0007, actualizado en ADR
 0014), y desde ADR 0011 el motor aplica **fricción real** (0.05%
 comisión + 0.05% slippage por lado, igual que el backtest formal) —
 ya no ejecuta a precio de cierre exacto sin costo.
 
-## Estrategias (4 implementadas, 1 método de selección)
+## Estrategias (5 implementadas, 1 método de selección)
 
 | Estrategia | Investigación base | Bucket | Estado |
 |---|---|---|---|
 | Trend Following (SMA) | — | Mediano/Riesgo Alto | Walk-forward 3/4 ventanas consistente |
 | Momentum/Breakout (VCP simplificado) | — | Mediano/Riesgo Alto | Walk-forward 2/4 — inconsistente, en revisión |
 | Time-Series Momentum | Moskowitz, Ooi & Pedersen (2012) | Largo Plazo | Walk-forward 3/4 ventanas consistente |
+| Mean Reversion RSI(2) | Connors & Radge | Mean Reversion | Agregado 1-nov-2026 (ADR 0019) — correlación 0.142 con el resto del sistema, validado aislado y combinado |
 | Cross-Sectional Momentum | Jegadeesh & Titman (1993) | Selección entre buckets | **Resultado del backtest inflado por sesgo de supervivencia en el universo — ver advertencia abajo** |
 
 **⚠ Sesgo de supervivencia**: nuestro universo (`config/universe*.txt`)

@@ -1,8 +1,9 @@
-"""Reparto del capital inyectado entre los 3 buckets de inversión.
+"""Reparto del capital inyectado entre los 4 buckets de inversión.
 
-    Largo plazo             43.33%
-    Mediano plazo           33.33%
-    Riesgo alto             23.33%
+    Largo plazo             28.17%  (antes 43.33%)
+    Mediano plazo           21.67%  (antes 33.33%)
+    Riesgo alto              15.17%  (antes 23.33%)
+    Mean Reversion           35.00%  (nuevo, ver ADR 0019)
 
 Se eliminó el bucket "Muy alta volatilidad" (cripto, 10%) por decisión
 explícita del usuario tras comparar backtests de 2025-2026: el
@@ -12,6 +13,13 @@ docs/adr/0006-elimina-bucket-cripto.md) en las 3 ventanas probadas
 los 3 buckets restantes (+3.33 puntos cada uno), no proporcional a su
 tamaño — decisión explícita del usuario, distinta de la alternativa
 "proporcional" que también se probó.
+
+El 1-nov-2026 se agregó un 4to bucket, "mean_reversion" (ADR 0019):
+35% del capital total, validado con datos reales congelados como el
+peso que maximiza retorno y mejora drawdown simultáneamente vs. el
+control (ver ADR 0019 para la curva completa de sensibilidad al peso).
+Los 3 buckets originales se escalaron a 65% del total, MANTENIENDO su
+proporción interna de siempre (13/10/7) — no se repartió equitativo.
 
 IMPORTANTE — qué es y qué NO es este módulo todavía:
 
@@ -42,9 +50,10 @@ import requests
 EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD"
 
 BUCKETS = {
-    "largo_plazo": 13.0 / 30.0,     # 40% + 10%/3, redondeado exacto como fracción
-    "mediano_plazo": 10.0 / 30.0,   # 30% + 10%/3
-    "riesgo_alto": 7.0 / 30.0,      # 20% + 10%/3
+    "largo_plazo": 0.65 * 13.0 / 30.0,
+    "mediano_plazo": 0.65 * 10.0 / 30.0,
+    "riesgo_alto": 0.65 * 7.0 / 30.0,
+    "mean_reversion": 0.35,
 }
 
 assert abs(sum(BUCKETS.values()) - 1.0) < 1e-9, "Los buckets deben sumar 100%"

@@ -34,6 +34,19 @@ def test_bench_shares_round_trip_preserves_dollar_value():
     assert valor_en_dolares == pytest.approx(1000.0, rel=0.01)
 
 
+def test_mean_reversion_bucket_is_registered_in_engine():
+    """Regresión de ADR 0019: el bucket mean_reversion debe estar
+    presente en todos los diccionarios de configuración del motor, no
+    solo en BUCKET_CONFIG — un bucket a medias (ej. sin RISK_LIMITS)
+    rompería los circuit breakers en silencio."""
+    assert "mean_reversion" in engine.BUCKET_CONFIG
+    assert "mean_reversion" in engine.BENCHMARK_SYMBOL
+    assert "mean_reversion" in engine.RISK_LIMITS
+    assert "mean_reversion" in engine.ACTIVE_BUCKETS
+    assert engine.BUCKET_CONFIG["mean_reversion"]["strategies"] == ["mean_reversion_rsi2"]
+    assert "mean_reversion_rsi2" in engine.SIGNAL_FNS
+
+
 def test_state_persists_round_trip(tmp_path):
     state = {"mediano_plazo": engine.init_bucket_state("mediano_plazo", 300.0)}
     engine.save_state(state)

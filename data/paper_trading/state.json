@@ -1,9 +1,9 @@
 {
   "largo_plazo": {
-    "starting_capital": 433.33,
+    "starting_capital": 317.13,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 0.6177872309175173,
+    "bench_shares": 0.0,
     "open_positions": [
       {
         "symbol": "EFA",
@@ -31,17 +31,17 @@
       }
     ],
     "closed_positions": [],
-    "day_start_equity": 433.33,
+    "day_start_equity": 317.13,
     "day_start_date": "2026-10-30",
     "daily_loss_tripped_today": false,
-    "peak_equity": 433.33,
-    "last_equity": 433.1897100067139
+    "peak_equity": 317.13,
+    "last_equity": 316.98999786376953
   },
   "mediano_plazo": {
-    "starting_capital": 333.33,
+    "starting_capital": 281.81,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 0.2738893757758902,
+    "bench_shares": 0.0,
     "open_positions": [
       {
         "symbol": "XLF",
@@ -77,23 +77,39 @@
       }
     ],
     "closed_positions": [],
-    "day_start_equity": 333.33,
+    "day_start_equity": 281.81,
     "day_start_date": "2026-10-30",
     "daily_loss_tripped_today": false,
-    "peak_equity": 333.33,
-    "last_equity": 333.16590000152587
+    "peak_equity": 281.81,
+    "last_equity": 281.64999771118164
   },
   "riesgo_alto": {
-    "starting_capital": 233.33,
+    "starting_capital": 151.66,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 1.2405219594060504,
+    "bench_shares": 0.80633919309785,
     "open_positions": [],
     "closed_positions": [],
-    "day_start_equity": 233.33,
+    "day_start_equity": 151.66,
     "day_start_date": "2026-10-30",
     "daily_loss_tripped_today": false,
-    "peak_equity": 233.33000000000004,
-    "last_equity": 233.33000000000004
+    "peak_equity": 151.66448485571544,
+    "last_equity": 151.66448485571544
+  },
+  "mean_reversion": {
+    "starting_capital": 249.38,
+    "start_date": "2026-11-01",
+    "cash": 0.0,
+    "bench_shares": 1.325859373001608,
+    "open_positions": [],
+    "closed_positions": [],
+    "peak_equity": 249.38112957757318,
+    "day_start_equity": 249.38,
+    "day_start_date": "2026-10-30",
+    "suspended": false,
+    "suspended_reason": null,
+    "suspended_since": null,
+    "daily_loss_tripped_today": false,
+    "last_equity": 249.38112957757318
   }
 }
