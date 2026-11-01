@@ -53,6 +53,7 @@
         "suspended_reason": null,
         "newly_suspended_today": false
       }
-    }
+    },
+    "alertas": []
   }
 ]

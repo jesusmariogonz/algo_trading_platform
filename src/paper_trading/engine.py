@@ -437,7 +437,7 @@ def run_daily_tick(as_of: pd.Timestamp | None = None) -> dict:
     state = load_state()
     balances = get_balances()
 
-    snapshot = {"date": None, "buckets": {}}
+    snapshot = {"date": None, "buckets": {}, "alertas": []}
     for bucket in ACTIVE_BUCKETS:
         if bucket not in state:
             starting_capital = balances.get(bucket, 0.0)
@@ -445,8 +445,28 @@ def run_daily_tick(as_of: pd.Timestamp | None = None) -> dict:
                 continue  # sin capital registrado para este bucket todavía
             state[bucket] = init_bucket_state(bucket, starting_capital, as_of)
 
+        equity_antes = state[bucket].get("last_equity")
         result = run_bucket_tick(bucket, state[bucket], as_of)
         snapshot["buckets"][bucket] = result
+
+        # Red de seguridad: un salto de equity de un día a otro mayor a
+        # 25% casi nunca es un movimiento real de mercado — es más
+        # probable que sea un bug (ej. el de ADR 0014: cambiar la
+        # unidad de cuenta de bench_shares sin migrar). No bloquea el
+        # pipeline (podría ser legítimo en un evento extremo), pero lo
+        # marca fuerte en la salida para que no pase desapercibido.
+        if equity_antes and equity_antes > 0:
+            cambio_pct = abs(result["equity"] - equity_antes) / equity_antes
+            if cambio_pct > 0.25:
+                alerta = (
+                    f"⚠️⚠️ SALTO DE EQUITY SOSPECHOSO en '{bucket}': "
+                    f"${equity_antes:.2f} -> ${result['equity']:.2f} "
+                    f"({cambio_pct*100:.1f}% en un día). Revisar antes de confiar "
+                    f"en este snapshot — probablemente un bug, no un movimiento real."
+                )
+                print(alerta)
+                snapshot["alertas"].append(alerta)
+
         if result["date"]:
             snapshot["date"] = result["date"]
 

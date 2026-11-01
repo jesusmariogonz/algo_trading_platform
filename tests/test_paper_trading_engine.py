@@ -13,13 +13,25 @@ def isolated_paths(tmp_path, monkeypatch):
 
 def test_init_bucket_state_invests_full_capital_in_benchmark():
     # Desde ADR 0007: el capital inicial se invierte en el benchmark
-    # (SPY) del bucket, no se queda en cash parado.
+    # (hoy: blend SPY/GLD) del bucket, no se queda en cash parado.
     state = engine.init_bucket_state("mediano_plazo", 300.0)
     assert state["starting_capital"] == 300.0
     assert state["bench_shares"] > 0
     assert state["cash"] == 0.0
     assert state["open_positions"] == []
     assert state["closed_positions"] == []
+
+
+def test_bench_shares_round_trip_preserves_dollar_value():
+    """Regresión del bug real de ADR 0014: al inicializar un bucket, el
+    valor en dólares de bench_shares (marcado a mercado con el precio
+    de HOY del mismo benchmark) debe coincidir con el capital que se
+    invirtió — si alguien cambia BENCHMARK_SYMBOL en el futuro sin
+    migrar correctamente, esta prueba debe fallar."""
+    state = engine.init_bucket_state("largo_plazo", 1000.0)
+    precio_hoy = engine._benchmark_price("largo_plazo", None)
+    valor_en_dolares = state["bench_shares"] * precio_hoy
+    assert valor_en_dolares == pytest.approx(1000.0, rel=0.01)
 
 
 def test_state_persists_round_trip(tmp_path):

@@ -29,6 +29,13 @@ def main():
                 print(f"    {c['symbol']}: {c['pnl_pct']}% ({c['reason']})")
         print()
 
+    if snapshot.get("alertas"):
+        print("=" * 60)
+        print("ALERTAS — revisar antes de confiar en este snapshot:")
+        for a in snapshot["alertas"]:
+            print(f"  {a}")
+        print("=" * 60)
+
 
 if __name__ == "__main__":
     main()
