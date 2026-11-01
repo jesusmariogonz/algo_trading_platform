@@ -60,14 +60,22 @@ y docs/adr/0007-trailing-stop-y-cash-en-benchmark.md):
     ejercicio exploratorio: -0.44 puntos sobre 34 meses.
   - UNIVERSO AMPLIADO de 32 a 117+15 símbolos (ver ADR 0010 y 0011):
     más candidatos de entrada sin relajar ningún criterio.
+  - RIESGO POR OPERACIÓN MÁS ALTO + SIZING SOBRE EQUITY ACTUAL (ver
+    ADR 0012): 1%->2% en Largo/Mediano Plazo, 2%->3% en Riesgo Alto —
+    y el monto de riesgo ya no se calcula sobre el capital inicial fijo
+    del bucket, sino sobre su equity de HOY (compone con ganancias y
+    pérdidas acumuladas). Medido en 36 meses: retorno +37.21%->+48.25%,
+    PERO drawdown máximo también sube 10.83%->18.77% — decisión de
+    apetito de riesgo explícita del usuario, no una mejora "gratis".
 
 IMPORTANTE: el capital "starting_capital" de cada bucket se fija la
 PRIMERA vez que se corre el motor (snapshot del libro de
-allocation.py en ese momento) y no se mueve con inyecciones
-posteriores durante la ventana de prueba — así el % de retorno mide
-el desempeño de la estrategia, no confunde "metí más dinero" con
-"la estrategia ganó más". Nuevas inyecciones durante el paper trading
-se ignoran a propósito; se reconcilian manualmente si hace falta.
+allocation.py en ese momento) y se sigue usando como base para el
+equity inicial y el % de retorno reportado — pero el SIZING de cada
+operación nueva (ADR 0012) ya usa el equity actual, no este valor
+fijo. Nuevas inyecciones durante el paper trading se siguen ignorando
+a propósito en `starting_capital`; se reconcilian manualmente si hace
+falta.
 """
 
 import json
@@ -268,6 +276,7 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
     daily_loss_pct = 0.0
     drawdown_pct = 0.0
     newly_suspended = False
+    equity_now = bucket_state["starting_capital"]  # fallback si no hay limits (no debería pasar)
     if limits is not None and today_label is not None:
         if bucket_state.get("day_start_date") != today_label:
             bucket_state["day_start_equity"] = bucket_state.get("last_equity", bucket_state["starting_capital"])
@@ -325,7 +334,12 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
             if risk_per_share <= 0:
                 continue
 
-            risk_amount = bucket_state["starting_capital"] * risk_pct
+            # Riesgo calculado sobre el EQUITY ACTUAL del bucket (no el
+            # capital inicial fijo) — decisión explícita del usuario tras
+            # medir el trade-off real (ADR 0012): compone con las
+            # ganancias/pérdidas acumuladas, en vez de quedarse congelado
+            # en el día 1.
+            risk_amount = equity_now * risk_pct
             shares = int(risk_amount // risk_per_share)
             entry_price = entry_price_bruto * (1 + FRICCION_POR_LADO)  # fricción de entrada
             cost = shares * entry_price

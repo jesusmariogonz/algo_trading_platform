@@ -38,20 +38,24 @@ ROOT = Path(__file__).resolve().parents[2]
 # docs/adr/0006-elimina-bucket-cripto.md. Cada bucket que queda usa
 # BENCHMARK_SYMBOL (SPY) para invertir el cash ocioso en vez de dejarlo
 # parado — ver paper_trading/engine.py.
+# Riesgo por operación subido el 1-nov-2026 (ver ADR 0012): 1%->2% en
+# Largo/Mediano Plazo, 2%->3% en Riesgo Alto — decisión explícita del
+# usuario tras ver el trade-off real medido (retorno +37.21%->+48.25%,
+# drawdown máximo 10.83%->18.77% en 36 meses de backtest).
 BUCKET_CONFIG = {
     "largo_plazo": {
         "universe_file": ROOT / "config" / "universe_largo_plazo.txt",
-        "risk_pct": 0.01,
+        "risk_pct": 0.02,
         "strategies": ["time_series_momentum"],
     },
     "mediano_plazo": {
         "universe_file": ROOT / "config" / "universe.txt",
-        "risk_pct": 0.01,  # 1% — regla base del master prompt
+        "risk_pct": 0.02,
         "strategies": ["trend_following", "momentum_breakout"],
     },
     "riesgo_alto": {
         "universe_file": ROOT / "config" / "universe_riesgo_alto.txt",
-        "risk_pct": 0.02,  # 2% — deliberadamente más laxo, decisión del usuario
+        "risk_pct": 0.03,
         "strategies": ["trend_following", "momentum_breakout"],
     },
 }

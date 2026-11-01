@@ -90,14 +90,17 @@ backtests reales de 6/22/34 meses (sin cripto rindió mejor en las 3).
 
 | Bucket | % | Universo | Estado |
 |---|---|---|---|
-| Largo plazo | 43.33% | 13 ETFs | Time-Series Momentum (12m/6m) · `config/universe_largo_plazo.txt` · 1% riesgo/operación |
-| Mediano plazo | 33.33% | 74 símbolos | Trend Following + Momentum/Breakout · `config/universe.txt` · 1% riesgo/operación |
-| Riesgo alto | 23.33% | 45 símbolos | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` · 2% riesgo/operación |
+| Largo plazo | 43.33% | 13 ETFs | Time-Series Momentum (12m/6m) · `config/universe_largo_plazo.txt` · 2% riesgo/operación |
+| Mediano plazo | 33.33% | 74 símbolos | Trend Following + Momentum/Breakout · `config/universe.txt` · 2% riesgo/operación |
+| Riesgo alto | 23.33% | 45 símbolos | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` · 3% riesgo/operación |
 
 Universos ampliados el 31-oct-2026 (de 32 a 146 símbolos en total) —
-ver ADR 0010 y 0011. Más candidatos = más operaciones (99 → 336 en 34
-meses de backtest), sin relajar ningún criterio de entrada. Retorno
-neto validado: **+32.76%** en 34 meses, con fricción real incluida.
+ver ADR 0010 y 0011. Riesgo por operación subido el 1-nov-2026
+(1%→2%, 2%→3%) y sizing calculado sobre el equity actual, no el
+capital inicial fijo — ver ADR 0012. Retorno neto validado:
+**+48.25%** en 36 meses, con fricción real incluida — a cambio de un
+drawdown máximo más alto (18.77% vs 10.83% antes), decisión explícita
+de apetito de riesgo del usuario.
 
 Los 3 buckets usan **trailing stop** (el stop sube con el precio,
 nunca baja), el cash ocioso se invierte en SPY en vez de quedarse

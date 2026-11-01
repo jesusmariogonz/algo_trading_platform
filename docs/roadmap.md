@@ -133,8 +133,26 @@ completo sin partir.
       igual que el backtest formal. Riesgo Alto pasó de 30 a 45
       símbolos (era el bucket con más margen relativo). Resultado
       final validado: 336 operaciones cerradas, **+32.76% neto** en
-      34 meses (sube pese a la fricción nueva) — ver ADR 0011. Cierra
-      esta ronda de mejoras del modelo de buckets.
+      34 meses (sube pese a la fricción nueva) — ver ADR 0011.
+- [x] **Riesgo por operación subido + sizing sobre equity actual
+      (1-nov-2026)**: 1%→2% (Largo/Mediano Plazo), 2%→3% (Riesgo
+      Alto); el monto de riesgo ya no usa el capital inicial fijo del
+      bucket, usa su equity de hoy. Resultado en 36 meses: **+48.25%**
+      neto (antes +37.21%), pero drawdown máximo sube a **18.77%**
+      (antes 10.83%) — decisión de apetito de riesgo explícita del
+      usuario ("aguantaré el drawdown"), no una mejora gratuita. Se
+      probó y DESCARTÓ repartir el cash ocioso en bonos/SGOV para
+      bajar el drawdown — empeoró demasiado el retorno (SGOV: -8.37%
+      neto). Ver ADR 0012. Cierra esta ronda de mejoras del modelo de
+      buckets.
+- [ ] Investigación en curso: conectar un bróker real vía API. Alpaca
+      descartado para cuenta LIVE en México (solo invite-only para
+      no-residentes de EE.UU.); Interactive Brokers sí acepta
+      residentes de México — cuenta en trámite (No Borrow Margin,
+      permisos Stocks/Options habilitados por default del broker,
+      Prediction Markets desactivado). Pendiente confirmar con IBKR si
+      su Web API con OAuth 1.0a permite automatización headless (sin
+      TWS/Gateway corriendo) antes de construir el adaptador.
 - [ ] Adaptador de broker real (Alpaca) para PAPER vía su API
 - [ ] Order Management, reconciliación contra broker real
 - [ ] Modos RESEARCH / BACKTEST / PAPER — LIVE permanece deshabilitado

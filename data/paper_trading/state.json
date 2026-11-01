@@ -3,7 +3,7 @@
     "starting_capital": 433.33,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 0.3395834507107092,
+    "bench_shares": 0.15376027714979087,
     "open_positions": [
       {
         "symbol": "EFA",
@@ -20,6 +20,14 @@
         "entry_price": 73.33,
         "stop_price": 70.43286296299526,
         "shares": 1
+      },
+      {
+        "symbol": "IJR",
+        "strategy": "time_series_momentum",
+        "entry_date": "2026-10-30",
+        "entry_price": 140.43,
+        "stop_price": 134.61,
+        "shares": 1
       }
     ],
     "closed_positions": [],
@@ -27,13 +35,13 @@
     "day_start_date": "2026-10-30",
     "daily_loss_tripped_today": false,
     "peak_equity": 433.33,
-    "last_equity": 433.33
+    "last_equity": 433.1897100067139
   },
   "mediano_plazo": {
     "starting_capital": 333.33,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 0.2855290439951942,
+    "bench_shares": 0.06816797793819532,
     "open_positions": [
       {
         "symbol": "XLF",
@@ -50,6 +58,22 @@
         "entry_price": 30.52,
         "stop_price": 29.011071750095912,
         "shares": 2
+      },
+      {
+        "symbol": "KO",
+        "strategy": "trend_following",
+        "entry_date": "2026-10-30",
+        "entry_price": 94.17,
+        "stop_price": 89.68,
+        "shares": 1
+      },
+      {
+        "symbol": "XLE",
+        "strategy": "trend_following",
+        "entry_date": "2026-10-30",
+        "entry_price": 70.09,
+        "stop_price": 66.46,
+        "shares": 1
       }
     ],
     "closed_positions": [],
@@ -57,7 +81,7 @@
     "day_start_date": "2026-10-30",
     "daily_loss_tripped_today": false,
     "peak_equity": 333.33,
-    "last_equity": 333.33
+    "last_equity": 333.16590000152587
   },
   "riesgo_alto": {
     "starting_capital": 233.33,
