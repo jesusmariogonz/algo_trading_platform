@@ -156,10 +156,15 @@ completo sin partir.
 - [x] **Semiconductores/Defensa (TSM, SMH, GD, NOC, LHX): probado y
       DESCARTADO (1-nov-2026)** — bajó el retorno sin reducir el
       drawdown, con datos congelados. Ver ADR 0013.
-- [ ] **Oro (GLD) como cash holder: pendiente de decisión del
-      usuario** — reduce el drawdown (13.63%→12.22%) a cambio de
-      retorno (22.07%→17.53%), mejor relación que las alternativas de
-      bonos ya descartadas, pero no es gratis. Ver ADR 0013.
+- [x] **Cash ocioso: blend 50% SPY / 50% GLD (1-nov-2026)** — decisión
+      final del usuario, punto intermedio entre 100% SPY y 100% GLD
+      (ninguno de los dos probados antes). Implementado con un índice
+      sintético rebalanceado diario. Durante el despliegue se encontró
+      y corrigió un bug real: cambiar `BENCHMARK_SYMBOL` sin migrar el
+      `bench_shares` ya persistido hizo que el equity de Riesgo Alto
+      se desplomara -75% en un tick (reinterpretación de unidades, no
+      un movimiento de mercado real) — corregido con una migración
+      explícita que preservó el valor en dólares exacto. Ver ADR 0014.
 - [ ] Mejora de infraestructura pendiente: el pipeline de descarga no
       cachea datos entre corridas exploratorias — automatizar un modo
       "congelado" para sesiones de backtest comparativo evitaría este

@@ -3,7 +3,7 @@
     "starting_capital": 433.33,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 0.15376027714979087,
+    "bench_shares": 0.6177872309175173,
     "open_positions": [
       {
         "symbol": "EFA",
@@ -41,7 +41,7 @@
     "starting_capital": 333.33,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 0.06816797793819532,
+    "bench_shares": 0.2738893757758902,
     "open_positions": [
       {
         "symbol": "XLF",
@@ -64,7 +64,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-10-30",
         "entry_price": 94.17,
-        "stop_price": 89.68,
+        "stop_price": 89.6835754939488,
         "shares": 1
       },
       {
@@ -87,7 +87,7 @@
     "starting_capital": 233.33,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 0.30875193066938383,
+    "bench_shares": 1.2405219594060504,
     "open_positions": [],
     "closed_positions": [],
     "day_start_equity": 233.33,

@@ -33,9 +33,10 @@ y docs/adr/0007-trailing-stop-y-cash-en-benchmark.md):
     más alto que el guardado — nunca baja. Deja correr ganadores sin
     aumentar el riesgo ya asumido al entrar.
   - CASH OCIOSO EN BENCHMARK: el efectivo que no está en ninguna
-    posición se invierte en BENCHMARK_SYMBOL (SPY) en vez de quedarse
-    parado sin generar nada. Se marca a mercado cada día; al abrir una
-    posición nueva se vende la porción de benchmark necesaria.
+    posición se invierte en BENCHMARK_SYMBOL (desde ADR 0014: un blend
+    50% SPY / 50% GLD, no solo SPY) en vez de quedarse parado sin
+    generar nada. Se marca a mercado cada día; al abrir una posición
+    nueva se vende la porción de benchmark necesaria.
   - Bucket de cripto (muy_alta_volatilidad) ELIMINADO: el backtest con
     cripto rindió peor en las 3 ventanas probadas (6, 22 y 34 meses).
     El 10% que tenía se repartió EQUITATIVAMENTE entre los 3 buckets
@@ -101,14 +102,17 @@ SIGNAL_FNS = {
     "time_series_momentum": time_series_momentum_signals,
 }
 
-# Benchmark donde se invierte el cash ocioso de cada bucket — todos
-# los buckets restantes son de acciones/ETFs de EE.UU., así que SPY
-# es el ancla natural (ver ADR 0007).
+# Benchmark donde se invierte el cash ocioso de cada bucket. Desde
+# ADR 0014: blend 50% SPY / 50% GLD (oro), no solo SPY — decisión
+# explícita del usuario tras medir el trade-off real (reduce el
+# drawdown máximo de 13.63% a 12.22% a cambio de ~4.5 puntos de
+# retorno, sobre datos congelados y reproducibles).
 BENCHMARK_SYMBOL = {
-    "largo_plazo": "SPY",
-    "mediano_plazo": "SPY",
-    "riesgo_alto": "SPY",
+    "largo_plazo": "BLEND_SPY_GLD",
+    "mediano_plazo": "BLEND_SPY_GLD",
+    "riesgo_alto": "BLEND_SPY_GLD",
 }
+BLEND_WEIGHTS = {"SPY": 0.5, "GLD": 0.5}
 
 # Circuit breakers por bucket — misma mecánica que src/quant_portfolios
 # (ver ADR 0008), con límites crecientes según el riesgo de cada
@@ -151,11 +155,35 @@ def save_history(history: list[dict]) -> None:
     HISTORY_PATH.write_text(json.dumps(history, indent=2, ensure_ascii=False))
 
 
+def _blend_price_series(weights: dict[str, float]) -> pd.DataFrame:
+    """Índice sintético de un blend de símbolos (ej. 50% SPY + 50% GLD),
+    rebalanceado diario: cada día compone el retorno ponderado de cada
+    componente, empezando en una base de 100. No son acciones reales de
+    ningún símbolo — es una unidad de cuenta interna para marcar a
+    mercado el cash ocioso (ver ADR 0014)."""
+    dfs = []
+    for symbol, weight in weights.items():
+        df = load_universe(symbols=[symbol])[symbol][["date", "close"]].rename(columns={"close": symbol})
+        dfs.append(df)
+    blend = dfs[0]
+    for df in dfs[1:]:
+        blend = blend.merge(df, on="date", how="inner")
+    blend = blend.sort_values("date").reset_index(drop=True)
+    blend["blend_ret"] = 0.0
+    for symbol, weight in weights.items():
+        blend["blend_ret"] += weight * blend[symbol].pct_change().fillna(0.0)
+    blend["close"] = 100.0 * (1 + blend["blend_ret"]).cumprod()
+    return blend[["date", "close"]]
+
+
 def _benchmark_price(bucket: str, as_of: pd.Timestamp | None) -> float | None:
     bench_symbol = BENCHMARK_SYMBOL.get(bucket)
     if bench_symbol is None:
         return None
-    df = load_universe(symbols=[bench_symbol])[bench_symbol]
+    if bench_symbol == "BLEND_SPY_GLD":
+        df = _blend_price_series(BLEND_WEIGHTS)
+    else:
+        df = load_universe(symbols=[bench_symbol])[bench_symbol]
     last = _last_row_as_of(df, as_of)
     return None if last is None else float(last["close"])
 

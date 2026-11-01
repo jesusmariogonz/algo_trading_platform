@@ -110,10 +110,11 @@ congelada, nunca descargando de nuevo entre corridas — ver la sección
 "Corrección de reproducibilidad" en ADR 0012.
 
 Los 3 buckets usan **trailing stop** (el stop sube con el precio,
-nunca baja), el cash ocioso se invierte en SPY en vez de quedarse
-parado (ADR 0007), y desde ADR 0011 el motor aplica **fricción real**
-(0.05% comisión + 0.05% slippage por lado, igual que el backtest
-formal) — ya no ejecuta a precio de cierre exacto sin costo.
+nunca baja), el cash ocioso se invierte en un **blend 50% SPY / 50%
+GLD (oro)** en vez de quedarse parado (ADR 0007, actualizado en ADR
+0014), y desde ADR 0011 el motor aplica **fricción real** (0.05%
+comisión + 0.05% slippage por lado, igual que el backtest formal) —
+ya no ejecuta a precio de cierre exacto sin costo.
 
 ## Estrategias (4 implementadas, 1 método de selección)
 

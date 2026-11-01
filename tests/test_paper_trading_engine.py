@@ -118,6 +118,9 @@ def test_drawdown_circuit_breaker_suspends_without_liquidating(monkeypatch):
         "SPY": pd.DataFrame(
             {"date": [pd.Timestamp("2026-01-01")], "close": [10.0], "sma_200": [9.0], "atr_14": [0.1]}
         ),
+        "GLD": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [20.0], "sma_200": [19.0], "atr_14": [0.1]}
+        ),
     }
     monkeypatch.setattr(engine, "load_universe", lambda symbols=None: fake_universe)
     monkeypatch.setattr(engine, "BUCKET_CONFIG", {
@@ -165,6 +168,9 @@ def test_blocked_bucket_never_opens_new_positions(monkeypatch):
         ),
         "SPY": pd.DataFrame(
             {"date": [pd.Timestamp("2026-01-01")], "close": [10.0], "sma_200": [9.0], "atr_14": [0.1]}
+        ),
+        "GLD": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [20.0], "sma_200": [19.0], "atr_14": [0.1]}
         ),
     }
     monkeypatch.setattr(engine, "load_universe", lambda symbols=None: fake_universe)
