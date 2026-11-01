@@ -171,7 +171,15 @@ completo sin partir.
       ≈9.44% anual compuesto**, drawdown máximo 13.83%. Esta cifra
       reemplaza todas las anteriores (32.76%, 37.21%, 48.25%, 22.07%,
       17.53%) como la referencia oficial del proyecto. Ver ADR 0015.
-      Cierra esta ronda de validación.
+- [x] **Amplía Largo Plazo de 13 a 26 ETFs (1-nov-2026)**: era el
+      bucket más débil (+8.40%) pese a recibir el 43.33% del capital —
+      diagnóstico: universo chico, no monto mal asignado. Se agregó
+      diversidad real (internacional, bonos de varios plazos,
+      commodities, REITs internacionales). Resultado: **+15.17%**
+      (antes +8.40%), y el drawdown total del sistema también bajó
+      (13.83%→12.91%) — no fue un trade-off, mejoró en ambos frentes.
+      **Nueva cifra oficial: +34.00% en 36 meses** (reemplaza ADR
+      0015). Ver ADR 0016. Cierra esta ronda de validación.
 - [ ] Mejora de infraestructura pendiente: el pipeline de descarga no
       cachea datos entre corridas exploratorias — automatizar un modo
       "congelado" para sesiones de backtest comparativo evitaría este

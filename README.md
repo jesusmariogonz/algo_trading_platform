@@ -90,21 +90,30 @@ backtests reales de 6/22/34 meses (sin cripto rindió mejor en las 3).
 
 | Bucket | % | Universo | Estado |
 |---|---|---|---|
-| Largo plazo | 43.33% | 13 ETFs | Time-Series Momentum (12m/6m) · `config/universe_largo_plazo.txt` · 2% riesgo/operación |
+| Largo plazo | 43.33% | 26 ETFs | Time-Series Momentum (12m/6m) · `config/universe_largo_plazo.txt` · 2% riesgo/operación |
 | Mediano plazo | 33.33% | 74 símbolos | Trend Following + Momentum/Breakout · `config/universe.txt` · 2% riesgo/operación |
 | Riesgo alto | 23.33% | 45 símbolos | Mismas estrategias, universo más volátil `config/universe_riesgo_alto.txt` · 3% riesgo/operación |
 
-Universos ampliados el 31-oct-2026 (de 32 a 146 símbolos en total) —
-ver ADR 0010 y 0011. Riesgo por operación subido el 1-nov-2026
+Universos ampliados el 31-oct-2026 (de 32 a 146 símbolos) y Largo
+Plazo ampliado de nuevo el 1-nov-2026 (13→26 ETFs, ADR 0016, 159
+símbolos en total). Riesgo por operación subido el 1-nov-2026
 (1%→2%, 2%→3%) y sizing calculado sobre el equity actual, no el
 capital inicial fijo — ver ADR 0012.
 
-**Cifra oficial de referencia del proyecto (ADR 0015, reemplaza todas
-las anteriores)**: con la configuración exacta de producción (146
-símbolos, riesgo 2%/2%/3%, equity actual, cash en blend 50% SPY / 50%
-GLD, fricción real), validada con una sola descarga de datos
-congelada — **+31.07% acumulado en 36 meses, ≈9.44% anual
-compuesto**, drawdown máximo 13.83%.
+**Cifra oficial de referencia del proyecto (ADR 0016, reemplaza
+ADR 0015 y todas las anteriores)**: con la configuración exacta de
+producción (159 símbolos, riesgo 2%/2%/3%, equity actual, cash en
+blend 50% SPY / 50% GLD, fricción real), validada con una sola
+descarga de datos congelada — **+34.00% acumulado en 36 meses**,
+drawdown máximo 12.91%.
+
+Por bucket (mismo período, misma corrida):
+
+| Bucket | Retorno | Operaciones |
+|---|---|---|
+| Largo plazo | +15.17% | 53 |
+| Mediano plazo | +45.91% | 86 |
+| Riesgo alto | +51.96% | 90 |
 
 **Nota sobre reproducibilidad**: `yfinance` revisa precios ajustados
 en cada descarga (dividendos aplicados retroactivamente), así que
