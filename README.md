@@ -97,10 +97,17 @@ backtests reales de 6/22/34 meses (sin cripto rindió mejor en las 3).
 Universos ampliados el 31-oct-2026 (de 32 a 146 símbolos en total) —
 ver ADR 0010 y 0011. Riesgo por operación subido el 1-nov-2026
 (1%→2%, 2%→3%) y sizing calculado sobre el equity actual, no el
-capital inicial fijo — ver ADR 0012. Retorno neto validado:
-**+48.25%** en 36 meses, con fricción real incluida — a cambio de un
-drawdown máximo más alto (18.77% vs 10.83% antes), decisión explícita
-de apetito de riesgo del usuario.
+capital inicial fijo — ver ADR 0012. Retorno neto validado (con datos
+congelados, reproducibles — ver corrección en ADR 0012): **+22.07%**
+en 36 meses, con fricción real incluida — a cambio de un drawdown
+máximo más alto (13.63% vs 7.44% antes), decisión explícita de
+apetito de riesgo del usuario.
+
+**Nota sobre reproducibilidad**: `yfinance` revisa precios ajustados
+en cada descarga (dividendos aplicados retroactivamente), así que
+cualquier comparación de variantes debe hacerse con UNA sola descarga
+congelada, nunca descargando de nuevo entre corridas — ver la sección
+"Corrección de reproducibilidad" en ADR 0012.
 
 Los 3 buckets usan **trailing stop** (el stop sube con el precio,
 nunca baja), el cash ocioso se invierte en SPY en vez de quedarse

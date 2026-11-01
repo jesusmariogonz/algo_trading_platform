@@ -143,8 +143,27 @@ completo sin partir.
       usuario ("aguantaré el drawdown"), no una mejora gratuita. Se
       probó y DESCARTÓ repartir el cash ocioso en bonos/SGOV para
       bajar el drawdown — empeoró demasiado el retorno (SGOV: -8.37%
-      neto). Ver ADR 0012. Cierra esta ronda de mejoras del modelo de
-      buckets.
+      neto). Ver ADR 0012.
+- [x] **Corrección de reproducibilidad de backtests (1-nov-2026)**: se
+      encontró que `yfinance` revisa precios ajustados en cada
+      descarga, haciendo que comparaciones hechas en momentos
+      distintos del día no fueran comparables entre sí. Los números de
+      ADR 0012 se corrigieron con una descarga única congelada:
+      retorno real **+22.07%** (no +48.25%), drawdown máximo real
+      **13.63%** (no 18.77%) — la dirección del hallazgo se mantiene,
+      la magnitud era menor de lo reportado originalmente. Ver
+      corrección en ADR 0012.
+- [x] **Semiconductores/Defensa (TSM, SMH, GD, NOC, LHX): probado y
+      DESCARTADO (1-nov-2026)** — bajó el retorno sin reducir el
+      drawdown, con datos congelados. Ver ADR 0013.
+- [ ] **Oro (GLD) como cash holder: pendiente de decisión del
+      usuario** — reduce el drawdown (13.63%→12.22%) a cambio de
+      retorno (22.07%→17.53%), mejor relación que las alternativas de
+      bonos ya descartadas, pero no es gratis. Ver ADR 0013.
+- [ ] Mejora de infraestructura pendiente: el pipeline de descarga no
+      cachea datos entre corridas exploratorias — automatizar un modo
+      "congelado" para sesiones de backtest comparativo evitaría este
+      tipo de error de reproducibilidad en el futuro.
 - [ ] Investigación en curso: conectar un bróker real vía API. Alpaca
       descartado para cuenta LIVE en México (solo invite-only para
       no-residentes de EE.UU.); Interactive Brokers sí acepta

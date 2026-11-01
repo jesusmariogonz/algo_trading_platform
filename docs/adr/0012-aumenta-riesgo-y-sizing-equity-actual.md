@@ -1,7 +1,10 @@
 # ADR 0012 — Aumenta el riesgo por operación + sizing sobre equity actual
 
 ## Estado
-Aceptado.
+Aceptado, **con corrección de números el 1-nov-2026** (ver sección
+"Corrección de reproducibilidad" al final) — la decisión de diseño se
+mantiene, los números originales de esta sección NO son confiables y se
+reemplazan más abajo.
 
 ## Contexto
 Dos preguntas del usuario llevaron a probar dos cambios juntos, sobre 36
@@ -74,3 +77,48 @@ el resultado en este universo y período.
 - Validar estos nuevos límites de riesgo con más historial de paper
   trading real, no solo backtest — la decisión se tomó con evidencia de
   36 meses hacia atrás, no es garantía hacia adelante.
+
+## Corrección de reproducibilidad (1-nov-2026)
+
+**Problema encontrado**: los números de la sección "Resultado medido"
+arriba (+37.21%→+48.25%, 10.83%→18.77% drawdown) se calcularon mezclando
+descargas de datos hechas en distintos momentos del día. `yfinance`
+revisa los precios ajustados cada vez que se vuelve a pedir el mismo
+período (ajustes de dividendos aplicados retroactivamente, y la barra
+del día más reciente cambia según si el mercado ya cerró "en firme" al
+momento de la descarga) — así que dos descargas del "mismo" período de
+3 años, en momentos distintos, pueden diferir en símbolos y barras
+puntuales, lo suficiente para voltear señales de entrada/salida que
+estaban justo en el límite, y eso se propaga sobre 36 meses.
+
+**Verificación**: se corrió la MISMA configuración (riesgo subido +
+sizing sobre equity actual) con una descarga única y congelada (sin
+volver a pedir datos entre corridas) — los números NO coincidieron con
+los reportados originalmente arriba, confirmando el problema.
+
+**Números reproducibles correctos** (misma descarga congelada, 36 meses,
+fricción real, universo de 146 símbolos):
+
+| | Riesgo original (1%/1%/2%, capital fijo) | Riesgo subido + equity actual (decisión de este ADR) |
+|---|---|---|
+| Retorno neto | +11.41% | **+22.07%** |
+| Drawdown máximo | 7.44% | **13.63%** |
+| Operaciones cerradas | 422 | 220 |
+
+La dirección del hallazgo se mantiene igual (subir el riesgo + equity
+actual sube tanto el retorno como el drawdown, proporcionalmente), pero
+la **magnitud real es menor** de lo que se reportó originalmente — no es
++11 puntos de retorno por +8 de drawdown, es +10.66 puntos de retorno
+por +6.19 de drawdown. La decisión del usuario ("aguantaré el drawdown")
+se mantiene vigente con este número corregido, pero se documenta aquí
+para que quede claro qué evidencia real respalda la decisión hoy.
+
+**Causa raíz y mitigación para análisis futuros**: para cualquier
+comparación de variantes (ej. "con esto" vs. "sin esto"), descargar los
+datos UNA sola vez y correr todas las variantes de la comparación sin
+volver a descargar nada entre ellas — es la única forma de que los
+resultados sean comparables entre sí. El pipeline de producción diario
+(Routines) no tiene este problema de raíz: siempre debe usar el dato
+más reciente disponible, eso es correcto para operar en vivo; el
+problema es específico de comparar variantes en sesiones de análisis
+exploratorio separadas en el tiempo.
