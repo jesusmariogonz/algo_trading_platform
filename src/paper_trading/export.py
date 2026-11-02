@@ -14,6 +14,23 @@ from pathlib import Path
 
 from src.backtesting.run import load_universe
 from src.paper_trading.engine import load_history, load_state
+from src.portfolio.allocation import get_usd_mxn_rate
+
+
+def _tipo_de_cambio_hoy() -> dict:
+    """Tipo de cambio USD->MXN del día, para que jesus-site pueda
+    mostrar todo el dashboard en pesos sin inventar un número — si la
+    API falla (ver allocation.get_usd_mxn_rate), se omite el campo y
+    el frontend debe mostrar USD con una nota, nunca un tipo de cambio
+    viejo o estimado."""
+    try:
+        rate = get_usd_mxn_rate()
+    except Exception:
+        return {"usd_mxn_rate": None, "usd_mxn_rate_fecha": None}
+    return {
+        "usd_mxn_rate": round(rate, 4),
+        "usd_mxn_rate_fecha": datetime.now(timezone.utc).date().isoformat(),
+    }
 
 
 def _con_precio_en_vivo(open_positions: list[dict]) -> list[dict]:
@@ -73,6 +90,7 @@ def build_export() -> dict:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source": "algo_trading_platform paper trading engine (simulado, sin dinero real)",
         "buckets": buckets,
+        **_tipo_de_cambio_hoy(),
     }
 
 

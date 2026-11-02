@@ -41,3 +41,30 @@ def test_con_precio_en_vivo_no_falla_si_faltan_datos_de_un_simbolo(monkeypatch):
 
 def test_con_precio_en_vivo_respeta_lista_vacia():
     assert export._con_precio_en_vivo([]) == []
+
+
+def test_tipo_de_cambio_hoy_incluye_rate_real(monkeypatch):
+    monkeypatch.setattr(export, "get_usd_mxn_rate", lambda: 18.5)
+    resultado = export._tipo_de_cambio_hoy()
+    assert resultado["usd_mxn_rate"] == 18.5
+    assert resultado["usd_mxn_rate_fecha"] is not None
+
+
+def test_tipo_de_cambio_hoy_no_inventa_rate_si_la_api_falla(monkeypatch):
+    def falla():
+        raise ConnectionError("simulado")
+
+    monkeypatch.setattr(export, "get_usd_mxn_rate", falla)
+    resultado = export._tipo_de_cambio_hoy()
+    assert resultado["usd_mxn_rate"] is None
+    assert resultado["usd_mxn_rate_fecha"] is None
+
+
+def test_build_export_incluye_campos_de_tipo_de_cambio(monkeypatch):
+    monkeypatch.setattr(export, "get_usd_mxn_rate", lambda: 18.5)
+    from src.paper_trading import engine
+
+    engine.save_state({})
+    resultado = export.build_export()
+    assert resultado["usd_mxn_rate"] == 18.5
+    assert "usd_mxn_rate_fecha" in resultado
