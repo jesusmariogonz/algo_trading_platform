@@ -12,7 +12,39 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from src.backtesting.run import load_universe
 from src.paper_trading.engine import load_history, load_state
+
+
+def _con_precio_en_vivo(open_positions: list[dict]) -> list[dict]:
+    """Agrega precio actual y P&L no realizado a cada posición abierta,
+    usando el mismo dato procesado (data/processed/<symbol>.parquet)
+    que ya usa el motor para el tick del día — no descarga nada nuevo,
+    no inventa un precio: si falta el dato procesado de algún símbolo,
+    esa posición se exporta sin precio en vivo en vez de fallar el
+    export completo."""
+    if not open_positions:
+        return open_positions
+
+    symbols = sorted({p["symbol"] for p in open_positions})
+    try:
+        universe = load_universe(symbols=symbols)
+    except SystemExit:
+        return open_positions  # faltan datos procesados para algún símbolo: no bloquea el export
+
+    enriquecidas = []
+    for pos in open_positions:
+        df = universe.get(pos["symbol"])
+        precio_actual = float(df.sort_values("date")["close"].iloc[-1]) if df is not None and not df.empty else None
+        nueva = dict(pos)
+        if precio_actual is not None:
+            valor_actual = precio_actual * pos["shares"]
+            costo_entrada = pos["entry_price"] * pos["shares"]
+            nueva["current_price"] = round(precio_actual, 4)
+            nueva["unrealized_pnl"] = round(valor_actual - costo_entrada, 2)
+            nueva["unrealized_pnl_pct"] = round((valor_actual / costo_entrada - 1) * 100, 2)
+        enriquecidas.append(nueva)
+    return enriquecidas
 
 
 def build_export() -> dict:
@@ -29,7 +61,7 @@ def build_export() -> dict:
         buckets[bucket] = {
             "starting_capital": bucket_state["starting_capital"],
             "start_date": bucket_state["start_date"],
-            "open_positions": bucket_state["open_positions"],
+            "open_positions": _con_precio_en_vivo(bucket_state["open_positions"]),
             "closed_positions": bucket_state["closed_positions"],
             "daily_history": history_for_bucket,
             "suspended": bucket_state.get("suspended", False),
