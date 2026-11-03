@@ -146,5 +146,79 @@
       }
     },
     "alertas": []
+  },
+  {
+    "date": "2026-11-03",
+    "buckets": {
+      "largo_plazo": {
+        "date": "2026-11-03",
+        "equity": 318.26,
+        "cash": 0.0,
+        "unrealized_pnl": 1.13,
+        "open_count": 3,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": 0.36,
+        "closed_today_detail": [],
+        "daily_loss_pct": 0.26,
+        "drawdown_pct": 0.26,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "mediano_plazo": {
+        "date": "2026-11-03",
+        "equity": 278.67,
+        "cash": 0.0,
+        "unrealized_pnl": -3.14,
+        "open_count": 4,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -1.11,
+        "closed_today_detail": [],
+        "daily_loss_pct": 1.17,
+        "drawdown_pct": 1.17,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "riesgo_alto": {
+        "date": "2026-11-03",
+        "equity": 112.64,
+        "cash": 112.64,
+        "unrealized_pnl": 0.0,
+        "open_count": 0,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -25.73,
+        "closed_today_detail": [],
+        "daily_loss_pct": 0.18,
+        "drawdown_pct": 0.18,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "mean_reversion": {
+        "date": "2026-11-03",
+        "equity": 185.21,
+        "cash": 185.21,
+        "unrealized_pnl": 0.0,
+        "open_count": 0,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -25.73,
+        "closed_today_detail": [],
+        "daily_loss_pct": 0.18,
+        "drawdown_pct": 0.18,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      }
+    },
+    "alertas": []
   }
 ]

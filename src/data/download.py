@@ -29,6 +29,18 @@ def read_universe(path: str) -> list[str]:
     return symbols
 
 
+def rango_de_fechas(hoy: datetime, years: int) -> tuple[datetime, datetime]:
+    """`start`/`end` para yfinance, dados `years` años de historia hacia
+    atrás desde `hoy`. yfinance trata `end` como EXCLUSIVO — por eso se
+    usa `hoy + 1 día`, para que el cierre del día de HOY sí quede
+    incluido (ver ADR 0021: con `end=hoy` tal cual, el cierre de hoy
+    nunca se descargaba, lo que dejaba a la corrida "después del
+    cierre" tan desactualizada como la de "antes de la apertura")."""
+    end = hoy + timedelta(days=1)
+    start = end - timedelta(days=365 * years)
+    return start, end
+
+
 def download_symbol(symbol: str, start: str, end: str) -> pd.DataFrame:
     df = yf.download(
         symbol,
@@ -68,8 +80,7 @@ def main():
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     symbols = read_universe(args.universe)
-    end = datetime.today()
-    start = end - timedelta(days=365 * args.years)
+    start, end = rango_de_fechas(datetime.today(), args.years)
 
     ok, failed = [], []
     for symbol in symbols:
