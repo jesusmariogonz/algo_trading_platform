@@ -29,9 +29,79 @@ def test_bench_shares_round_trip_preserves_dollar_value():
     invirtió — si alguien cambia BENCHMARK_SYMBOL en el futuro sin
     migrar correctamente, esta prueba debe fallar."""
     state = engine.init_bucket_state("largo_plazo", 1000.0)
-    precio_hoy = engine._benchmark_price("largo_plazo", None)
+    precio_hoy = engine._benchmark_price("largo_plazo", state, None)
     valor_en_dolares = state["bench_shares"] * precio_hoy
     assert valor_en_dolares == pytest.approx(1000.0, rel=0.01)
+
+
+def test_blend_incremental_price_ignores_revisions_to_old_history(monkeypatch):
+    """Regresión del bug real de ADR 0020: recomputar el blend desde
+    cero cada día lo dejaba expuesto a que una revisión retroactiva de
+    un dato viejo (yfinance ajusta precios después, ver ADR 0012)
+    desplazara TODO el nivel del índice de un día a otro, tumbando las
+    Routines en producción con falsas alertas de equity. El avance
+    incremental solo debe mirar los días posteriores al último precio
+    ya persistido — nunca debe importarle si un dato de hace meses
+    cambió."""
+    bucket_state = {}
+
+    universo_v1 = {
+        "SPY": pd.DataFrame({"date": pd.to_datetime(["2026-01-01", "2026-01-02"]), "close": [100.0, 101.0]}),
+        "GLD": pd.DataFrame({"date": pd.to_datetime(["2026-01-01", "2026-01-02"]), "close": [50.0, 50.5]}),
+    }
+    monkeypatch.setattr(engine, "load_universe", lambda symbols=None: {s: universo_v1[s] for s in symbols})
+    precio_dia1 = engine._blend_incremental_price(bucket_state, pd.Timestamp("2026-01-01"))
+    assert precio_dia1 == pytest.approx(100.0)  # base = 100
+    assert bucket_state["blend_last_date"] == "2026-01-01"
+
+    # "Revisión retroactiva": el precio del día 1 cambia completamente
+    # (ej. yfinance reajusta un dividendo viejo) Y se agregan los días 2
+    # y 3 reales (nunca procesados todavía, as_of del día 1 los había
+    # dejado fuera). El avance incremental NUNCA debe volver a leer el
+    # día 1 revisado — ya está persistido como ancla fija en
+    # bucket_state (componentes crudos, no solo el nivel del índice).
+    universo_v2 = {
+        "SPY": pd.DataFrame({
+            "date": pd.to_datetime(["2026-01-01", "2026-01-02", "2026-01-03"]),
+            "close": [55.0, 101.0, 102.0],  # día 1 "revisado" hacia abajo ~45%
+        }),
+        "GLD": pd.DataFrame({
+            "date": pd.to_datetime(["2026-01-01", "2026-01-02", "2026-01-03"]),
+            "close": [30.0, 50.5, 51.0],  # día 1 "revisado" también
+        }),
+    }
+    monkeypatch.setattr(engine, "load_universe", lambda symbols=None: {s: universo_v2[s] for s in symbols})
+    precio_dia3 = engine._blend_incremental_price(bucket_state, pd.Timestamp("2026-01-03"))
+
+    # El retorno del día 2 se calcula contra el ancla ORIGINAL del día 1
+    # (100/50, la persistida en la corrida anterior) — nunca contra el
+    # valor "revisado" (55/30) que trae universo_v2. El retorno del día
+    # 3 se calcula normalmente contra el día 2 (ambos frescos en esta
+    # misma corrida, sin revisión de por medio).
+    ret_dia2 = 0.5 * (101.0 / 100.0 - 1) + 0.5 * (50.5 / 50.0 - 1)
+    ret_dia3 = 0.5 * (102.0 / 101.0 - 1) + 0.5 * (51.0 / 50.5 - 1)
+    esperado = precio_dia1 * (1 + ret_dia2) * (1 + ret_dia3)
+    assert precio_dia3 == pytest.approx(esperado, rel=1e-6)
+    # Y, sobre todo: el resultado NO debe reflejar en absoluto el ~45%
+    # de "caída" que el día 1 revisado sugeriría si se hubiera usado.
+    assert precio_dia3 == pytest.approx(102.0, rel=1e-6)
+    assert bucket_state["blend_last_date"] == "2026-01-03"
+
+
+def test_blend_incremental_price_returns_same_value_if_no_new_data(monkeypatch):
+    bucket_state = {
+        "blend_last_price": 123.45,
+        "blend_last_date": "2026-01-02",
+        "blend_last_components": {"SPY": 101.0, "GLD": 50.5},
+    }
+    universo = {
+        "SPY": pd.DataFrame({"date": pd.to_datetime(["2026-01-01", "2026-01-02"]), "close": [100.0, 101.0]}),
+        "GLD": pd.DataFrame({"date": pd.to_datetime(["2026-01-01", "2026-01-02"]), "close": [50.0, 50.5]}),
+    }
+    monkeypatch.setattr(engine, "load_universe", lambda symbols=None: {s: universo[s] for s in symbols})
+    precio = engine._blend_incremental_price(bucket_state, pd.Timestamp("2026-01-02"))
+    assert precio == pytest.approx(123.45)
+    assert bucket_state["blend_last_date"] == "2026-01-02"  # sin cambios
 
 
 def test_mean_reversion_bucket_is_registered_in_engine():

@@ -170,7 +170,15 @@ def _blend_price_series(weights: dict[str, float]) -> pd.DataFrame:
     rebalanceado diario: cada día compone el retorno ponderado de cada
     componente, empezando en una base de 100. No son acciones reales de
     ningún símbolo — es una unidad de cuenta interna para marcar a
-    mercado el cash ocioso (ver ADR 0014)."""
+    mercado el cash ocioso (ver ADR 0014).
+
+    SOLO se usa para establecer la base la primera vez que un bucket se
+    inicializa — ver ADR 0020 sobre por qué recomputar esto desde cero
+    en cada tick es peligroso en producción (una revisión retroactiva
+    de un dato viejo desplaza TODO el nivel del índice de un día a
+    otro, aunque nada haya pasado en el mercado). Los ticks normales
+    usan `_blend_incremental_price`, que nunca vuelve a tocar datos
+    anteriores al último precio ya persistido."""
     dfs = []
     for symbol, weight in weights.items():
         df = load_universe(symbols=[symbol])[symbol][["date", "close"]].rename(columns={"close": symbol})
@@ -186,14 +194,104 @@ def _blend_price_series(weights: dict[str, float]) -> pd.DataFrame:
     return blend[["date", "close"]]
 
 
-def _benchmark_price(bucket: str, as_of: pd.Timestamp | None) -> float | None:
+def _blend_component_closes(weights: dict[str, float]) -> pd.DataFrame:
+    """Cierres diarios de cada componente del blend, alineados por
+    fecha (sin componer nada) — insumo de `_blend_incremental_price`."""
+    dfs = []
+    for symbol in weights:
+        df = load_universe(symbols=[symbol])[symbol][["date", "close"]].rename(columns={"close": symbol})
+        dfs.append(df)
+    merged = dfs[0]
+    for df in dfs[1:]:
+        merged = merged.merge(df, on="date", how="inner")
+    return merged.sort_values("date").reset_index(drop=True)
+
+
+def _blend_incremental_price(bucket_state: dict, as_of: pd.Timestamp | None) -> float | None:
+    """Precio del blend SPY/GLD, avanzado INCREMENTALMENTE desde el
+    último precio conocido (persistido en `bucket_state["blend_last_price"]`/
+    `["blend_last_date"]`) en vez de recomputar el cumprod completo
+    desde el inicio del historial en cada tick (ver ADR 0020).
+
+    Por qué importa: `yfinance` revisa precios ajustados de días viejos
+    de forma retroactiva (dividendos aplicados después, ver ADR 0012).
+    Si el precio de hoy se calcula recomponiendo TODO el historial cada
+    vez, una revisión a un dato de hace meses desplaza el nivel
+    completo del índice de un día a otro — contaminando el marcado a
+    mercado de dinero real sin que haya pasado nada en el mercado (este
+    bug real tumbó las Routines en producción varios días seguidos
+    antes de detectarse, ver ADR 0020). Avanzando desde el último
+    precio conocido con solo los retornos de los días NUEVOS, una
+    revisión a datos viejos nunca vuelve a poder afectar el valor de
+    hoy — como máximo puede afectar el precio del día más reciente
+    antes de que se cierre el mercado (riesgo mucho menor, acotado a
+    un solo día, ya documentado en ADR 0012/13).
+
+    Primera vez que se llama para un bucket (sin precio previo
+    persistido): cae una única vez al cálculo completo de
+    `_blend_price_series` para establecer la base, y la guarda —
+    junto con el cierre CRUDO de cada componente ese día
+    (`blend_last_components`), que es la pieza clave: el retorno del
+    primer día nuevo se calcula contra ese valor ya persistido, nunca
+    contra lo que el dato de ese día diga HOY — si solo guardáramos el
+    nivel del índice y volviéramos a leer el cierre crudo del último
+    día conocido en cada tick, una revisión futura a ese mismo día
+    seguiría colándose un día después, sin resolver nada."""
+    if bucket_state.get("blend_last_price") is None or bucket_state.get("blend_last_date") is None:
+        serie = _blend_price_series(BLEND_WEIGHTS)
+        last = _last_row_as_of(serie, as_of)
+        if last is None:
+            return None
+        closes = _blend_component_closes(BLEND_WEIGHTS)
+        ultimo_componentes = _last_row_as_of(closes, as_of)
+        bucket_state["blend_last_price"] = float(last["close"])
+        bucket_state["blend_last_date"] = str(last["date"].date())
+        bucket_state["blend_last_components"] = {s: float(ultimo_componentes[s]) for s in BLEND_WEIGHTS}
+        return float(last["close"])
+
+    last_price = bucket_state["blend_last_price"]
+    last_date_ts = pd.Timestamp(bucket_state["blend_last_date"])
+    last_components = bucket_state.get("blend_last_components")
+    if last_components is None:
+        # Estado persistido antes de este fix (sin blend_last_components
+        # guardado): no hay forma segura de anclar el primer día nuevo,
+        # así que se re-establece la base una vez más con el cálculo
+        # completo — después de esto ya nunca vuelve a pasar.
+        bucket_state["blend_last_price"] = None
+        bucket_state["blend_last_date"] = None
+        return _blend_incremental_price(bucket_state, as_of)
+
+    closes = _blend_component_closes(BLEND_WEIGHTS)
+    ventana = closes[closes["date"] > last_date_ts]
+    if as_of is not None:
+        ventana = ventana[ventana["date"] <= as_of]
+    if ventana.empty:
+        return last_price  # nada nuevo desde el último tick: mismo precio
+
+    factor_acumulado = 1.0
+    componentes_previos = dict(last_components)
+    for _, fila in ventana.iterrows():
+        ret_dia = 0.0
+        for symbol, weight in BLEND_WEIGHTS.items():
+            ret_dia += weight * (float(fila[symbol]) / componentes_previos[symbol] - 1.0)
+        factor_acumulado *= 1 + ret_dia
+        componentes_previos = {s: float(fila[s]) for s in BLEND_WEIGHTS}
+
+    nuevo_precio = last_price * factor_acumulado
+
+    bucket_state["blend_last_price"] = nuevo_precio
+    bucket_state["blend_last_date"] = str(ventana.iloc[-1]["date"].date())
+    bucket_state["blend_last_components"] = componentes_previos
+    return nuevo_precio
+
+
+def _benchmark_price(bucket: str, bucket_state: dict | None, as_of: pd.Timestamp | None) -> float | None:
     bench_symbol = BENCHMARK_SYMBOL.get(bucket)
     if bench_symbol is None:
         return None
     if bench_symbol == "BLEND_SPY_GLD":
-        df = _blend_price_series(BLEND_WEIGHTS)
-    else:
-        df = load_universe(symbols=[bench_symbol])[bench_symbol]
+        return _blend_incremental_price(bucket_state if bucket_state is not None else {}, as_of)
+    df = load_universe(symbols=[bench_symbol])[bench_symbol]
     last = _last_row_as_of(df, as_of)
     return None if last is None else float(last["close"])
 
@@ -201,9 +299,10 @@ def _benchmark_price(bucket: str, as_of: pd.Timestamp | None) -> float | None:
 def init_bucket_state(bucket: str, starting_capital: float, as_of: pd.Timestamp | None = None) -> dict:
     """El capital inicial se invierte de entrada en el benchmark del
     bucket (no se queda en cash parado) — ver ADR 0007."""
-    bench_price = _benchmark_price(bucket, as_of)
+    temp_state: dict = {}
+    bench_price = _benchmark_price(bucket, temp_state, as_of)
     bench_shares = starting_capital / bench_price if bench_price else 0.0
-    return {
+    nuevo_estado = {
         "starting_capital": round(starting_capital, 2),
         "start_date": date.today().isoformat(),
         "cash": 0.0 if bench_price else round(starting_capital, 2),
@@ -218,6 +317,14 @@ def init_bucket_state(bucket: str, starting_capital: float, as_of: pd.Timestamp 
         "suspended_since": None,
         "daily_loss_tripped_today": False,
     }
+    # Base del blend incremental (ver ADR 0020): se queda guardada en el
+    # estado del bucket desde el primer día, para que el siguiente tick
+    # nunca tenga que recomponer el historial completo.
+    if "blend_last_price" in temp_state:
+        nuevo_estado["blend_last_price"] = temp_state["blend_last_price"]
+        nuevo_estado["blend_last_date"] = temp_state["blend_last_date"]
+        nuevo_estado["blend_last_components"] = temp_state["blend_last_components"]
+    return nuevo_estado
 
 
 def _signals_for_symbol(df: pd.DataFrame, strategy_key: str) -> pd.DataFrame:
@@ -253,7 +360,7 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
             today_label = str(last["date"].date())
             break
 
-    bench_price = _benchmark_price(bucket, as_of)
+    bench_price = _benchmark_price(bucket, bucket_state, as_of)
     bench_shares = bucket_state.get("bench_shares", 0.0)
     open_positions = bucket_state["open_positions"]
     closed_today = []

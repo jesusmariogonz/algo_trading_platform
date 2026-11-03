@@ -10,7 +10,7 @@
         "strategy": "time_series_momentum",
         "entry_date": "2026-10-30",
         "entry_price": 103.37,
-        "stop_price": 100.42,
+        "stop_price": 100.69357027326312,
         "shares": 1
       },
       {
@@ -18,7 +18,7 @@
         "strategy": "time_series_momentum",
         "entry_date": "2026-10-30",
         "entry_price": 73.33,
-        "stop_price": 70.43286296299526,
+        "stop_price": 70.92428806849888,
         "shares": 1
       },
       {
@@ -26,16 +26,22 @@
         "strategy": "time_series_momentum",
         "entry_date": "2026-10-30",
         "entry_price": 140.43,
-        "stop_price": 134.61,
+        "stop_price": 135.53570556640625,
         "shares": 1
       }
     ],
     "closed_positions": [],
-    "day_start_equity": 317.13,
-    "day_start_date": "2026-10-30",
+    "day_start_equity": 319.1,
+    "day_start_date": "2026-11-02",
     "daily_loss_tripped_today": false,
-    "peak_equity": 317.13,
-    "last_equity": 316.98999786376953
+    "peak_equity": 319.1,
+    "last_equity": 319.09999084472656,
+    "blend_last_price": 139.9466056072037,
+    "blend_last_date": "2026-11-02",
+    "blend_last_components": {
+      "SPY": 752.0999755859375,
+      "GLD": 361.6499938964844
+    }
   },
   "mediano_plazo": {
     "starting_capital": 281.81,
@@ -48,7 +54,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-10-30",
         "entry_price": 56.51,
-        "stop_price": 54.63142817361014,
+        "stop_price": 55.64928831372942,
         "shares": 1
       },
       {
@@ -56,7 +62,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-10-30",
         "entry_price": 30.52,
-        "stop_price": 29.011071750095912,
+        "stop_price": 29.096785885947092,
         "shares": 2
       },
       {
@@ -64,7 +70,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-10-30",
         "entry_price": 94.17,
-        "stop_price": 89.6835754939488,
+        "stop_price": 91.20321818760463,
         "shares": 1
       },
       {
@@ -77,11 +83,17 @@
       }
     ],
     "closed_positions": [],
-    "day_start_equity": 281.81,
-    "day_start_date": "2026-10-30",
+    "day_start_equity": 281.98,
+    "day_start_date": "2026-11-02",
     "daily_loss_tripped_today": false,
-    "peak_equity": 281.81,
-    "last_equity": 281.64999771118164
+    "peak_equity": 281.9800033569336,
+    "last_equity": 281.9800033569336,
+    "blend_last_price": 139.9466056072037,
+    "blend_last_date": "2026-11-02",
+    "blend_last_components": {
+      "SPY": 752.0999755859375,
+      "GLD": 361.6499938964844
+    }
   },
   "riesgo_alto": {
     "starting_capital": 151.66,
@@ -90,11 +102,17 @@
     "bench_shares": 0.80633919309785,
     "open_positions": [],
     "closed_positions": [],
-    "day_start_equity": 151.66,
-    "day_start_date": "2026-10-30",
+    "day_start_equity": 112.84,
+    "day_start_date": "2026-11-02",
     "daily_loss_tripped_today": false,
-    "peak_equity": 151.66448485571544,
-    "last_equity": 151.66448485571544
+    "peak_equity": 112.84443304209569,
+    "last_equity": 112.84443304209569,
+    "blend_last_price": 139.9466056072037,
+    "blend_last_date": "2026-11-02",
+    "blend_last_components": {
+      "SPY": 752.0999755859375,
+      "GLD": 361.6499938964844
+    }
   },
   "mean_reversion": {
     "starting_capital": 249.38,
@@ -103,13 +121,19 @@
     "bench_shares": 1.325859373001608,
     "open_positions": [],
     "closed_positions": [],
-    "peak_equity": 249.38112957757318,
-    "day_start_equity": 249.38,
-    "day_start_date": "2026-10-30",
+    "peak_equity": 185.55,
+    "day_start_equity": 185.55,
+    "day_start_date": "2026-11-02",
     "suspended": false,
     "suspended_reason": null,
     "suspended_since": null,
     "daily_loss_tripped_today": false,
-    "last_equity": 249.38112957757318
+    "last_equity": 185.54951876407043,
+    "blend_last_price": 139.9466056072037,
+    "blend_last_date": "2026-11-02",
+    "blend_last_components": {
+      "SPY": 752.0999755859375,
+      "GLD": 361.6499938964844
+    }
   }
 }
