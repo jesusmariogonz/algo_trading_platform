@@ -146,6 +146,50 @@ def test_ejecutar_live_desconecta_aunque_falle(client, monkeypatch):
     assert llamadas.get("desconectado") is True
 
 
+def test_correr_lanza_runtimeerror_con_la_salida_si_el_subproceso_falla():
+    with pytest.raises(RuntimeError, match="exit 1"):
+        trading_api._correr("src.paper_trading._modulo_que_no_existe_de_verdad")
+
+
+def test_refrescar_datos_y_ejecutar_corre_los_3_pasos_en_orden_y_luego_ejecuta(client, monkeypatch):
+    llamadas = []
+
+    def correr_falso(*args):
+        llamadas.append(args)
+
+    monkeypatch.setattr(trading_api, "_correr", correr_falso)
+    monkeypatch.setattr(trading_api, "ejecutar_live", lambda authorization: {"date": "2026-11-05"})
+
+    r = client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json()["date"] == "2026-11-05"
+    assert llamadas == [
+        ("src.data.download", "--universe", str(trading_api.UNIVERSO_LIVE)),
+        ("src.indicators.compute",),
+        ("src.indicators.relative_strength", "--universe", str(trading_api.UNIVERSO_LIVE)),
+    ]
+
+
+def test_refrescar_datos_y_ejecutar_requiere_token(client):
+    assert client.post("/live/refrescar-datos-y-ejecutar").status_code == 401
+
+
+def test_refrescar_datos_y_ejecutar_no_llama_ejecutar_live_si_un_paso_falla(client, monkeypatch):
+    def correr_que_falla(*args):
+        if args[0] == "src.indicators.compute":
+            raise RuntimeError("falló el cómputo de indicadores")
+
+    def ejecutar_no_deberia_llamarse(authorization):
+        pytest.fail("no debería ejecutar el motor si refrescar datos falló")
+
+    monkeypatch.setattr(trading_api, "_correr", correr_que_falla)
+    monkeypatch.setattr(trading_api, "ejecutar_live", ejecutar_no_deberia_llamarse)
+
+    with pytest.raises(RuntimeError):
+        client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
+
+
 def test_reconciliar_live(client, monkeypatch):
     monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)

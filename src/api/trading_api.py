@@ -15,6 +15,9 @@ Correr con:
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
+from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException
 
@@ -23,8 +26,27 @@ from src.portfolio.allocation import BUCKETS, get_usd_mxn_rate
 from src.paper_trading import live_engine
 
 API_TOKEN = os.environ["TRADING_API_TOKEN"]
+ROOT = Path(__file__).resolve().parents[2]
+UNIVERSO_LIVE = ROOT / "config" / "universe_live_4_buckets.txt"
 
 app = FastAPI()
+
+
+def _correr(*args: str) -> None:
+    """Corre un script del repo como subproceso (mismo intérprete que
+    uvicorn, mismo venv) y propaga cualquier falla con su stdout/stderr
+    — para que el error se vea completo en el 500, no solo el código
+    de salida."""
+    resultado = subprocess.run(
+        [sys.executable, "-m", *args],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if resultado.returncode != 0:
+        raise RuntimeError(
+            f"Falló '{' '.join(args)}' (exit {resultado.returncode}):\n{resultado.stdout}\n{resultado.stderr}"
+        )
 
 
 def _equity_usd_con_fallback(ib) -> float:
@@ -75,6 +97,23 @@ def ejecutar_live(authorization: str | None = Header(None)):
         desconectar(ib)
 
     return snapshot
+
+
+@app.post("/live/refrescar-datos-y-ejecutar")
+def refrescar_datos_y_ejecutar_live(authorization: str | None = Header(None)):
+    """Pensado para dispararse desde un cron/Routine automática, sin
+    pasos intermedios: descarga el universo combinado de los 4 buckets
+    (config/universe_live_4_buckets.txt), recalcula indicadores y
+    fuerza relativa, y corre el motor en vivo — todo en una sola
+    llamada HTTPS, para que una rutina externa no tenga que orquestar
+    varios pasos por separado (y no necesite más acceso que HTTPS)."""
+    _verificar_token(authorization)
+
+    _correr("src.data.download", "--universe", str(UNIVERSO_LIVE))
+    _correr("src.indicators.compute")
+    _correr("src.indicators.relative_strength", "--universe", str(UNIVERSO_LIVE))
+
+    return ejecutar_live(authorization)
 
 
 @app.get("/live/estado")
