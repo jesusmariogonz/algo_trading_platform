@@ -52,12 +52,26 @@ def cuenta_activa(ib: IB) -> str:
 
 
 def equity_de_cuenta(ib: IB) -> float:
-    """NetLiquidation de la cuenta activa, en la moneda base de la cuenta."""
+    """NetLiquidation de la cuenta activa, en la moneda base de la cuenta
+    (puede ser MXN — ver `equity_de_cuenta_usd` para sizing de
+    posiciones en acciones de EE.UU., que cotizan en USD)."""
     resumen = ib.accountSummary()
     for item in resumen:
         if item.tag == "NetLiquidation":
             return float(item.value)
     raise RuntimeError("No se encontró NetLiquidation en accountSummary()")
+
+
+def equity_de_cuenta_usd(ib: IB) -> float:
+    """NetLiquidation específico en USD, vía el desglose por moneda de
+    `accountValues()` — distinto de `equity_de_cuenta()` si la moneda
+    base de la cuenta no es USD (la cuenta paper real de este proyecto
+    reporta en MXN por default). Es el valor correcto para dimensionar
+    posiciones en acciones de EE.UU."""
+    for v in ib.accountValues():
+        if v.tag == "NetLiquidationByCurrency" and v.currency == "USD":
+            return float(v.value)
+    raise RuntimeError("No se encontró NetLiquidationByCurrency en USD en accountValues()")
 
 
 def posiciones_reales(ib: IB) -> dict[str, int]:

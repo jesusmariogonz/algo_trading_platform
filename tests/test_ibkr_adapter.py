@@ -28,11 +28,15 @@ class _TradeFalso:
 class _IBFalso:
     """Simula lo mínimo de ib_async.IB que usa el adapter."""
 
-    def __init__(self, trade: _TradeFalso, cuentas=None, resumen=None, posiciones=None):
+    def __init__(self, trade: _TradeFalso, cuentas=None, resumen=None, posiciones=None, account_values=None):
         self._trade = trade
         self._cuentas = cuentas if cuentas is not None else ["DUR123456"]
         self._resumen = resumen if resumen is not None else []
         self._posiciones = posiciones if posiciones is not None else []
+        self._account_values = account_values if account_values is not None else []
+
+    def accountValues(self):
+        return self._account_values
 
     def qualifyContracts(self, contrato):
         pass
@@ -57,6 +61,13 @@ class _ItemResumenFalso:
     def __init__(self, tag, value):
         self.tag = tag
         self.value = value
+
+
+class _AccountValueFalso:
+    def __init__(self, tag, value, currency):
+        self.tag = tag
+        self.value = value
+        self.currency = currency
 
 
 class _ContratoFalso:
@@ -127,6 +138,23 @@ def test_equity_de_cuenta_lanza_error_si_falta_net_liquidation():
     ib = _IBFalso(_TradeFalso("Filled"), resumen=[])
     with pytest.raises(RuntimeError):
         ibkr_adapter.equity_de_cuenta(ib)
+
+
+def test_equity_de_cuenta_usd_lee_net_liquidation_by_currency_en_usd():
+    account_values = [
+        _AccountValueFalso("NetLiquidationByCurrency", "18866.36", "MXN"),
+        _AccountValueFalso("NetLiquidationByCurrency", "1023.45", "USD"),
+        _AccountValueFalso("NetLiquidationByCurrency", "1050.00", "BASE"),
+    ]
+    ib = _IBFalso(_TradeFalso("Filled"), account_values=account_values)
+    assert ibkr_adapter.equity_de_cuenta_usd(ib) == 1023.45
+
+
+def test_equity_de_cuenta_usd_lanza_error_si_no_hay_desglose_en_usd():
+    account_values = [_AccountValueFalso("NetLiquidationByCurrency", "18866.36", "MXN")]
+    ib = _IBFalso(_TradeFalso("Filled"), account_values=account_values)
+    with pytest.raises(RuntimeError):
+        ibkr_adapter.equity_de_cuenta_usd(ib)
 
 
 def test_posiciones_reales_agrupa_por_symbol_y_filtra_no_acciones():
