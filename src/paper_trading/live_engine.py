@@ -325,7 +325,14 @@ def run_daily_tick_live(ib, starting_capital_por_bucket: dict[str, float]) -> di
             state[bucket] = init_bucket_state(bucket, capital)
 
         equity_antes = state[bucket].get("last_equity")
-        result = run_bucket_tick_live(bucket, state[bucket], ib)
+        try:
+            result = run_bucket_tick_live(bucket, state[bucket], ib)
+        finally:
+            # Guarda SIEMPRE después de cada bucket, no solo al final
+            # del for — si una orden real ya se ejecutó en este bucket
+            # y luego algo truena en el siguiente, ese fill real nunca
+            # debe quedar sin reflejarse en el estado local.
+            save_state(state)
         snapshot["buckets"][bucket] = result
 
         if equity_antes and equity_antes > 0:

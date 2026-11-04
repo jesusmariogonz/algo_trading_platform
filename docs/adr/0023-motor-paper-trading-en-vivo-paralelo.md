@@ -85,12 +85,60 @@ Todos protegidos por el mismo token Bearer que ya usaba `/health`.
 siempre en un `finally`, incluso si la ejecución del día falla a
 medio camino.
 
+## Validado en producción — primera corrida real (4-nov-2026)
+
+Primer intento real tronó dos veces antes de llegar a la causa raíz:
+
+1. **Universo incompleto**: el universo descargado hasta ese momento
+   solo cubría `config/universe.txt` — faltaban símbolos de
+   `universe_largo_plazo.txt`, `universe_riesgo_alto.txt` y
+   `universe_mean_reversion.txt` (ETFs de bonos/commodities como AGG,
+   DBC, TLT, etc.). Se descargó y procesó el universo combinado de los
+   4 buckets (143 símbolos).
+2. **Falta `relative_strength`**: `momentum_breakout` (estrategia de
+   `riesgo_alto`) depende de `relative_strength_63`, calculado por un
+   script aparte (`src.indicators.relative_strength`) que no se había
+   corrido sobre el universo nuevo. **Bug real encontrado en el
+   proceso**: `run_daily_tick_live()` no envuelve la llamada a
+   `run_bucket_tick_live()` en un try/except — una excepción a medio
+   camino del bucle de 4 buckets significa que `save_state()` (que
+   corre DESPUÉS del bucle completo) nunca se ejecuta, así que
+   cualquier orden real que sí se haya llenado en un bucket anterior
+   quedaría sin reflejarse en el estado local. En este caso no hubo
+   fills reales de por medio (se verificó con
+   `posiciones_reales(ib)` antes de reintentar), pero el riesgo es
+   real y queda como pendiente (ver abajo).
+3. **Gateway en modo Read-Only API por default** — el hallazgo
+   importante. Todas las órdenes se rechazaban con
+   `Warning 321: The API interface is currently in Read-Only mode`,
+   sin que nada en la configuración de Gateway lo mencionara
+   explícitamente. Editar `~/Jts/jts.ini` a mano
+   (`ReadOnlyApi=false` bajo `[IBGateway]`) NO fue suficiente — el
+   fix real es configurarlo en el `config.ini` de **IBC**
+   (`/opt/ibc/config.ini`, variable `ReadOnlyApi=no`), que lo
+   impone activamente al arrancar Gateway en vez de confiar en que
+   Gateway respete un `jts.ini` editado externamente.
+
+Tras los 3 fixes, `POST /live/ejecutar` corrió limpio para los 4
+buckets, repartió el equity real correctamente, y detectó + mandó 8
+órdenes reales de entrada — canceladas solo por estar fuera de
+horario de mercado (`TIF=DAY` expira al cierre), no por ningún error
+de la integración. Confirma que la cadena completa (Gateway → IBC →
+adapter → motor en vivo → API) funciona de punta a punta; falta
+validar un FILL real, que solo puede pasar en horario de mercado.
+
 ## Pendiente
 
+- **Atomicidad por bucket**: si `run_bucket_tick_live()` lanza una
+  excepción para un bucket después de que otro bucket anterior ya
+  colocó órdenes reales en el mismo `run_daily_tick_live()`, el
+  estado de ese bucket anterior no se guarda (ver punto 2 arriba).
+  Debería guardarse el estado bucket por bucket (o en un try/finally)
+  en vez de solo al final de todo el bucle, para que una orden real ya
+  ejecutada nunca quede sin reflejarse localmente.
 - No se ha confirmado todavía que IBC reautentique solo tras el cierre
   nocturno de sesión de IBKR (ver ADR 0022, sección Pendiente) — si el
   motor en vivo falla con error de conexión, es la primera causa a
   revisar, no un bug de este motor.
-- Falta desplegar `src/api/trading_api.py` a la VM (reemplazando la
-  app mínima creada a mano) y conectar las Routines reales a
-  `POST /live/ejecutar`.
+- Falta validar un FILL real (solo posible en horario de mercado,
+  9:30am-4pm hora del Este) — todo lo demás ya está confirmado.

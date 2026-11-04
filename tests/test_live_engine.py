@@ -217,6 +217,56 @@ def test_bucket_bloqueado_no_abre_posiciones_nuevas(monkeypatch):
     assert result["daily_loss_breaker_tripped"] is True
 
 
+def test_run_daily_tick_live_guarda_estado_aunque_un_bucket_posterior_truene(monkeypatch):
+    """Regresión: si un bucket ya ejecutó una orden real y el SIGUIENTE
+    bucket truena (ej. falta un indicador), el estado del primero debe
+    quedar guardado — un fill real nunca debe perderse por un error en
+    otro bucket del mismo día."""
+    fake_universe_ok = {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0]}
+        ),
+    }
+
+    monkeypatch.setattr(
+        live_engine,
+        "BUCKET_CONFIG",
+        {
+            "largo_plazo": {"universe_file": "ok", "risk_pct": 0.01, "strategies": ["time_series_momentum"]},
+            "mediano_plazo": {"universe_file": "roto", "risk_pct": 0.01, "strategies": ["time_series_momentum"]},
+        },
+    )
+
+    def load_universe_falso(symbols=None):
+        if symbols == ["VOO"]:
+            return fake_universe_ok
+        raise ValueError("universo roto a propósito")
+
+    monkeypatch.setattr(live_engine, "load_universe", load_universe_falso)
+    monkeypatch.setattr(
+        live_engine,
+        "read_universe_file",
+        lambda path: ["VOO"] if path == "ok" else ["ROTO"],
+    )
+    monkeypatch.setitem(
+        engine.SIGNAL_FNS, "time_series_momentum",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 5),
+    )
+    monkeypatch.setattr(
+        live_engine, "ejecutar_orden_mercado",
+        lambda ib, symbol, accion, shares: Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=101.0),
+    )
+
+    with pytest.raises(ValueError):
+        live_engine.run_daily_tick_live(ib=object(), starting_capital_por_bucket={"largo_plazo": 1000.0, "mediano_plazo": 1000.0})
+
+    # El bucket que SÍ alcanzó a correr (y mandar una orden real) debe
+    # quedar persistido, aunque el segundo haya tronado.
+    estado_guardado = live_engine.load_state()
+    assert "largo_plazo" in estado_guardado
+    assert len(estado_guardado["largo_plazo"]["open_positions"]) == 1
+
+
 def test_posiciones_reconciliadas_detecta_divergencia(monkeypatch, tmp_path):
     state = {
         "largo_plazo": {
