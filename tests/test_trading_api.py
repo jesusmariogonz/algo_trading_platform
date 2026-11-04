@@ -52,6 +52,11 @@ def test_ejecutar_live_primera_corrida_reparte_equity_usd_por_buckets(client, mo
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
     monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", lambda ib: 1000.0)
     monkeypatch.setattr(live_engine, "load_state", lambda: {})  # estado vacío: primera corrida
+    monkeypatch.setattr(
+        trading_api,
+        "equity_de_cuenta",
+        lambda ib: pytest.fail("no debería usarse MXN si equity_de_cuenta_usd ya respondió"),
+    )
 
     def run_daily_tick_live_falso(ib, capital_por_bucket):
         llamadas["ib"] = ib
@@ -69,6 +74,35 @@ def test_ejecutar_live_primera_corrida_reparte_equity_usd_por_buckets(client, mo
     # El equity (1000) se repartió en las mismas proporciones que BUCKETS
     assert sum(llamadas["capital_por_bucket"].values()) == pytest.approx(1000.0)
     assert set(llamadas["capital_por_bucket"]) == {"largo_plazo", "mediano_plazo", "riesgo_alto", "mean_reversion"}
+
+
+def test_ejecutar_live_sin_segmento_usd_convierte_desde_mxn(client, monkeypatch):
+    """La cuenta paper real de este proyecto no tiene segmento en USD
+    (nunca se ha comprado nada en dólares) — equity_de_cuenta_usd lanza
+    RuntimeError y el fallback debe convertir desde MXN."""
+    llamadas = {}
+
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
+
+    def sin_segmento_usd(ib):
+        raise RuntimeError("No se encontró NetLiquidationByCurrency en USD")
+
+    monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", sin_segmento_usd)
+    monkeypatch.setattr(trading_api, "equity_de_cuenta", lambda ib: 18866.36)  # MXN
+    monkeypatch.setattr(trading_api, "get_usd_mxn_rate", lambda: 18.4)
+    monkeypatch.setattr(live_engine, "load_state", lambda: {})
+
+    def run_daily_tick_live_falso(ib, capital_por_bucket):
+        llamadas["capital_por_bucket"] = capital_por_bucket
+        return {"date": "2026-11-04", "buckets": {}, "alertas": []}
+
+    monkeypatch.setattr(trading_api.live_engine, "run_daily_tick_live", run_daily_tick_live_falso)
+
+    r = client.post("/live/ejecutar", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert sum(llamadas["capital_por_bucket"].values()) == pytest.approx(18866.36 / 18.4)
 
 
 def test_ejecutar_live_corridas_siguientes_no_vuelve_a_pedir_equity(client, monkeypatch):

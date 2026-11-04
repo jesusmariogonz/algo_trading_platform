@@ -18,13 +18,26 @@ import os
 
 from fastapi import FastAPI, Header, HTTPException
 
-from src.broker.ibkr_adapter import conectar, desconectar, equity_de_cuenta_usd
-from src.portfolio.allocation import BUCKETS
+from src.broker.ibkr_adapter import conectar, desconectar, equity_de_cuenta, equity_de_cuenta_usd
+from src.portfolio.allocation import BUCKETS, get_usd_mxn_rate
 from src.paper_trading import live_engine
 
 API_TOKEN = os.environ["TRADING_API_TOKEN"]
 
 app = FastAPI()
+
+
+def _equity_usd_con_fallback(ib) -> float:
+    """La cuenta paper real de este proyecto no tiene segmento en USD
+    todavía (nunca se ha comprado nada en dólares) — solo reporta en
+    MXN. Si `equity_de_cuenta_usd` no encuentra el desglose en USD,
+    convierte el equity en MXN al tipo de cambio del día (misma fuente
+    que ya usa el dashboard, `allocation.get_usd_mxn_rate`)."""
+    try:
+        return equity_de_cuenta_usd(ib)
+    except RuntimeError:
+        equity_mxn = equity_de_cuenta(ib)
+        return equity_mxn / get_usd_mxn_rate()
 
 
 def _verificar_token(authorization: str | None) -> None:
@@ -54,7 +67,7 @@ def ejecutar_live(authorization: str | None = Header(None)):
             # Primera corrida: reparte el equity REAL de la cuenta
             # (en USD, no en la moneda base MXN de la cuenta) con las
             # mismas proporciones que el portafolio simulado.
-            equity_usd = equity_de_cuenta_usd(ib)
+            equity_usd = _equity_usd_con_fallback(ib)
             capital_por_bucket = {bucket: equity_usd * pct for bucket, pct in BUCKETS.items()}
 
         snapshot = live_engine.run_daily_tick_live(ib, capital_por_bucket)
