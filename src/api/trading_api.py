@@ -34,7 +34,7 @@ UNIVERSO_LIVE = ROOT / "config" / "universe_live_4_buckets.txt"
 app = FastAPI()
 
 
-def _correr(*args: str) -> None:
+def _correr(*args: str, env: dict | None = None) -> None:
     """Corre un script del repo como subproceso (mismo intérprete que
     uvicorn, mismo venv) y propaga cualquier falla con su stdout/stderr
     — para que el error se vea completo en el 500, no solo el código
@@ -44,6 +44,7 @@ def _correr(*args: str) -> None:
         cwd=ROOT,
         capture_output=True,
         text=True,
+        env=env,
     )
     if resultado.returncode != 0:
         raise RuntimeError(
@@ -105,7 +106,16 @@ def desplegar(authorization: str | None = Header(None)):
     _verificar_token(authorization)
 
     git_output = _git_pull()
-    _correr("pytest", "-q")
+    # Los tests fijan su propio TRADING_API_TOKEN de prueba vía
+    # os.environ.setdefault, pero eso no pisa el token REAL que ya
+    # está en el entorno de este servicio (vía systemd) — sin este
+    # override, pytest corrido como subproceso aquí hereda el token
+    # real, los tests comparan contra "token-de-prueba" y los 13
+    # tests que golpean endpoints protegidos fallan con 401 aunque el
+    # código esté bien (causa real del primer 500 de este endpoint).
+    entorno_tests = os.environ.copy()
+    entorno_tests.pop("TRADING_API_TOKEN", None)
+    _correr("pytest", "-q", env=entorno_tests)
 
     threading.Thread(target=_reiniciar_proceso_despues_de_responder, daemon=True).start()
     return {"status": "ok", "git_pull": git_output, "mensaje": "tests pasaron, reiniciando en ~1s"}

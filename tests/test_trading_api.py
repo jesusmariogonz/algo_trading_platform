@@ -36,7 +36,7 @@ def test_desplegar_corre_git_pull_y_pytest_y_programa_reinicio(client, monkeypat
     llamadas = []
 
     monkeypatch.setattr(trading_api, "_git_pull", lambda: "Already up to date.")
-    monkeypatch.setattr(trading_api, "_correr", lambda *args: llamadas.append(args))
+    monkeypatch.setattr(trading_api, "_correr", lambda *args, **kwargs: llamadas.append(args))
 
     hilos_lanzados = []
 
@@ -62,7 +62,7 @@ def test_desplegar_corre_git_pull_y_pytest_y_programa_reinicio(client, monkeypat
 def test_desplegar_no_programa_reinicio_si_los_tests_fallan(client, monkeypatch):
     monkeypatch.setattr(trading_api, "_git_pull", lambda: "ok")
 
-    def pytest_falla(*args):
+    def pytest_falla(*args, **kwargs):
         raise RuntimeError("Falló 'pytest -q' (exit 1): algo tronó")
 
     monkeypatch.setattr(trading_api, "_correr", pytest_falla)
@@ -86,7 +86,7 @@ def test_desplegar_propaga_error_si_git_pull_falla(client, monkeypatch):
     monkeypatch.setattr(trading_api, "_git_pull", git_falla)
     monkeypatch.setattr(
         trading_api, "_correr",
-        lambda *a: pytest.fail("no debería correr pytest si git pull ya falló"),
+        lambda *a, **kw: pytest.fail("no debería correr pytest si git pull ya falló"),
     )
 
     with pytest.raises(RuntimeError):
