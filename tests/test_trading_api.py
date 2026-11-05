@@ -73,7 +73,7 @@ def test_ejecutar_live_primera_corrida_reparte_equity_usd_por_buckets(client, mo
     assert llamadas["desconectado"] == "ib-falso"  # siempre desconecta, incluso si todo sale bien
     # El equity (1000) se repartió en las mismas proporciones que BUCKETS
     assert sum(llamadas["capital_por_bucket"].values()) == pytest.approx(1000.0)
-    assert set(llamadas["capital_por_bucket"]) == {"largo_plazo", "mediano_plazo", "riesgo_alto", "mean_reversion"}
+    assert set(llamadas["capital_por_bucket"]) == {"largo_plazo", "mediano_plazo", "riesgo_alto"}
 
 
 def test_ejecutar_live_sin_segmento_usd_convierte_desde_mxn(client, monkeypatch):

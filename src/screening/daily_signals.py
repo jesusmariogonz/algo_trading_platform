@@ -58,17 +58,13 @@ BUCKET_CONFIG = {
         "risk_pct": 0.03,
         "strategies": ["trend_following", "momentum_breakout"],
     },
-    # Bucket agregado el 1-nov-2026 (ver ADR 0019): Mean Reversion
-    # RSI(2), lógica de entrada opuesta a los otros 3 (compra debilidad
-    # temporal dentro de tendencia alcista, no fortaleza) — correlación
-    # medida de 0.142 con el resto del sistema sobre datos reales
-    # congelados, por eso corre con capital propio en vez de competir
-    # por símbolo dentro de un bucket existente (lección de ADR 0018).
-    "mean_reversion": {
-        "universe_file": ROOT / "config" / "universe_mean_reversion.txt",
-        "risk_pct": 0.02,
-        "strategies": ["mean_reversion_rsi2"],
-    },
+    # Mean Reversion RSI(2) (agregado 1-nov-2026, ADR 0019) se
+    # ELIMINÓ el 5-nov-2026 — ver ADR 0027. El +47.90% que justificó
+    # su aprobación no fue reproducible con datos actuales (+19.09%
+    # real), y walk-forward rolling de 5 ventanas mostró Sharpe OOS
+    # promedio negativo (-0.032) con ningún peso de asignación
+    # mejorando el portafolio de control. Capital redistribuido a los
+    # 3 buckets de arriba en su proporción original (13/10/7).
 }
 
 

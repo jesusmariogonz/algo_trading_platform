@@ -49,11 +49,13 @@ import requests
 
 EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD"
 
+# Proporción original 13/10/7 (restaurada el 5-nov-2026, ADR 0027,
+# tras eliminar Mean Reversion RSI(2) — ver ADR 0019 para el origen
+# del ratio y ADR 0026/0027 para por qué se revirtió).
 BUCKETS = {
-    "largo_plazo": 0.65 * 13.0 / 30.0,
-    "mediano_plazo": 0.65 * 10.0 / 30.0,
-    "riesgo_alto": 0.65 * 7.0 / 30.0,
-    "mean_reversion": 0.35,
+    "largo_plazo": 13.0 / 30.0,
+    "mediano_plazo": 10.0 / 30.0,
+    "riesgo_alto": 7.0 / 30.0,
 }
 
 assert abs(sum(BUCKETS.values()) - 1.0) < 1e-9, "Los buckets deben sumar 100%"

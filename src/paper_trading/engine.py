@@ -113,7 +113,6 @@ BENCHMARK_SYMBOL = {
     "largo_plazo": "BLEND_SPY_GLD",
     "mediano_plazo": "BLEND_SPY_GLD",
     "riesgo_alto": "BLEND_SPY_GLD",
-    "mean_reversion": "BLEND_SPY_GLD",
 }
 BLEND_WEIGHTS = {"SPY": 0.5, "GLD": 0.5}
 
@@ -125,13 +124,6 @@ RISK_LIMITS = {
     "largo_plazo": {"daily_loss_limit_pct": 0.01, "drawdown_review_pct": 0.06},
     "mediano_plazo": {"daily_loss_limit_pct": 0.015, "drawdown_review_pct": 0.10},
     "riesgo_alto": {"daily_loss_limit_pct": 0.02, "drawdown_review_pct": 0.15},
-    # Mean Reversion (ADR 0019): mismo risk_pct por operación (2%) que
-    # largo/mediano plazo, pero drawdown_review más holgado (15%, igual
-    # que riesgo_alto) porque su propio backtest aislado ya mostró un
-    # drawdown máximo de 13.48% en condiciones normales — un límite más
-    # ajustado lo suspendería con frecuencia por su comportamiento
-    # normal, no por una anomalía real.
-    "mean_reversion": {"daily_loss_limit_pct": 0.015, "drawdown_review_pct": 0.15},
 }
 
 ACTIVE_BUCKETS = list(BUCKET_CONFIG.keys())  # buckets con estrategia real — ver BUCKET_CONFIG

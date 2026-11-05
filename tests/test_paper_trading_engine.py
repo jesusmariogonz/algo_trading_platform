@@ -104,16 +104,18 @@ def test_blend_incremental_price_returns_same_value_if_no_new_data(monkeypatch):
     assert bucket_state["blend_last_date"] == "2026-01-02"  # sin cambios
 
 
-def test_mean_reversion_bucket_is_registered_in_engine():
-    """Regresión de ADR 0019: el bucket mean_reversion debe estar
-    presente en todos los diccionarios de configuración del motor, no
-    solo en BUCKET_CONFIG — un bucket a medias (ej. sin RISK_LIMITS)
-    rompería los circuit breakers en silencio."""
-    assert "mean_reversion" in engine.BUCKET_CONFIG
-    assert "mean_reversion" in engine.BENCHMARK_SYMBOL
-    assert "mean_reversion" in engine.RISK_LIMITS
-    assert "mean_reversion" in engine.ACTIVE_BUCKETS
-    assert engine.BUCKET_CONFIG["mean_reversion"]["strategies"] == ["mean_reversion_rsi2"]
+def test_mean_reversion_bucket_was_removed_cleanly():
+    """Regresión de ADR 0027: Mean Reversion RSI(2) se eliminó como
+    bucket activo (no sobrevivió walk-forward rolling, ver ADR 0026) —
+    no debe quedar a medias en ningún diccionario de configuración del
+    motor, eso rompería los circuit breakers en silencio si alguien lo
+    reactivara sin querer."""
+    assert "mean_reversion" not in engine.BUCKET_CONFIG
+    assert "mean_reversion" not in engine.BENCHMARK_SYMBOL
+    assert "mean_reversion" not in engine.RISK_LIMITS
+    assert "mean_reversion" not in engine.ACTIVE_BUCKETS
+    # El código de la estrategia se conserva (puede reconsiderarse en
+    # el futuro con mejor evidencia), solo se desactivó como bucket.
     assert "mean_reversion_rsi2" in engine.SIGNAL_FNS
 
 
