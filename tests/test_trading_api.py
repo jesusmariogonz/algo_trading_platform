@@ -255,6 +255,62 @@ def test_refrescar_datos_y_ejecutar_no_llama_ejecutar_live_si_un_paso_falla(clie
         client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
 
 
+def test_equity_live_requiere_token(client):
+    assert client.get("/live/equity").status_code == 401
+
+
+def test_equity_live_usa_usd_si_hay_segmento(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
+    monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", lambda ib: 100000.0)
+    monkeypatch.setattr(
+        trading_api,
+        "equity_de_cuenta",
+        lambda ib: pytest.fail("no debería usarse MXN si equity_de_cuenta_usd ya respondió"),
+    )
+
+    r = client.get("/live/equity", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json() == {"equity_usd": 100000.0}
+    assert llamadas["desconectado"] == "ib-falso"
+
+
+def test_equity_live_cae_a_mxn_si_no_hay_segmento_usd(client, monkeypatch):
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
+
+    def sin_segmento_usd(ib):
+        raise RuntimeError("No se encontró NetLiquidationByCurrency en USD")
+
+    monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", sin_segmento_usd)
+    monkeypatch.setattr(trading_api, "equity_de_cuenta", lambda ib: 18866.36)
+    monkeypatch.setattr(trading_api, "get_usd_mxn_rate", lambda: 18.4)
+
+    r = client.get("/live/equity", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json()["equity_usd"] == pytest.approx(18866.36 / 18.4)
+
+
+def test_equity_live_desconecta_aunque_falle(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", True))
+
+    def falla(ib):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", falla)
+    monkeypatch.setattr(trading_api, "equity_de_cuenta", falla)
+
+    with pytest.raises(RuntimeError):
+        client.get("/live/equity", headers=HEADERS_OK)
+
+    assert llamadas.get("desconectado") is True
+
+
 def test_reconciliar_live(client, monkeypatch):
     monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)

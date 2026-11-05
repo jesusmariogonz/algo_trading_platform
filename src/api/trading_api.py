@@ -173,6 +173,23 @@ def estado_live(authorization: str | None = Header(None)):
     return history[-1] if history else {"date": None, "buckets": {}, "alertas": []}
 
 
+@app.get("/live/equity")
+def equity_live(authorization: str | None = Header(None)):
+    """Equity real de la cuenta IBKR en este momento, sin ejecutar
+    nada ni tocar el estado del motor — solo lectura, para validar
+    cosas como el reset de balance de la cuenta paper sin tener que
+    entrar a la VM a correr un script a mano."""
+    _verificar_token(authorization)
+
+    ib = conectar()
+    try:
+        equity_usd = _equity_usd_con_fallback(ib)
+    finally:
+        desconectar(ib)
+
+    return {"equity_usd": equity_usd}
+
+
 @app.get("/live/reconciliar")
 def reconciliar_live(authorization: str | None = Header(None)):
     """Compara posiciones que el estado local cree tener abiertas
