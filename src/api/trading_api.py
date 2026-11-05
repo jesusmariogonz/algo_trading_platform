@@ -228,6 +228,16 @@ def equity_live(authorization: str | None = Header(None)):
     return {"equity_usd": equity_usd}
 
 
+@app.get("/live/blend-ledger")
+def blend_ledger_live(authorization: str | None = Header(None)):
+    """Ledger de transacciones del blend del motor en vivo (ADR 0028),
+    sin ejecutar nada — para diagnosticar divergencias entre lo que
+    el estado local cree y lo que IBKR reporta, sin tener que pedir
+    el archivo manualmente en la VM."""
+    _verificar_token(authorization)
+    return live_engine.blend_ledger.load_ledger(live_engine.LIVE_BLEND_LEDGER_PATH)
+
+
 @app.get("/live/reconciliar")
 def reconciliar_live(authorization: str | None = Header(None)):
     """Compara posiciones que el estado local cree tener abiertas

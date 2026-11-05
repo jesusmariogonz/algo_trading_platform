@@ -363,6 +363,19 @@ def test_equity_live_desconecta_aunque_falle(client, monkeypatch):
     assert llamadas.get("desconectado") is True
 
 
+def test_blend_ledger_live_requiere_token(client):
+    assert client.get("/live/blend-ledger").status_code == 401
+
+
+def test_blend_ledger_live_devuelve_el_ledger(client, monkeypatch):
+    renglones = [{"bucket": "largo_plazo", "simbolo": "GLD", "shares": 1}]
+    monkeypatch.setattr(trading_api.live_engine.blend_ledger, "load_ledger", lambda path: renglones)
+
+    r = client.get("/live/blend-ledger", headers=HEADERS_OK)
+    assert r.status_code == 200
+    assert r.json() == renglones
+
+
 def test_reconciliar_live(client, monkeypatch):
     monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
