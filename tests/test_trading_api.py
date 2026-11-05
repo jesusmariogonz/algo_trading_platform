@@ -255,6 +255,58 @@ def test_refrescar_datos_y_ejecutar_no_llama_ejecutar_live_si_un_paso_falla(clie
         client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
 
 
+def test_reiniciar_capital_live_requiere_token(client):
+    assert client.post("/admin/live/reiniciar-capital?total_usd=2000").status_code == 401
+
+
+def test_reiniciar_capital_live_rechaza_total_no_positivo(client):
+    r = client.post("/admin/live/reiniciar-capital?total_usd=0", headers=HEADERS_OK)
+    assert r.status_code == 400
+
+
+def test_reiniciar_capital_live_reparte_por_bucket_e_invierte_en_blend(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
+    monkeypatch.setattr(live_engine, "load_state", lambda: {})
+
+    def init_bucket_state_falso(bucket, starting_capital, ib):
+        llamadas.setdefault("buckets", {})[bucket] = (starting_capital, ib)
+        return {"starting_capital": round(starting_capital, 2), "cash": 0, "open_positions": []}
+
+    guardados = {}
+    monkeypatch.setattr(trading_api.live_engine, "init_bucket_state", init_bucket_state_falso)
+    monkeypatch.setattr(trading_api.live_engine, "save_state", lambda state: guardados.setdefault("state", state))
+
+    r = client.post("/admin/live/reiniciar-capital?total_usd=2000", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert set(llamadas["buckets"]) == {"largo_plazo", "mediano_plazo", "riesgo_alto"}
+    assert llamadas["buckets"]["largo_plazo"][1] == "ib-falso"
+    total_repartido = sum(cap for cap, _ in llamadas["buckets"].values())
+    assert total_repartido == pytest.approx(2000.0)
+    assert llamadas["desconectado"] == "ib-falso"
+    assert guardados["state"] == r.json()
+
+
+def test_reiniciar_capital_live_rechaza_si_hay_posiciones_abiertas(client, monkeypatch):
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
+    monkeypatch.setattr(
+        live_engine,
+        "load_state",
+        lambda: {"largo_plazo": {"open_positions": [{"symbol": "SPY"}]}},
+    )
+    monkeypatch.setattr(
+        trading_api.live_engine,
+        "init_bucket_state",
+        lambda *a, **kw: pytest.fail("no debería reinicializar si hay posiciones abiertas"),
+    )
+
+    r = client.post("/admin/live/reiniciar-capital?total_usd=2000", headers=HEADERS_OK)
+    assert r.status_code == 409
+
+
 def test_equity_live_requiere_token(client):
     assert client.get("/live/equity").status_code == 401
 

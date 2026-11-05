@@ -173,6 +173,44 @@ def estado_live(authorization: str | None = Header(None)):
     return history[-1] if history else {"date": None, "buckets": {}, "alertas": []}
 
 
+@app.post("/admin/live/reiniciar-capital")
+def reiniciar_capital_live(total_usd: float, authorization: str | None = Header(None)):
+    """Reinicializa el capital de los 3 buckets del motor en vivo a un
+    monto total fijo (repartido con las mismas proporciones que
+    `BUCKETS`), en vez de usar el equity real de la cuenta — para
+    poder operar con un subconjunto del capital disponible (ej.
+    limitar a $2,000 USD aunque la cuenta tenga más), sin tener que
+    editar `data/paper_trading_live/state.json` a mano en la VM.
+
+    Por seguridad, se niega a tocar cualquier bucket que tenga
+    posiciones abiertas (`open_positions`) — en ese caso hay que
+    cerrarlas primero, no se cierran solas aquí."""
+    _verificar_token(authorization)
+
+    if total_usd <= 0:
+        raise HTTPException(status_code=400, detail="total_usd debe ser positivo")
+
+    ib = conectar()
+    try:
+        state = live_engine.load_state()
+        for bucket, bucket_state in state.items():
+            if bucket_state.get("open_positions"):
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"El bucket '{bucket}' tiene posiciones abiertas — ciérralas antes de reiniciar capital.",
+                )
+
+        nuevo_estado = {
+            bucket: live_engine.init_bucket_state(bucket, total_usd * pct, ib)
+            for bucket, pct in BUCKETS.items()
+        }
+        live_engine.save_state(nuevo_estado)
+    finally:
+        desconectar(ib)
+
+    return nuevo_estado
+
+
 @app.get("/live/equity")
 def equity_live(authorization: str | None = Header(None)):
     """Equity real de la cuenta IBKR en este momento, sin ejecutar
