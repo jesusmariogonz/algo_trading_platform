@@ -363,6 +363,60 @@ def test_equity_live_desconecta_aunque_falle(client, monkeypatch):
     assert llamadas.get("desconectado") is True
 
 
+def test_fijar_estado_bucket_live_requiere_token(client):
+    assert client.post("/admin/live/fijar-estado-bucket?bucket=largo_plazo&cash=100").status_code == 401
+
+
+def test_fijar_estado_bucket_live_404_si_no_existe(client, monkeypatch):
+    monkeypatch.setattr(live_engine, "load_state", lambda: {})
+    r = client.post("/admin/live/fijar-estado-bucket?bucket=largo_plazo&cash=100", headers=HEADERS_OK)
+    assert r.status_code == 404
+
+
+def test_fijar_estado_bucket_live_rechaza_si_hay_posiciones_abiertas(client, monkeypatch):
+    monkeypatch.setattr(
+        live_engine, "load_state",
+        lambda: {"largo_plazo": {"open_positions": [{"symbol": "SPY"}]}},
+    )
+    r = client.post("/admin/live/fijar-estado-bucket?bucket=largo_plazo&cash=100", headers=HEADERS_OK)
+    assert r.status_code == 409
+
+
+def test_fijar_estado_bucket_live_corrige_cash_y_shares(client, monkeypatch):
+    guardados = {}
+    monkeypatch.setattr(
+        live_engine, "load_state",
+        lambda: {"largo_plazo": {"cash": 866.67, "blend_spy_shares": 0, "blend_gld_shares": 0, "open_positions": []}},
+    )
+    monkeypatch.setattr(trading_api.live_engine, "save_state", lambda state: guardados.setdefault("state", state))
+
+    r = client.post(
+        "/admin/live/fijar-estado-bucket?bucket=largo_plazo&cash=490.55&blend_spy_shares=0&blend_gld_shares=1",
+        headers=HEADERS_OK,
+    )
+
+    assert r.status_code == 200
+    assert r.json() == {"cash": 490.55, "blend_spy_shares": 0, "blend_gld_shares": 1, "open_positions": []}
+    assert guardados["state"]["largo_plazo"]["cash"] == 490.55
+
+
+def test_limpiar_blend_ledger_live_requiere_token(client):
+    assert client.post("/admin/live/limpiar-blend-ledger").status_code == 401
+
+
+def test_limpiar_blend_ledger_live_vacia_el_archivo(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(
+        trading_api.live_engine.blend_ledger, "save_ledger",
+        lambda path, ledger: llamadas.setdefault("args", (path, ledger)),
+    )
+
+    r = client.post("/admin/live/limpiar-blend-ledger", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert llamadas["args"][1] == []
+
+
 def test_blend_ledger_live_requiere_token(client):
     assert client.get("/live/blend-ledger").status_code == 401
 

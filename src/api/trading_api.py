@@ -228,6 +228,50 @@ def equity_live(authorization: str | None = Header(None)):
     return {"equity_usd": equity_usd}
 
 
+@app.post("/admin/live/fijar-estado-bucket")
+def fijar_estado_bucket_live(
+    bucket: str,
+    cash: float,
+    blend_spy_shares: int = 0,
+    blend_gld_shares: int = 0,
+    authorization: str | None = Header(None),
+):
+    """Corrige a mano cash/acciones de blend de UN bucket ya existente
+    — para reparar una divergencia puntual entre el estado local y las
+    posiciones reales de IBKR (ej. tras un bug de contabilidad),
+    sin tener que editar `state.json` en la VM. No crea buckets
+    nuevos ni toca `starting_capital`/posiciones abiertas; se niega
+    si el bucket no existe o tiene `open_positions`."""
+    _verificar_token(authorization)
+
+    state = live_engine.load_state()
+    if bucket not in state:
+        raise HTTPException(status_code=404, detail=f"Bucket '{bucket}' no existe en el estado actual")
+    if state[bucket].get("open_positions"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"El bucket '{bucket}' tiene posiciones abiertas — no se puede corregir así.",
+        )
+
+    state[bucket]["cash"] = round(cash, 2)
+    state[bucket]["blend_spy_shares"] = blend_spy_shares
+    state[bucket]["blend_gld_shares"] = blend_gld_shares
+    live_engine.save_state(state)
+    return state[bucket]
+
+
+@app.post("/admin/live/limpiar-blend-ledger")
+def limpiar_blend_ledger_live(authorization: str | None = Header(None)):
+    """Vacía el ledger de transacciones del blend del motor en vivo —
+    para usarse SOLO si el archivo quedó contaminado con datos de
+    prueba (ej. precios irreales que nunca pasaron en el mercado real),
+    nunca como operación de rutina. No toca `state.json` ni las
+    posiciones reales en IBKR, solo el historial de transacciones."""
+    _verificar_token(authorization)
+    live_engine.blend_ledger.save_ledger(live_engine.LIVE_BLEND_LEDGER_PATH, [])
+    return {"status": "ok", "mensaje": "blend_ledger.json vaciado"}
+
+
 @app.get("/live/blend-ledger")
 def blend_ledger_live(authorization: str | None = Header(None)):
     """Ledger de transacciones del blend del motor en vivo (ADR 0028),
