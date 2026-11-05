@@ -17,6 +17,8 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import threading
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException
@@ -49,6 +51,25 @@ def _correr(*args: str) -> None:
         )
 
 
+def _git_pull() -> str:
+    resultado = subprocess.run(
+        ["git", "pull", "origin", "main"], cwd=ROOT, capture_output=True, text=True,
+    )
+    if resultado.returncode != 0:
+        raise RuntimeError(f"git pull falló:\n{resultado.stdout}\n{resultado.stderr}")
+    return resultado.stdout
+
+
+def _reiniciar_proceso_despues_de_responder() -> None:
+    """No usa `systemctl restart` (requeriría sudo desde dentro del
+    proceso) — simplemente termina este proceso después de un segundo,
+    para que la respuesta HTTP ya se haya mandado. El servicio tiene
+    `Restart=always` (ver ADR 0022), así que systemd lo vuelve a
+    levantar solo, con el código ya actualizado por el git pull."""
+    time.sleep(1)
+    os._exit(0)
+
+
 def _equity_usd_con_fallback(ib) -> float:
     """La cuenta paper real de este proyecto no tiene segmento en USD
     todavía (nunca se ha comprado nada en dólares) — solo reporta en
@@ -71,6 +92,23 @@ def _verificar_token(authorization: str | None) -> None:
 def health(authorization: str | None = Header(None)):
     _verificar_token(authorization)
     return {"status": "ok", "gateway_port_esperado": 4002}
+
+
+@app.post("/admin/desplegar")
+def desplegar(authorization: str | None = Header(None)):
+    """git pull + pytest + reinicio del servicio, en una sola llamada
+    HTTPS — para no tener que pedirle al usuario que corra esto a mano
+    en la VM cada vez que hay código nuevo. Si los tests fallan, NO
+    reinicia (el código en disco ya quedó actualizado por el pull,
+    pero el proceso sigue corriendo con el código viejo hasta que se
+    corrija y se vuelva a desplegar)."""
+    _verificar_token(authorization)
+
+    git_output = _git_pull()
+    _correr("pytest", "-q")
+
+    threading.Thread(target=_reiniciar_proceso_despues_de_responder, daemon=True).start()
+    return {"status": "ok", "git_pull": git_output, "mensaje": "tests pasaron, reiniciando en ~1s"}
 
 
 @app.post("/live/ejecutar")

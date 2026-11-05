@@ -28,6 +28,71 @@ def test_health_responde_ok_con_token_correcto(client):
     assert r.json()["status"] == "ok"
 
 
+def test_desplegar_requiere_token(client):
+    assert client.post("/admin/desplegar").status_code == 401
+
+
+def test_desplegar_corre_git_pull_y_pytest_y_programa_reinicio(client, monkeypatch):
+    llamadas = []
+
+    monkeypatch.setattr(trading_api, "_git_pull", lambda: "Already up to date.")
+    monkeypatch.setattr(trading_api, "_correr", lambda *args: llamadas.append(args))
+
+    hilos_lanzados = []
+
+    class HiloFalso:
+        def __init__(self, target, daemon):
+            self.target = target
+            hilos_lanzados.append(self)
+
+        def start(self):
+            pass  # no lo ejecutamos de verdad: mataría el proceso de pytest
+
+    monkeypatch.setattr(trading_api.threading, "Thread", HiloFalso)
+
+    r = client.post("/admin/desplegar", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json()["git_pull"] == "Already up to date."
+    assert llamadas == [("pytest", "-q")]
+    assert len(hilos_lanzados) == 1
+    assert hilos_lanzados[0].target == trading_api._reiniciar_proceso_despues_de_responder
+
+
+def test_desplegar_no_programa_reinicio_si_los_tests_fallan(client, monkeypatch):
+    monkeypatch.setattr(trading_api, "_git_pull", lambda: "ok")
+
+    def pytest_falla(*args):
+        raise RuntimeError("Falló 'pytest -q' (exit 1): algo tronó")
+
+    monkeypatch.setattr(trading_api, "_correr", pytest_falla)
+
+    hilos_lanzados = []
+    monkeypatch.setattr(
+        trading_api.threading, "Thread",
+        lambda target, daemon: hilos_lanzados.append(target) or pytest.fail("no debería llegar aquí"),
+    )
+
+    with pytest.raises(RuntimeError):
+        client.post("/admin/desplegar", headers=HEADERS_OK)
+
+    assert hilos_lanzados == []
+
+
+def test_desplegar_propaga_error_si_git_pull_falla(client, monkeypatch):
+    def git_falla():
+        raise RuntimeError("git pull falló: conflicto")
+
+    monkeypatch.setattr(trading_api, "_git_pull", git_falla)
+    monkeypatch.setattr(
+        trading_api, "_correr",
+        lambda *a: pytest.fail("no debería correr pytest si git pull ya falló"),
+    )
+
+    with pytest.raises(RuntimeError):
+        client.post("/admin/desplegar", headers=HEADERS_OK)
+
+
 def test_estado_live_sin_historial_devuelve_vacio(client, monkeypatch):
     monkeypatch.setattr(live_engine, "load_history", lambda: [])
     r = client.get("/live/estado", headers=HEADERS_OK)
