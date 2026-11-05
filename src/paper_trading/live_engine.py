@@ -8,20 +8,27 @@ Corre EN PARALELO al motor simulado, con su propio estado
 (`data/paper_trading_live/`), para poder comparar simulado vs.
 ejecución real sin arriesgar el histórico ya acumulado del simulado.
 
-Diferencia deliberada vs. el motor simulado (ver ADR 0023): el cash
-ocioso NO se invierte en el benchmark SPY/GLD aquí — se queda como
-cash real en la cuenta. Invertirlo implicaría mandar órdenes reales de
-SPY/GLD constantemente solo para "parquear" cash, multiplicando el
-volumen de operaciones reales sin aportar a la pregunta que este motor
-está validando (¿las señales se ejecutan bien contra un broker real?).
-Esto hace que el equity reportado aquí no sea 1:1 comparable al
-simulado en buckets con mucho cash ocioso — es una limitación conocida,
-no un bug.
+Desde ADR 0028, el cash ocioso SÍ se invierte en el blend SPY/GLD, con
+órdenes reales (50/50 por valor, redondeado a acciones enteras — IBKR
+no soporta fracciones vía orden de mercado). Cada vez que se abre una
+posición, se liquida la porción de blend necesaria; cada vez que se
+cierra una, el producto vuelve al blend. Mismo comportamiento que el
+motor simulado (ADR 0007), ejecutado con órdenes reales. Toda entrada
+y salida del blend queda registrada en `blend_ledger.py` (ADR 0028),
+por bucket y por símbolo (SPY/GLD por separado, a diferencia del motor
+simulado que los trata como un solo índice combinado).
+
+Antes de ADR 0028 el cash ocioso se quedaba como cash puro sin
+invertir — decisión original de ADR 0023, revertida tras validar que
+el motor en vivo funciona de forma estable y que el usuario prefiere
+paridad de comportamiento con el motor simulado sobre minimizar
+volumen de operaciones.
 """
 
 from __future__ import annotations
 
 import json
+import math
 from datetime import date
 from pathlib import Path
 
@@ -29,7 +36,9 @@ import pandas as pd
 
 from src.backtesting.run import load_universe
 from src.broker.ibkr_adapter import Fill, OrdenNoLlenada, ejecutar_orden_mercado, posiciones_reales
+from src.paper_trading import blend_ledger
 from src.paper_trading.engine import (
+    BLEND_WEIGHTS,
     FRICCION_POR_LADO,
     RISK_LIMITS,
     _last_row_as_of,
@@ -40,8 +49,103 @@ from src.screening.daily_signals import BUCKET_CONFIG, read_universe_file
 ROOT = Path(__file__).resolve().parents[2]
 LIVE_STATE_PATH = ROOT / "data" / "paper_trading_live" / "state.json"
 LIVE_HISTORY_PATH = ROOT / "data" / "paper_trading_live" / "history.json"
+LIVE_BLEND_LEDGER_PATH = ROOT / "data" / "paper_trading_live" / "blend_ledger.json"
 
 ACTIVE_BUCKETS = list(BUCKET_CONFIG.keys())
+
+
+def _precios_blend_hoy(as_of: pd.Timestamp | None = None) -> dict[str, float]:
+    """Último precio de cierre descargado para SPY y GLD — sirve solo
+    para DECIDIR cuántas acciones enteras comprar/vender; el precio
+    real de ejecución siempre lo da el fill de la orden, nunca este."""
+    universe = load_universe(symbols=list(BLEND_WEIGHTS))
+    precios = {}
+    for simbolo in BLEND_WEIGHTS:
+        df = universe.get(simbolo)
+        if df is None:
+            continue
+        last = _last_row_as_of(df, as_of)
+        if last is not None:
+            precios[simbolo] = float(last["close"])
+    return precios
+
+
+def _valor_blend(bucket_state: dict, precios: dict[str, float]) -> float:
+    valor = 0.0
+    for simbolo in BLEND_WEIGHTS:
+        shares = bucket_state.get(f"blend_{simbolo.lower()}_shares", 0)
+        precio = precios.get(simbolo)
+        if precio:
+            valor += shares * precio
+    return valor
+
+
+def _invertir_en_blend(
+    ib, bucket: str, monto_usd: float, bucket_state: dict, fecha: str, motivo: str,
+    precios: dict[str, float], ordenes_fallidas_hoy: list[dict],
+) -> float:
+    """Compra SPY+GLD real, 50/50 por valor, con lo que alcance en
+    acciones enteras. Devuelve el monto REAL invertido — puede ser
+    menor al pedido por el redondeo; el resto se queda en cash."""
+    if monto_usd <= 0:
+        return 0.0
+    invertido = 0.0
+    for simbolo, peso in BLEND_WEIGHTS.items():
+        precio = precios.get(simbolo)
+        if not precio:
+            continue
+        shares = int((monto_usd * peso) // precio)
+        if shares < 1:
+            continue
+        try:
+            fill: Fill = ejecutar_orden_mercado(ib, simbolo, "BUY", shares)
+        except OrdenNoLlenada as e:
+            ordenes_fallidas_hoy.append({"symbol": simbolo, "accion": "BUY", "error": str(e)})
+            continue
+        costo_real = fill.precio_promedio * shares
+        invertido += costo_real
+        clave = f"blend_{simbolo.lower()}_shares"
+        bucket_state[clave] = bucket_state.get(clave, 0) + shares
+        blend_ledger.registrar(
+            LIVE_BLEND_LEDGER_PATH, bucket=bucket, fecha=fecha, tipo="compra",
+            simbolo=simbolo, monto_usd=costo_real, precio=fill.precio_promedio,
+            shares=shares, motivo=motivo,
+        )
+    return invertido
+
+
+def _liquidar_de_blend(
+    ib, bucket: str, monto_necesario: float, bucket_state: dict, fecha: str, motivo: str,
+    precios: dict[str, float], ordenes_fallidas_hoy: list[dict],
+) -> float:
+    """Vende SPY+GLD real, proporcional por valor, para levantar AL
+    MENOS `monto_necesario` — puede levantar algo más por el redondeo
+    a acciones enteras (el sobrante se queda en cash). Devuelve el
+    monto REAL levantado."""
+    if monto_necesario <= 0:
+        return 0.0
+    levantado = 0.0
+    for simbolo, peso in BLEND_WEIGHTS.items():
+        precio = precios.get(simbolo)
+        clave = f"blend_{simbolo.lower()}_shares"
+        shares_disponibles = bucket_state.get(clave, 0)
+        if not precio or shares_disponibles < 1:
+            continue
+        shares_a_vender = min(shares_disponibles, max(1, math.ceil((monto_necesario * peso) / precio)))
+        try:
+            fill: Fill = ejecutar_orden_mercado(ib, simbolo, "SELL", shares_a_vender)
+        except OrdenNoLlenada as e:
+            ordenes_fallidas_hoy.append({"symbol": simbolo, "accion": "SELL", "error": str(e)})
+            continue
+        proceeds = fill.precio_promedio * shares_a_vender
+        levantado += proceeds
+        bucket_state[clave] = shares_disponibles - shares_a_vender
+        blend_ledger.registrar(
+            LIVE_BLEND_LEDGER_PATH, bucket=bucket, fecha=fecha, tipo="venta",
+            simbolo=simbolo, monto_usd=proceeds, precio=fill.precio_promedio,
+            shares=shares_a_vender, motivo=motivo,
+        )
+    return levantado
 
 
 def load_state() -> dict:
@@ -66,13 +170,19 @@ def save_history(history: list[dict]) -> None:
     LIVE_HISTORY_PATH.write_text(json.dumps(history, indent=2, ensure_ascii=False))
 
 
-def init_bucket_state(bucket: str, starting_capital: float) -> dict:
-    """A diferencia del motor simulado, el cash arranca como cash real
-    — no se invierte en benchmark (ver docstring del módulo)."""
-    return {
+def init_bucket_state(bucket: str, starting_capital: float, ib=None) -> dict:
+    """Desde ADR 0028: si se pasa `ib` (conexión real), el capital
+    inicial se invierte de entrada en el blend, igual que el motor
+    simulado (ADR 0007). Si `ib` es None (uso en tests que no
+    necesitan una conexión real), se queda como cash puro — compat
+    hacia atrás para no forzar un mock de IB en cada test que solo
+    necesita un bucket_state de arranque."""
+    estado = {
         "starting_capital": round(starting_capital, 2),
         "start_date": date.today().isoformat(),
         "cash": round(starting_capital, 2),
+        "blend_spy_shares": 0,
+        "blend_gld_shares": 0,
         "open_positions": [],
         "closed_positions": [],
         "peak_equity": round(starting_capital, 2),
@@ -84,6 +194,14 @@ def init_bucket_state(bucket: str, starting_capital: float) -> dict:
         "daily_loss_tripped_today": False,
         "ordenes_fallidas": [],
     }
+    if ib is not None:
+        fecha = date.today().isoformat()
+        precios = _precios_blend_hoy()
+        invertido = _invertir_en_blend(
+            ib, bucket, estado["cash"], estado, fecha, "capital inicial del bucket", precios, [],
+        )
+        estado["cash"] = round(estado["cash"] - invertido, 2)
+    return estado
 
 
 def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestamp | None = None) -> dict:
@@ -109,6 +227,7 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
     cash = bucket_state.get("cash", 0.0)
     closed_today = []
     ordenes_fallidas_hoy = []
+    precios_blend = _precios_blend_hoy(as_of)
 
     # --- 1. Revisar posiciones abiertas: trailing stop o señal de salida ---
     still_open = []
@@ -145,7 +264,11 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
 
         proceeds = fill.precio_promedio * pos["shares"]
         pnl = proceeds - pos["entry_price"] * pos["shares"]
-        cash += proceeds
+        invertido = _invertir_en_blend(
+            ib, bucket, proceeds, bucket_state, today_label, f"producto de cerrar {symbol}",
+            precios_blend, ordenes_fallidas_hoy,
+        )
+        cash += round(proceeds - invertido, 2)
         closed_today.append(
             {
                 **pos,
@@ -177,7 +300,7 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
             for p in open_positions
             if universe.get(p["symbol"]) is not None and _last_row_as_of(universe[p["symbol"]], as_of) is not None
         )
-        equity_now = cash + unrealized_now
+        equity_now = cash + _valor_blend(bucket_state, precios_blend) + unrealized_now
 
         day_start_equity = bucket_state.get("day_start_equity") or bucket_state["starting_capital"]
         daily_loss_pct = (day_start_equity - equity_now) / day_start_equity if day_start_equity else 0.0
@@ -224,11 +347,33 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
             risk_amount = equity_now * risk_pct
             shares = int(risk_amount // risk_per_share)
             # Costo estimado con la misma fricción del backtest, solo
-            # para decidir si alcanza el cash — el costo REAL lo da el
-            # fill de la orden, no esta estimación.
+            # para decidir si alcanza — el costo REAL lo da el fill de
+            # la orden, no esta estimación. "disponible" es cash + lo
+            # que hay invertido en el blend (ADR 0028), no solo cash.
             cost_estimado = shares * entry_price_estimado * (1 + FRICCION_POR_LADO)
-            if shares < 1 or cost_estimado > cash:
+            disponible = cash + _valor_blend(bucket_state, precios_blend)
+            if shares < 1 or cost_estimado > disponible:
                 continue
+
+            if cost_estimado > cash:
+                faltante = cost_estimado - cash
+                levantado = _liquidar_de_blend(
+                    ib, bucket, faltante, bucket_state, today_label, f"financia la compra de {symbol}",
+                    precios_blend, ordenes_fallidas_hoy,
+                )
+                cash += levantado
+                if cost_estimado > cash:
+                    # La liquidación del blend no alcanzó a levantar lo
+                    # necesario (ej. una pata falló) — no se fuerza la
+                    # compra con cash que no existe.
+                    ordenes_fallidas_hoy.append(
+                        {
+                            "symbol": symbol,
+                            "accion": "BUY",
+                            "error": f"liquidar el blend solo levantó ${levantado:.2f}, faltaba ${faltante:.2f}",
+                        }
+                    )
+                    continue
 
             try:
                 fill: Fill = ejecutar_orden_mercado(ib, symbol, "BUY", shares)
@@ -276,7 +421,8 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
         unrealized += float(last["close"]) * pos["shares"]
         today_label = today_label or str(last["date"].date())
 
-    equity = cash + unrealized
+    valor_blend_final = _valor_blend(bucket_state, precios_blend)
+    equity = cash + valor_blend_final + unrealized
     realized_pnl_today = sum(c["pnl"] for c in closed_today)
 
     bucket_state["cash"] = round(cash, 2)
@@ -291,6 +437,7 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
         "date": today_label,
         "equity": round(equity, 2),
         "cash": round(cash, 2),
+        "blend_value": round(valor_blend_final, 2),
         "unrealized_pnl": round(unrealized - sum(p["entry_price"] * p["shares"] for p in open_positions), 2),
         "open_count": len(open_positions),
         "closed_today": len(closed_today),
@@ -322,7 +469,7 @@ def run_daily_tick_live(ib, starting_capital_por_bucket: dict[str, float]) -> di
             capital = starting_capital_por_bucket.get(bucket, 0.0)
             if capital <= 0:
                 continue
-            state[bucket] = init_bucket_state(bucket, capital)
+            state[bucket] = init_bucket_state(bucket, capital, ib)
 
         equity_antes = state[bucket].get("last_equity")
         try:

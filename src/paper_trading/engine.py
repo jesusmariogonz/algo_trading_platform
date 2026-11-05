@@ -86,6 +86,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.backtesting.run import load_universe
+from src.paper_trading import blend_ledger
 from src.portfolio.allocation import get_balances
 from src.screening.daily_signals import BUCKET_CONFIG, read_universe_file
 from src.strategies.mean_reversion_rsi2 import generate_signals as mean_reversion_rsi2_signals
@@ -96,6 +97,8 @@ from src.strategies.trend_following import generate_signals as trend_following_s
 ROOT = Path(__file__).resolve().parents[2]
 STATE_PATH = ROOT / "data" / "paper_trading" / "state.json"
 HISTORY_PATH = ROOT / "data" / "paper_trading" / "history.json"
+# Ledger de transacciones del blend (ADR 0028) — ver src/paper_trading/blend_ledger.py.
+BLEND_LEDGER_PATH = ROOT / "data" / "paper_trading" / "blend_ledger.json"
 
 SIGNAL_FNS = {
     "trend_following": trend_following_signals,
@@ -294,6 +297,12 @@ def init_bucket_state(bucket: str, starting_capital: float, as_of: pd.Timestamp 
     temp_state: dict = {}
     bench_price = _benchmark_price(bucket, temp_state, as_of)
     bench_shares = starting_capital / bench_price if bench_price else 0.0
+    if bench_price:
+        blend_ledger.registrar(
+            BLEND_LEDGER_PATH, bucket=bucket, fecha=date.today().isoformat(), tipo="compra",
+            simbolo="BLEND_SPY_GLD", monto_usd=starting_capital, precio=bench_price,
+            shares=bench_shares, motivo="capital inicial del bucket",
+        )
     nuevo_estado = {
         "starting_capital": round(starting_capital, 2),
         "start_date": date.today().isoformat(),
@@ -388,7 +397,13 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
             proceeds = exit_price * pos["shares"] * (1 - FRICCION_POR_LADO)  # fricción de salida
             pnl = proceeds - pos["entry_price"] * pos["shares"]  # entry_price ya incluye fricción de entrada
             if bench_price:
-                bench_shares += proceeds / bench_price
+                shares_compradas = proceeds / bench_price
+                bench_shares += shares_compradas
+                blend_ledger.registrar(
+                    BLEND_LEDGER_PATH, bucket=bucket, fecha=today_label, tipo="compra",
+                    simbolo="BLEND_SPY_GLD", monto_usd=proceeds, precio=bench_price,
+                    shares=shares_compradas, motivo=f"producto de cerrar {symbol}",
+                )
             else:
                 bucket_state["cash"] = bucket_state.get("cash", 0.0) + proceeds
             closed = {
@@ -484,7 +499,13 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
                 continue
 
             if bench_price:
-                bench_shares -= cost / bench_price
+                shares_vendidas = cost / bench_price
+                bench_shares -= shares_vendidas
+                blend_ledger.registrar(
+                    BLEND_LEDGER_PATH, bucket=bucket, fecha=today_label, tipo="venta",
+                    simbolo="BLEND_SPY_GLD", monto_usd=cost, precio=bench_price,
+                    shares=shares_vendidas, motivo=f"financia la compra de {symbol}",
+                )
             else:
                 bucket_state["cash"] = bucket_state.get("cash", 0.0) - cost
             open_positions.append(

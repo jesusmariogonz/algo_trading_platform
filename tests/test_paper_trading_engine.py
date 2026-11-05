@@ -8,6 +8,7 @@ from src.paper_trading import engine
 def isolated_paths(tmp_path, monkeypatch):
     monkeypatch.setattr(engine, "STATE_PATH", tmp_path / "state.json")
     monkeypatch.setattr(engine, "HISTORY_PATH", tmp_path / "history.json")
+    monkeypatch.setattr(engine, "BLEND_LEDGER_PATH", tmp_path / "blend_ledger.json")
     yield
 
 
@@ -296,3 +297,49 @@ def test_blocked_bucket_never_opens_new_positions(monkeypatch):
 
     assert result["daily_loss_breaker_tripped"] is True
     assert result["open_count"] == 0  # no se abrió nada pese a la señal
+
+
+def test_entrada_y_salida_registran_en_el_blend_ledger(monkeypatch):
+    """Regresión de ADR 0028: cada vez que se abre o cierra una
+    posición, el movimiento de cash hacia/desde el blend debe quedar
+    registrado en el ledger — no solo reflejado en bench_shares."""
+    from src.paper_trading import blend_ledger
+
+    fake_universe = {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0]}
+        ),
+        "SPY": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [10.0], "sma_200": [9.0], "atr_14": [0.1]}
+        ),
+        "GLD": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [20.0], "sma_200": [19.0], "atr_14": [0.1]}
+        ),
+    }
+    monkeypatch.setattr(engine, "load_universe", lambda symbols=None: fake_universe)
+    monkeypatch.setattr(engine, "BUCKET_CONFIG", {
+        "largo_plazo": {
+            "universe_file": None,
+            "risk_pct": 0.3,
+            "strategies": ["time_series_momentum"],
+        }
+    })
+    monkeypatch.setattr(engine, "read_universe_file", lambda path: ["VOO"])
+    monkeypatch.setitem(
+        engine.SIGNAL_FNS, "time_series_momentum",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 50),
+    )
+
+    bucket_state = engine.init_bucket_state("largo_plazo", 10000.0)
+    ledger_tras_init = blend_ledger.load_ledger(engine.BLEND_LEDGER_PATH)
+    assert len(ledger_tras_init) == 1
+    assert ledger_tras_init[0]["tipo"] == "compra"
+    assert ledger_tras_init[0]["motivo"] == "capital inicial del bucket"
+
+    engine.run_bucket_tick("largo_plazo", bucket_state)
+
+    ledger = blend_ledger.load_ledger(engine.BLEND_LEDGER_PATH)
+    ventas = [tx for tx in ledger if tx["tipo"] == "venta"]
+    assert len(ventas) == 1
+    assert ventas[0]["bucket"] == "largo_plazo"
+    assert "VOO" in ventas[0]["motivo"]

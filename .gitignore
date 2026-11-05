@@ -12,3 +12,4 @@ data/portfolio/ledger.json
 .ruff_cache/
 .pytest_cache/
 exploracion_2026_11/
+data/paper_trading_live/

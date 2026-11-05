@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from src.broker.ibkr_adapter import Fill, OrdenNoLlenada
-from src.paper_trading import engine, live_engine
+from src.paper_trading import blend_ledger, engine, live_engine
 
 
 @pytest.fixture(autouse=True)
@@ -227,6 +227,10 @@ def test_run_daily_tick_live_guarda_estado_aunque_un_bucket_posterior_truene(mon
             {"date": [pd.Timestamp("2026-01-01")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0]}
         ),
     }
+    fake_universe_blend = {
+        "SPY": pd.DataFrame({"date": [pd.Timestamp("2026-01-01")], "close": [500.0]}),
+        "GLD": pd.DataFrame({"date": [pd.Timestamp("2026-01-01")], "close": [300.0]}),
+    }
 
     monkeypatch.setattr(
         live_engine,
@@ -240,6 +244,8 @@ def test_run_daily_tick_live_guarda_estado_aunque_un_bucket_posterior_truene(mon
     def load_universe_falso(symbols=None):
         if symbols == ["VOO"]:
             return fake_universe_ok
+        if symbols is not None and set(symbols) == {"SPY", "GLD"}:
+            return fake_universe_blend
         raise ValueError("universo roto a propósito")
 
     monkeypatch.setattr(live_engine, "load_universe", load_universe_falso)
@@ -282,3 +288,126 @@ def test_posiciones_reconciliadas_detecta_divergencia(monkeypatch, tmp_path):
     resultado = live_engine.posiciones_reconciliadas(ib=object())
 
     assert resultado["divergencias"] == {"MSFT": {"esperado": 5, "real": 3}}
+
+
+# --- ADR 0028: cash ocioso invertido en el blend, con órdenes reales ---
+
+class _IBFalsoBlend:
+    """Fake minimal para probar _invertir_en_blend / _liquidar_de_blend
+    sin pasar por el adapter real — las funciones de blend llaman a
+    live_engine.ejecutar_orden_mercado directamente (se monkeypatchea
+    esa función, no el objeto `ib`), así que aquí `ib` es solo un
+    marcador, nunca se usa de verdad."""
+    pass
+
+
+def _fill_falso_para(precios: dict):
+    def fn(ib, symbol, accion, shares):
+        return Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=precios[symbol])
+    return fn
+
+
+def test_invertir_en_blend_compra_50_50_redondeado_a_enteros(monkeypatch, tmp_path):
+    ledger_path = tmp_path / "blend_ledger.json"
+    monkeypatch.setattr(live_engine, "LIVE_BLEND_LEDGER_PATH", ledger_path)
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", _fill_falso_para({"SPY": 100.0, "GLD": 60.0}))
+
+    bucket_state = {}
+    invertido = live_engine._invertir_en_blend(
+        object(), "largo_plazo", 1000.0, bucket_state, "2026-11-05", "capital inicial",
+        {"SPY": 100.0, "GLD": 60.0}, [],
+    )
+
+    # 500 a SPY (5 acciones a $100), 500 a GLD (8 acciones a $60 = $480, resto no alcanza para una 9na)
+    assert bucket_state["blend_spy_shares"] == 5
+    assert bucket_state["blend_gld_shares"] == 8
+    assert invertido == pytest.approx(5 * 100.0 + 8 * 60.0)
+
+    ledger = blend_ledger.load_ledger(ledger_path)
+    assert len(ledger) == 2
+    assert {tx["simbolo"] for tx in ledger} == {"SPY", "GLD"}
+    assert all(tx["tipo"] == "compra" for tx in ledger)
+
+
+def test_invertir_en_blend_no_crashea_si_una_pata_no_alcanza_para_1_share(monkeypatch, tmp_path):
+    monkeypatch.setattr(live_engine, "LIVE_BLEND_LEDGER_PATH", tmp_path / "blend_ledger.json")
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", _fill_falso_para({"SPY": 10.0, "GLD": 10000.0}))
+
+    bucket_state = {}
+    invertido = live_engine._invertir_en_blend(
+        object(), "largo_plazo", 100.0, bucket_state, "2026-11-05", "x", {"SPY": 10.0, "GLD": 10000.0}, [],
+    )
+    # 50 a SPY -> 5 acciones; 50 a GLD -> 0 acciones (no alcanza ni para 1)
+    assert bucket_state["blend_spy_shares"] == 5
+    assert bucket_state.get("blend_gld_shares", 0) == 0
+    assert invertido == pytest.approx(50.0)
+
+
+def test_invertir_en_blend_registra_orden_fallida_si_la_pata_no_se_llena(monkeypatch, tmp_path):
+    monkeypatch.setattr(live_engine, "LIVE_BLEND_LEDGER_PATH", tmp_path / "blend_ledger.json")
+
+    def fallo(ib, symbol, accion, shares):
+        if symbol == "GLD":
+            raise OrdenNoLlenada("simulado")
+        return Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=100.0)
+
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", fallo)
+
+    bucket_state = {}
+    fallidas = []
+    live_engine._invertir_en_blend(
+        object(), "largo_plazo", 1000.0, bucket_state, "2026-11-05", "x", {"SPY": 100.0, "GLD": 60.0}, fallidas,
+    )
+    assert bucket_state["blend_spy_shares"] == 5
+    assert "blend_gld_shares" not in bucket_state
+    assert len(fallidas) == 1
+    assert fallidas[0]["symbol"] == "GLD"
+
+
+def test_liquidar_de_blend_levanta_al_menos_lo_necesario(monkeypatch, tmp_path):
+    monkeypatch.setattr(live_engine, "LIVE_BLEND_LEDGER_PATH", tmp_path / "blend_ledger.json")
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", _fill_falso_para({"SPY": 100.0, "GLD": 60.0}))
+
+    bucket_state = {"blend_spy_shares": 10, "blend_gld_shares": 10}
+    levantado = live_engine._liquidar_de_blend(
+        object(), "largo_plazo", 150.0, bucket_state, "2026-11-05", "financia compra",
+        {"SPY": 100.0, "GLD": 60.0}, [],
+    )
+    assert levantado >= 150.0
+    assert bucket_state["blend_spy_shares"] < 10
+    assert bucket_state["blend_gld_shares"] < 10
+
+    ledger = blend_ledger.load_ledger(tmp_path / "blend_ledger.json")
+    assert all(tx["tipo"] == "venta" for tx in ledger)
+
+
+def test_liquidar_de_blend_nunca_vende_mas_shares_de_las_que_hay(monkeypatch, tmp_path):
+    monkeypatch.setattr(live_engine, "LIVE_BLEND_LEDGER_PATH", tmp_path / "blend_ledger.json")
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", _fill_falso_para({"SPY": 100.0, "GLD": 60.0}))
+
+    bucket_state = {"blend_spy_shares": 1, "blend_gld_shares": 0}
+    levantado = live_engine._liquidar_de_blend(
+        object(), "largo_plazo", 10000.0, bucket_state, "2026-11-05", "x", {"SPY": 100.0, "GLD": 60.0}, [],
+    )
+    assert bucket_state["blend_spy_shares"] == 0
+    assert levantado == pytest.approx(100.0)  # solo lo que había, no más
+
+
+def test_init_bucket_state_live_con_ib_invierte_capital_inicial_en_blend(monkeypatch, tmp_path):
+    monkeypatch.setattr(live_engine, "LIVE_BLEND_LEDGER_PATH", tmp_path / "blend_ledger.json")
+    monkeypatch.setattr(live_engine, "_precios_blend_hoy", lambda as_of=None: {"SPY": 100.0, "GLD": 60.0})
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", _fill_falso_para({"SPY": 100.0, "GLD": 60.0}))
+
+    estado = live_engine.init_bucket_state("largo_plazo", 1000.0, ib=object())
+
+    assert estado["blend_spy_shares"] == 5
+    assert estado["blend_gld_shares"] == 8
+    assert estado["cash"] < 1000.0  # el resto, no invertible por redondeo, queda en cash
+
+
+def test_init_bucket_state_live_sin_ib_sigue_siendo_cash_puro():
+    """Compat hacia atrás: sin ib, el comportamiento es el de siempre."""
+    estado = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    assert estado["cash"] == 1000.0
+    assert estado["blend_spy_shares"] == 0
+    assert estado["blend_gld_shares"] == 0
