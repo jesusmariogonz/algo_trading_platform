@@ -31,16 +31,16 @@
       }
     ],
     "closed_positions": [],
-    "day_start_equity": 429.65,
-    "day_start_date": "2026-11-04",
-    "daily_loss_tripped_today": false,
+    "day_start_equity": 435.43098527618366,
+    "day_start_date": "2026-11-05",
+    "daily_loss_tripped_today": true,
     "peak_equity": 435.43098527618366,
-    "last_equity": 435.43098527618366,
-    "blend_last_price": 143.41936674854034,
-    "blend_last_date": "2026-11-04",
+    "last_equity": 422.039436886516,
+    "blend_last_price": 140.83510422120978,
+    "blend_last_date": "2026-11-05",
     "blend_last_components": {
-      "SPY": 766.8099975585938,
-      "GLD": 372.489990234375
+      "SPY": 733.0,
+      "GLD": 375.489990234375
     }
   },
   "mediano_plazo": {
@@ -97,16 +97,16 @@
         "reason": "stop_hit"
       }
     ],
-    "day_start_equity": 364.36,
-    "day_start_date": "2026-11-04",
+    "day_start_equity": 369.18779439573524,
+    "day_start_date": "2026-11-05",
     "daily_loss_tripped_today": false,
     "peak_equity": 369.27973439817663,
-    "last_equity": 369.18779439573524,
-    "blend_last_price": 143.41936674854034,
-    "blend_last_date": "2026-11-04",
+    "last_equity": 363.81461981647004,
+    "blend_last_price": 140.83510422120978,
+    "blend_last_date": "2026-11-05",
     "blend_last_components": {
-      "SPY": 766.8099975585938,
-      "GLD": 372.489990234375
+      "SPY": 733.0,
+      "GLD": 375.489990234375
     }
   },
   "riesgo_alto": {
@@ -116,16 +116,16 @@
     "bench_shares": 1.5190838744569801,
     "open_positions": [],
     "closed_positions": [],
-    "day_start_equity": 212.25,
-    "day_start_date": "2026-11-04",
+    "day_start_equity": 216.31439994821412,
+    "day_start_date": "2026-11-05",
     "daily_loss_tripped_today": false,
     "peak_equity": 216.31439994821412,
-    "last_equity": 216.31439994821412,
-    "blend_last_price": 142.39793048,
-    "blend_last_date": "2026-11-04",
+    "last_equity": 212.41664743906398,
+    "blend_last_price": 139.83207314013228,
+    "blend_last_date": "2026-11-05",
     "blend_last_components": {
-      "SPY": 766.809998,
-      "GLD": 372.48999
+      "SPY": 733.0,
+      "GLD": 375.489990234375
     }
   }
 }

@@ -277,5 +277,62 @@
       }
     },
     "alertas": []
+  },
+  {
+    "date": "2026-11-05",
+    "buckets": {
+      "largo_plazo": {
+        "date": "2026-11-05",
+        "equity": 422.04,
+        "cash": 110.17,
+        "unrealized_pnl": -5.26,
+        "open_count": 3,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -1.51,
+        "closed_today_detail": [],
+        "daily_loss_pct": 3.08,
+        "drawdown_pct": 3.08,
+        "daily_loss_breaker_tripped": true,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "mediano_plazo": {
+        "date": "2026-11-05",
+        "equity": 363.81,
+        "cash": 59.57,
+        "unrealized_pnl": 0.49,
+        "open_count": 4,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -1.0,
+        "closed_today_detail": [],
+        "daily_loss_pct": 1.46,
+        "drawdown_pct": 1.48,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "riesgo_alto": {
+        "date": "2026-11-05",
+        "equity": 212.42,
+        "cash": 212.42,
+        "unrealized_pnl": 0.0,
+        "open_count": 0,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": 0.37,
+        "closed_today_detail": [],
+        "daily_loss_pct": 1.8,
+        "drawdown_pct": 1.8,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      }
+    },
+    "alertas": []
   }
 ]

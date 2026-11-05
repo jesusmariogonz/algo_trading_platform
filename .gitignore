@@ -13,3 +13,4 @@ data/portfolio/ledger.json
 .pytest_cache/
 exploracion_2026_11/
 data/paper_trading_live/
+venv/
