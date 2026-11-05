@@ -105,41 +105,41 @@
     "starting_capital": 151.66,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 0.80633919309785,
+    "bench_shares": 1.0978624458343111,
     "open_positions": [],
     "closed_positions": [],
-    "day_start_equity": 112.64035771291043,
+    "day_start_equity": 156.33,
     "day_start_date": "2026-11-04",
     "daily_loss_tripped_today": false,
-    "peak_equity": 115.64465645862263,
-    "last_equity": 115.64465645862263,
-    "blend_last_price": 143.41936674854034,
+    "peak_equity": 156.33,
+    "last_equity": 156.33,
+    "blend_last_price": 142.39793048,
     "blend_last_date": "2026-11-04",
     "blend_last_components": {
-      "SPY": 766.8099975585938,
-      "GLD": 372.489990234375
+      "SPY": 766.809998,
+      "GLD": 372.48999
     }
   },
   "mean_reversion": {
     "starting_capital": 249.38,
     "start_date": "2026-11-01",
     "cash": 0.0,
-    "bench_shares": 1.325859373001608,
+    "bench_shares": 1.8052547589487042,
     "open_positions": [],
     "closed_positions": [],
-    "peak_equity": 190.15391167350737,
-    "day_start_equity": 185.21395875369916,
+    "peak_equity": 257.06,
+    "day_start_equity": 257.06,
     "day_start_date": "2026-11-04",
     "suspended": false,
     "suspended_reason": null,
     "suspended_since": null,
     "daily_loss_tripped_today": false,
-    "last_equity": 190.15391167350737,
-    "blend_last_price": 143.41936674854034,
+    "last_equity": 257.06,
+    "blend_last_price": 142.39793048,
     "blend_last_date": "2026-11-04",
     "blend_last_components": {
-      "SPY": 766.8099975585938,
-      "GLD": 372.489990234375
+      "SPY": 766.809998,
+      "GLD": 372.48999
     }
   }
 }
