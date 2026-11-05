@@ -100,6 +100,14 @@ def ejecutar_orden_mercado(ib: IB, symbol: str, accion: str, shares: int) -> Fil
     ib.qualifyContracts(contrato)
 
     orden = MarketOrder(accion, shares)
+    # Si `tif` se deja vacío, TWS aplica el default de su "order
+    # preset" y manda el aviso Error 10349 ("Order TIF was set to DAY
+    # based on order preset") — versiones de ib_async anteriores al
+    # fix en la rama `next` lo malinterpretan como cancelación real de
+    # la orden, aunque en realidad pudo seguir viva. Fijar `tif`
+    # explícitamente evita que TWS mande ese aviso.
+    # Ver: https://github.com/ib-api-reloaded/ib_async/discussions/190
+    orden.tif = "DAY"
     trade = ib.placeOrder(contrato, orden)
 
     limite = time.monotonic() + FILL_TIMEOUT_SEGUNDOS
