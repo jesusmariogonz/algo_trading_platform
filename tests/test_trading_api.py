@@ -430,6 +430,26 @@ def test_blend_ledger_live_devuelve_el_ledger(client, monkeypatch):
     assert r.json() == renglones
 
 
+def test_posiciones_reales_live_requiere_token(client):
+    assert client.get("/live/posiciones-reales").status_code == 401
+
+
+def test_posiciones_reales_live_devuelve_posiciones_con_costo(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
+    monkeypatch.setattr(
+        trading_api, "posiciones_reales_con_costo",
+        lambda ib: {"AAPL": {"shares": 10, "avg_cost": 150.0}},
+    )
+
+    r = client.get("/live/posiciones-reales", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json() == {"AAPL": {"shares": 10, "avg_cost": 150.0}}
+    assert llamadas["desconectado"] == "ib-falso"
+
+
 def test_reconciliar_live(client, monkeypatch):
     monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)

@@ -23,7 +23,13 @@ from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException
 
-from src.broker.ibkr_adapter import conectar, desconectar, equity_de_cuenta, equity_de_cuenta_usd
+from src.broker.ibkr_adapter import (
+    conectar,
+    desconectar,
+    equity_de_cuenta,
+    equity_de_cuenta_usd,
+    posiciones_reales_con_costo,
+)
 from src.portfolio.allocation import BUCKETS, get_usd_mxn_rate
 from src.paper_trading import live_engine
 
@@ -280,6 +286,23 @@ def blend_ledger_live(authorization: str | None = Header(None)):
     el archivo manualmente en la VM."""
     _verificar_token(authorization)
     return live_engine.blend_ledger.load_ledger(live_engine.LIVE_BLEND_LEDGER_PATH)
+
+
+@app.get("/live/posiciones-reales")
+def posiciones_reales_live(authorization: str | None = Header(None)):
+    """Posiciones reales en IBKR con su costo promedio real
+    (`avgCost`) — para reconciliar el estado local contra la cuenta
+    cuando hay divergencias, sin tener que pedir esto a mano en la
+    VM. Solo lectura, no ejecuta nada."""
+    _verificar_token(authorization)
+
+    ib = conectar()
+    try:
+        posiciones = posiciones_reales_con_costo(ib)
+    finally:
+        desconectar(ib)
+
+    return posiciones
 
 
 @app.get("/live/reconciliar")

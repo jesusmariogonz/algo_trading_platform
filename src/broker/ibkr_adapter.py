@@ -84,13 +84,48 @@ def posiciones_reales(ib: IB) -> dict[str, int]:
     return out
 
 
+def posiciones_reales_con_costo(ib: IB) -> dict[str, dict]:
+    """symbol -> {"shares": int, "avg_cost": float}, solo para
+    acciones (Stock). `avgCost` de IBKR incluye comisiones promediadas
+    — es el costo base real para calcular P&L, no un precio de
+    mercado."""
+    out: dict[str, dict] = {}
+    for pos in ib.positions():
+        if pos.contract.secType != "STK":
+            continue
+        symbol = pos.contract.symbol
+        shares = int(pos.position)
+        costo = float(pos.avgCost)
+        if symbol in out:
+            total_shares_previas = out[symbol]["shares"]
+            costo_total = out[symbol]["avg_cost"] * total_shares_previas + costo * shares
+            nuevo_total = total_shares_previas + shares
+            out[symbol] = {
+                "shares": nuevo_total,
+                "avg_cost": costo_total / nuevo_total if nuevo_total else 0.0,
+            }
+        else:
+            out[symbol] = {"shares": shares, "avg_cost": costo}
+    return out
+
+
 def ejecutar_orden_mercado(ib: IB, symbol: str, accion: str, shares: int) -> Fill:
     """Manda una orden de mercado y espera a que se llene por completo.
 
-    `accion` es "BUY" o "SELL". Lanza OrdenNoLlenada si no se llena
-    dentro de FILL_TIMEOUT_SEGUNDOS — el motor decide qué hacer con
-    eso (reintentar, registrar como fallida, etc.), este adapter no
-    toma esa decisión."""
+    `accion` es "BUY" o "SELL". Lanza OrdenNoLlenada si de verdad no se
+    llenó dentro de FILL_TIMEOUT_SEGUNDOS — el motor decide qué hacer
+    con eso (reintentar, registrar como fallida, etc.), este adapter
+    no toma esa decisión.
+
+    IMPORTANTE: `trade.orderStatus.status` NO es confiable por sí solo
+    (ver docs/adr/0031 y 0032) — versiones de ib_async pueden reportar
+    "Cancelled"/"Inactive" para una orden que en realidad SÍ se llenó
+    en IBKR. Por eso esta función nunca decide "no se llenó" solo con
+    el status: primero revisa `trade.fills` (las ejecuciones reales
+    que llegan de IBKR, independientes del campo de status), y si
+    tampoco hay fills ahí, compara las posiciones reales de la cuenta
+    antes/después como última verificación antes de declarar la orden
+    como no llenada."""
     if accion not in ("BUY", "SELL"):
         raise ValueError(f"accion debe ser BUY o SELL, no {accion!r}")
     if shares < 1:
@@ -98,6 +133,8 @@ def ejecutar_orden_mercado(ib: IB, symbol: str, accion: str, shares: int) -> Fil
 
     contrato = Stock(symbol, "SMART", "USD")
     ib.qualifyContracts(contrato)
+
+    shares_antes = posiciones_reales(ib).get(symbol, 0)
 
     orden = MarketOrder(accion, shares)
     # Si `tif` se deja vacío, TWS aplica el default de su "order
@@ -114,14 +151,42 @@ def ejecutar_orden_mercado(ib: IB, symbol: str, accion: str, shares: int) -> Fil
     while not trade.isDone() and time.monotonic() < limite:
         ib.waitOnUpdate(timeout=1)
 
-    if not trade.isDone() or trade.orderStatus.status != "Filled":
-        raise OrdenNoLlenada(
-            f"{symbol} {accion} {shares}: estado final = {trade.orderStatus.status!r}"
+    if trade.isDone() and trade.orderStatus.status == "Filled":
+        return Fill(
+            symbol=symbol, accion=accion, shares=shares,
+            precio_promedio=float(trade.orderStatus.avgFillPrice),
         )
 
-    return Fill(
-        symbol=symbol,
-        accion=accion,
-        shares=shares,
-        precio_promedio=float(trade.orderStatus.avgFillPrice),
+    # El status dice que no se llenó — no confiar todavía. Revisar
+    # `trade.fills`: IBKR puede mandar ejecuciones reales aunque el
+    # status quede mal reportado.
+    if trade.fills:
+        total_shares = sum(f.execution.shares for f in trade.fills)
+        if total_shares > 0:
+            precio_promedio = (
+                sum(f.execution.shares * f.execution.price for f in trade.fills) / total_shares
+            )
+            return Fill(
+                symbol=symbol, accion=accion, shares=int(total_shares),
+                precio_promedio=precio_promedio,
+            )
+
+    # Última verificación: comparar posiciones reales antes/después.
+    # Si la cuenta cambió exactamente lo esperado, la orden SÍ se
+    # ejecutó pese al status — usamos el último precio de mercado
+    # como aproximación del precio real (no hay fill reportado del
+    # que sacar el precio exacto).
+    ib.sleep(2)
+    shares_despues = posiciones_reales(ib).get(symbol, 0)
+    delta_esperado = shares if accion == "BUY" else -shares
+    if shares_despues - shares_antes == delta_esperado:
+        [ticker] = ib.reqTickers(contrato)
+        precio_aprox = ticker.marketPrice() or ticker.close
+        return Fill(
+            symbol=symbol, accion=accion, shares=shares,
+            precio_promedio=float(precio_aprox),
+        )
+
+    raise OrdenNoLlenada(
+        f"{symbol} {accion} {shares}: estado final = {trade.orderStatus.status!r}"
     )
