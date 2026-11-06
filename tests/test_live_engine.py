@@ -43,7 +43,7 @@ def test_init_bucket_state_live_starts_as_cash_sin_benchmark():
 def test_abre_posicion_usa_el_fill_real_no_el_precio_de_cierre(monkeypatch):
     fake_universe = {
         "VOO": pd.DataFrame(
-            {"date": [pd.Timestamp("2026-01-01")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0]}
+            {"date": [pd.Timestamp("2026-01-01")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0], "return_126d": [0.1]}
         ),
     }
     _setup_bucket_unico(
@@ -137,7 +137,7 @@ def test_orden_no_llenada_al_cerrar_deja_la_posicion_abierta(monkeypatch):
 def test_orden_no_llenada_al_abrir_no_crea_posicion(monkeypatch):
     fake_universe = {
         "VOO": pd.DataFrame(
-            {"date": [pd.Timestamp("2026-01-01")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0]}
+            {"date": [pd.Timestamp("2026-01-01")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0], "return_126d": [0.1]}
         ),
     }
     _setup_bucket_unico(
@@ -224,7 +224,7 @@ def test_run_daily_tick_live_guarda_estado_aunque_un_bucket_posterior_truene(mon
     otro bucket del mismo día."""
     fake_universe_ok = {
         "VOO": pd.DataFrame(
-            {"date": [pd.Timestamp("2026-01-01")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0]}
+            {"date": [pd.Timestamp("2026-01-01")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0], "return_126d": [0.1]}
         ),
     }
     fake_universe_blend = {
@@ -411,3 +411,42 @@ def test_init_bucket_state_live_sin_ib_sigue_siendo_cash_puro():
     assert estado["cash"] == 1000.0
     assert estado["blend_spy_shares"] == 0
     assert estado["blend_gld_shares"] == 0
+
+
+def test_filtro_cross_sectional_rechaza_simbolo_con_percentil_bajo_en_largo_plazo_vivo(monkeypatch):
+    """Mismo filtro de ADR 0033/0034 aplicado al motor en vivo — AAA
+    (return_126d más alto) debe abrir, BBB (percentil 0.5 con 2
+    símbolos) debe quedar fuera."""
+    fake_universe = {
+        "AAA": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [100.0], "sma_200": [40.0],
+             "atr_14": [1.0], "return_126d": [0.20]}
+        ),
+        "BBB": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [50.0], "sma_200": [20.0],
+             "atr_14": [1.0], "return_126d": [0.05]}
+        ),
+        "SPY": pd.DataFrame({"date": [pd.Timestamp("2026-01-02")], "close": [500.0]}),
+        "GLD": pd.DataFrame({"date": [pd.Timestamp("2026-01-02")], "close": [300.0]}),
+    }
+    monkeypatch.setattr(live_engine, "load_universe", lambda symbols=None: fake_universe)
+    monkeypatch.setattr(live_engine, "BUCKET_CONFIG", {
+        "largo_plazo": {
+            "universe_file": None,
+            "risk_pct": 0.3,
+            "strategies": ["time_series_momentum"],
+        }
+    })
+    monkeypatch.setattr(live_engine, "read_universe_file", lambda path: ["AAA", "BBB"])
+    monkeypatch.setitem(
+        engine.SIGNAL_FNS, "time_series_momentum",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 50),
+    )
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", _fill_falso_para({"AAA": 101.0}))
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object())
+
+    symbols_abiertos = {p["symbol"] for p in bucket_state["open_positions"]}
+    assert symbols_abiertos == {"AAA"}
+    assert result["open_count"] == 1

@@ -131,6 +131,17 @@ RISK_LIMITS = {
 
 ACTIVE_BUCKETS = list(BUCKET_CONFIG.keys())  # buckets con estrategia real — ver BUCKET_CONFIG
 
+# Filtro cross-sectional de entrada (ADR 0033/0034): además de la
+# señal propia de la estrategia (momentum absoluto vs. su propio
+# pasado), exige que el símbolo esté entre los de mejor retorno
+# relativo DENTRO de su universo ese mismo día. Walk-forward rolling
+# mostró mejora fuerte y consistente solo en largo_plazo (Sharpe
+# 1.33->2.25, retorno 8.91%->19.14%, 0/5 ventanas negativas) —
+# en mediano_plazo fue ambiguo y en riesgo_alto empeoró, por eso el
+# filtro se activa únicamente para este bucket.
+CROSS_SECTIONAL_FILTER_BUCKETS = {"largo_plazo"}
+CROSS_SECTIONAL_PERCENTIL_MIN = 0.70
+
 # Fricción real por lado (comisión + slippage) — misma magnitud que
 # src/backtesting/run.py (fees=0.0005, slippage=0.0005), para que el
 # paper trading no reporte un retorno más optimista que el backtest
@@ -340,6 +351,26 @@ def _last_row_as_of(df: pd.DataFrame, as_of: pd.Timestamp | None):
     return snapshot.iloc[-1]
 
 
+def _percentiles_cross_sectional_hoy(
+    universe: dict[str, pd.DataFrame], symbols: list[str], as_of: pd.Timestamp | None
+) -> pd.Series:
+    """Percentil (0-1) del `return_126d` de cada símbolo contra el
+    resto del universo del bucket, el día más reciente disponible —
+    ver ADR 0033/0034. `rank(pct=True)` ignora NaN automáticamente."""
+    valores = {}
+    for symbol in symbols:
+        df = universe.get(symbol)
+        if df is None:
+            continue
+        last = _last_row_as_of(df, as_of)
+        if last is None:
+            continue
+        ret = last.get("return_126d")
+        if pd.notna(ret):
+            valores[symbol] = float(ret)
+    return pd.Series(valores, dtype=float).rank(pct=True)
+
+
 def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None = None) -> dict:
     """Corre un día para un bucket. `as_of` permite simular una fecha
     pasada (lo usa el backfill de demostración) — en uso real se deja
@@ -467,6 +498,11 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
     open_symbols = {p["symbol"] for p in open_positions}
     if blocked:
         strategies = []
+    percentiles_cross_sectional = (
+        _percentiles_cross_sectional_hoy(universe, symbols, as_of)
+        if bucket in CROSS_SECTIONAL_FILTER_BUCKETS
+        else None
+    )
     for strategy_key in strategies:
         for symbol in symbols:
             if symbol in open_symbols:
@@ -478,6 +514,17 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
             last = _last_row_as_of(signaled, as_of)
             if last is None or int(last["signal"]) != 1:
                 continue
+
+            if percentiles_cross_sectional is not None:
+                ret_126d = last.get("return_126d")
+                perc = percentiles_cross_sectional.get(symbol)
+                pasa_filtro = (
+                    pd.notna(ret_126d) and float(ret_126d) > 0
+                    and perc is not None and perc >= CROSS_SECTIONAL_PERCENTIL_MIN
+                )
+                if not pasa_filtro:
+                    continue
+
             today_label = str(last["date"].date())
 
             entry_price_bruto = float(last["close"])

@@ -39,9 +39,12 @@ from src.broker.ibkr_adapter import Fill, OrdenNoLlenada, ejecutar_orden_mercado
 from src.paper_trading import blend_ledger
 from src.paper_trading.engine import (
     BLEND_WEIGHTS,
+    CROSS_SECTIONAL_FILTER_BUCKETS,
+    CROSS_SECTIONAL_PERCENTIL_MIN,
     FRICCION_POR_LADO,
     RISK_LIMITS,
     _last_row_as_of,
+    _percentiles_cross_sectional_hoy,
     _signals_for_symbol,
 )
 from src.screening.daily_signals import BUCKET_CONFIG, read_universe_file
@@ -325,6 +328,11 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
     open_symbols = {p["symbol"] for p in open_positions}
     if blocked:
         strategies = []
+    percentiles_cross_sectional = (
+        _percentiles_cross_sectional_hoy(universe, symbols, as_of)
+        if bucket in CROSS_SECTIONAL_FILTER_BUCKETS
+        else None
+    )
     for strategy_key in strategies:
         for symbol in symbols:
             if symbol in open_symbols:
@@ -336,6 +344,17 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
             last = _last_row_as_of(signaled, as_of)
             if last is None or int(last["signal"]) != 1:
                 continue
+
+            if percentiles_cross_sectional is not None:
+                ret_126d = last.get("return_126d")
+                perc = percentiles_cross_sectional.get(symbol)
+                pasa_filtro = (
+                    pd.notna(ret_126d) and float(ret_126d) > 0
+                    and perc is not None and perc >= CROSS_SECTIONAL_PERCENTIL_MIN
+                )
+                if not pasa_filtro:
+                    continue
+
             today_label = str(last["date"].date())
 
             entry_price_estimado = float(last["close"])

@@ -307,7 +307,7 @@ def test_entrada_y_salida_registran_en_el_blend_ledger(monkeypatch):
 
     fake_universe = {
         "VOO": pd.DataFrame(
-            {"date": [pd.Timestamp("2026-01-02")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0]}
+            {"date": [pd.Timestamp("2026-01-02")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0], "return_126d": [0.1]}
         ),
         "SPY": pd.DataFrame(
             {"date": [pd.Timestamp("2026-01-02")], "close": [10.0], "sma_200": [9.0], "atr_14": [0.1]}
@@ -343,3 +343,89 @@ def test_entrada_y_salida_registran_en_el_blend_ledger(monkeypatch):
     assert len(ventas) == 1
     assert ventas[0]["bucket"] == "largo_plazo"
     assert "VOO" in ventas[0]["motivo"]
+
+
+def test_filtro_cross_sectional_rechaza_simbolo_con_percentil_bajo_en_largo_plazo(monkeypatch):
+    """ADR 0033/0034: en largo_plazo, además de la señal propia, el
+    símbolo debe estar en el percentil >=70 de retorno relativo del
+    universo ese día. AAA (return_126d más alto) debe abrir; BBB
+    (más bajo, percentil 0.5 con solo 2 símbolos) debe quedar fuera."""
+    fake_universe = {
+        "AAA": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [100.0], "sma_200": [40.0],
+             "atr_14": [1.0], "return_126d": [0.20]}
+        ),
+        "BBB": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [50.0], "sma_200": [20.0],
+             "atr_14": [1.0], "return_126d": [0.05]}
+        ),
+        "SPY": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [10.0], "sma_200": [9.0], "atr_14": [0.1]}
+        ),
+        "GLD": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [20.0], "sma_200": [19.0], "atr_14": [0.1]}
+        ),
+    }
+    monkeypatch.setattr(engine, "load_universe", lambda symbols=None: fake_universe)
+    monkeypatch.setattr(engine, "BUCKET_CONFIG", {
+        "largo_plazo": {
+            "universe_file": None,
+            "risk_pct": 0.3,
+            "strategies": ["time_series_momentum"],
+        }
+    })
+    monkeypatch.setattr(engine, "read_universe_file", lambda path: ["AAA", "BBB"])
+    monkeypatch.setitem(
+        engine.SIGNAL_FNS, "time_series_momentum",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 50),
+    )
+
+    bucket_state = engine.init_bucket_state("largo_plazo", 10000.0)
+    result = engine.run_bucket_tick("largo_plazo", bucket_state)
+
+    symbols_abiertos = {p["symbol"] for p in bucket_state["open_positions"]}
+    assert symbols_abiertos == {"AAA"}
+    assert result["open_count"] == 1
+
+
+def test_filtro_cross_sectional_no_aplica_fuera_de_largo_plazo(monkeypatch):
+    """El filtro está limitado a `largo_plazo` (ver
+    CROSS_SECTIONAL_FILTER_BUCKETS) — en otro bucket, un símbolo con
+    percentil bajo de todas formas debe abrir si la estrategia da
+    señal."""
+    fake_universe = {
+        "AAA": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [100.0], "sma_200": [40.0],
+             "atr_14": [1.0], "return_126d": [0.20]}
+        ),
+        "BBB": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [50.0], "sma_200": [20.0],
+             "atr_14": [1.0], "return_126d": [0.05]}
+        ),
+        "SPY": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [10.0], "sma_200": [9.0], "atr_14": [0.1]}
+        ),
+        "GLD": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [20.0], "sma_200": [19.0], "atr_14": [0.1]}
+        ),
+    }
+    monkeypatch.setattr(engine, "load_universe", lambda symbols=None: fake_universe)
+    monkeypatch.setattr(engine, "BUCKET_CONFIG", {
+        "mediano_plazo": {
+            "universe_file": None,
+            "risk_pct": 0.3,
+            "strategies": ["trend_following"],
+        }
+    })
+    monkeypatch.setattr(engine, "read_universe_file", lambda path: ["AAA", "BBB"])
+    monkeypatch.setitem(
+        engine.SIGNAL_FNS, "trend_following",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 50),
+    )
+
+    bucket_state = engine.init_bucket_state("mediano_plazo", 10000.0)
+    result = engine.run_bucket_tick("mediano_plazo", bucket_state)
+
+    symbols_abiertos = {p["symbol"] for p in bucket_state["open_positions"]}
+    assert symbols_abiertos == {"AAA", "BBB"}
+    assert result["open_count"] == 2
