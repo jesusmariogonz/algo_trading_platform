@@ -430,6 +430,56 @@ def test_blend_ledger_live_devuelve_el_ledger(client, monkeypatch):
     assert r.json() == renglones
 
 
+def test_liquidar_todo_live_requiere_token(client):
+    assert client.post("/admin/live/liquidar-todo").status_code == 401
+
+
+def test_liquidar_todo_live_vende_cada_posicion(client, monkeypatch):
+    llamadas = []
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
+    monkeypatch.setattr(
+        trading_api, "posiciones_reales_con_costo",
+        lambda ib: {"AAPL": {"shares": 10, "avg_cost": 150.0}, "MSFT": {"shares": 0, "avg_cost": 0.0}},
+    )
+
+    def ejecutar_falso(ib, symbol, accion, shares):
+        llamadas.append((symbol, accion, shares))
+        from src.broker.ibkr_adapter import Fill
+        return Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=155.0)
+
+    monkeypatch.setattr(trading_api, "ejecutar_orden_mercado", ejecutar_falso)
+
+    r = client.post("/admin/live/liquidar-todo", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert llamadas == [("AAPL", "SELL", 10)]  # MSFT con 0 shares se ignora
+    assert r.json()["AAPL"] == {"status": "vendido", "shares": 10, "precio": 155.0}
+
+
+def test_liquidar_todo_live_reporta_falla_sin_detener_las_demas(client, monkeypatch):
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
+    monkeypatch.setattr(
+        trading_api, "posiciones_reales_con_costo",
+        lambda ib: {"AAPL": {"shares": 10, "avg_cost": 150.0}, "MSFT": {"shares": -5, "avg_cost": 300.0}},
+    )
+
+    def ejecutar_falso(ib, symbol, accion, shares):
+        if symbol == "AAPL":
+            raise trading_api.OrdenNoLlenada("AAPL SELL 10: estado final = 'Cancelled'")
+        from src.broker.ibkr_adapter import Fill
+        return Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=300.0)
+
+    monkeypatch.setattr(trading_api, "ejecutar_orden_mercado", ejecutar_falso)
+
+    r = client.post("/admin/live/liquidar-todo", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json()["AAPL"]["status"] == "fallo"
+    assert r.json()["MSFT"] == {"status": "vendido", "shares": 5, "precio": 300.0}
+
+
 def test_posiciones_reales_live_requiere_token(client):
     assert client.get("/live/posiciones-reales").status_code == 401
 

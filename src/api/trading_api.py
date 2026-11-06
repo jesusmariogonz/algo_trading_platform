@@ -24,8 +24,10 @@ from pathlib import Path
 from fastapi import FastAPI, Header, HTTPException
 
 from src.broker.ibkr_adapter import (
+    OrdenNoLlenada,
     conectar,
     desconectar,
+    ejecutar_orden_mercado,
     equity_de_cuenta,
     equity_de_cuenta_usd,
     posiciones_reales_con_costo,
@@ -286,6 +288,37 @@ def blend_ledger_live(authorization: str | None = Header(None)):
     el archivo manualmente en la VM."""
     _verificar_token(authorization)
     return live_engine.blend_ledger.load_ledger(live_engine.LIVE_BLEND_LEDGER_PATH)
+
+
+@app.post("/admin/live/liquidar-todo")
+def liquidar_todo_live(authorization: str | None = Header(None)):
+    """Vende TODAS las posiciones reales de la cuenta (a mercado,
+    hasta dejarlas en 0) — para limpiar divergencias serias entre el
+    estado local y la cuenta real, antes de reinicializar el capital
+    con `/admin/live/reiniciar-capital`. No toca `state.json`; eso se
+    hace aparte. Reporta por símbolo si se vendió bien o falló."""
+    _verificar_token(authorization)
+
+    ib = conectar()
+    try:
+        posiciones = posiciones_reales_con_costo(ib)
+        resultados = {}
+        for symbol, info in posiciones.items():
+            shares = info["shares"]
+            if shares == 0:
+                continue
+            accion = "SELL" if shares > 0 else "BUY"  # BUY para cerrar una posición corta
+            try:
+                fill = ejecutar_orden_mercado(ib, symbol, accion, abs(shares))
+                resultados[symbol] = {
+                    "status": "vendido", "shares": fill.shares, "precio": fill.precio_promedio,
+                }
+            except OrdenNoLlenada as e:
+                resultados[symbol] = {"status": "fallo", "error": str(e)}
+    finally:
+        desconectar(ib)
+
+    return resultados
 
 
 @app.get("/live/posiciones-reales")
