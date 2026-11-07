@@ -334,5 +334,76 @@
       }
     },
     "alertas": []
+  },
+  {
+    "date": "2026-11-06",
+    "buckets": {
+      "largo_plazo": {
+        "date": "2026-11-06",
+        "equity": 421.83,
+        "cash": 116.35,
+        "unrealized_pnl": -4.11,
+        "open_count": 3,
+        "closed_today": 1,
+        "realized_pnl_today": -1.1,
+        "cumulative_return_pct": -1.56,
+        "closed_today_detail": [
+          {
+            "symbol": "EFA",
+            "strategy": "time_series_momentum",
+            "entry_date": "2026-10-30",
+            "entry_price": 103.37,
+            "stop_price": 102.37071936471122,
+            "shares": 1,
+            "exit_date": "2026-11-06",
+            "exit_price": 102.37,
+            "pnl": -1.1,
+            "pnl_pct": -1.07,
+            "reason": "stop_hit"
+          }
+        ],
+        "daily_loss_pct": 0.03,
+        "drawdown_pct": 3.1,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "mediano_plazo": {
+        "date": "2026-11-06",
+        "equity": 361.12,
+        "cash": 59.43,
+        "unrealized_pnl": -2.06,
+        "open_count": 4,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -1.74,
+        "closed_today_detail": [],
+        "daily_loss_pct": 0.74,
+        "drawdown_pct": 2.21,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "riesgo_alto": {
+        "date": "2026-11-06",
+        "equity": 211.91,
+        "cash": 211.91,
+        "unrealized_pnl": 0.0,
+        "open_count": 0,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": 0.13,
+        "closed_today_detail": [],
+        "daily_loss_pct": 0.24,
+        "drawdown_pct": 2.04,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      }
+    },
+    "alertas": []
   }
 ]
