@@ -504,6 +504,37 @@ def test_vender_simbolo_live_vende_y_desconecta(client, monkeypatch):
     assert llamadas["desconectado"] == "ib-falso"
 
 
+def test_vender_simbolo_live_reporta_encolada_en_vez_de_500(client, monkeypatch):
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
+
+    def orden_falla(ib, symbol, accion, shares):
+        raise trading_api.OrdenNoLlenada("FOXA SELL 1: estado final = 'PreSubmitted'")
+
+    monkeypatch.setattr(trading_api, "ejecutar_orden_mercado", orden_falla)
+
+    r = client.post("/admin/live/vender-simbolo?symbol=FOXA&shares=1", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json()["status"] == "encolada_o_fallida"
+
+
+def test_rebasar_y_recalcular_stops_live_requiere_token(client):
+    assert client.post("/admin/live/rebasar-y-recalcular-stops").status_code == 401
+
+
+def test_rebasar_y_recalcular_stops_live_delega_al_motor(client, monkeypatch):
+    monkeypatch.setattr(
+        trading_api.live_engine, "rebasar_y_recalcular_stops",
+        lambda: {"largo_plazo": {"nuevo_starting_capital": 871.11, "stops_actualizados": []}},
+    )
+
+    r = client.post("/admin/live/rebasar-y-recalcular-stops", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json() == {"largo_plazo": {"nuevo_starting_capital": 871.11, "stops_actualizados": []}}
+
+
 def test_posiciones_reales_live_requiere_token(client):
     assert client.get("/live/posiciones-reales").status_code == 401
 

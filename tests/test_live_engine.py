@@ -557,3 +557,55 @@ def test_reconciliar_posiciones_automatico_no_toca_simbolos_ya_conocidos(monkeyp
 
     assert resultado == {}
     assert live_engine.load_state() == state
+
+
+def test_rebasar_y_recalcular_stops_sube_el_stop_y_rebasa_capital(monkeypatch):
+    monkeypatch.setattr(live_engine, "BUCKET_CONFIG", {
+        "largo_plazo": {
+            "universe_file": None,
+            "risk_pct": 0.02,
+            "strategies": ["time_series_momentum"],
+        },
+    })
+    monkeypatch.setattr(live_engine, "_precios_blend_hoy", lambda as_of=None: {"SPY": 100.0, "GLD": 60.0})
+
+    def load_universe_falso(symbols=None):
+        if symbols and set(symbols) <= {"VOO"}:
+            return {
+                "VOO": pd.DataFrame(
+                    {"date": [pd.Timestamp("2026-01-05")], "close": [110.0], "sma_200": [40.0], "atr_14": [1.0]}
+                ),
+            }
+        return {}
+
+    monkeypatch.setattr(live_engine, "load_universe", load_universe_falso)
+    monkeypatch.setitem(
+        engine.SIGNAL_FNS, "time_series_momentum",
+        lambda df: df.assign(signal=0, stop_price=df["close"] - 5),  # 110-5=105, más alto que el guardado (90)
+    )
+
+    state = {"largo_plazo": {
+        "cash": 200.0, "blend_spy_shares": 0, "blend_gld_shares": 0,
+        "starting_capital": 500.0, "peak_equity": 500.0, "day_start_equity": 500.0,
+        "day_start_date": "2026-01-04", "start_date": "2026-01-01",
+        "open_positions": [
+            {"symbol": "VOO", "strategy": "time_series_momentum", "entry_date": "2026-01-01",
+             "entry_price": 95.0, "stop_price": 90.0, "shares": 3},
+        ],
+    }}
+    live_engine.save_state(state)
+
+    resultado = live_engine.rebasar_y_recalcular_stops()
+
+    estado = live_engine.load_state()
+    pos = estado["largo_plazo"]["open_positions"][0]
+    assert pos["stop_price"] == 105.0  # subió de 90 a 105, nunca baja
+
+    equity_esperado = 200.0 + 110.0 * 3  # cash + valor de mercado de la posición
+    assert estado["largo_plazo"]["starting_capital"] == equity_esperado
+    assert estado["largo_plazo"]["peak_equity"] == equity_esperado
+    assert estado["largo_plazo"]["day_start_equity"] == equity_esperado
+    assert estado["largo_plazo"]["day_start_date"] is None
+
+    assert resultado["largo_plazo"]["nuevo_starting_capital"] == equity_esperado
+    assert resultado["largo_plazo"]["stops_actualizados"] == [{"symbol": "VOO", "antes": 90.0, "despues": 105.0}]

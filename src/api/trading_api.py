@@ -333,11 +333,25 @@ def vender_simbolo_live(symbol: str, shares: int, authorization: str | None = He
 
     ib = conectar()
     try:
-        fill = ejecutar_orden_mercado(ib, symbol, "SELL", shares)
+        try:
+            fill = ejecutar_orden_mercado(ib, symbol, "SELL", shares)
+        except OrdenNoLlenada as e:
+            return {"status": "encolada_o_fallida", "detalle": str(e)}
     finally:
         desconectar(ib)
 
     return {"status": "vendido", "shares": fill.shares, "precio": fill.precio_promedio}
+
+
+@app.post("/admin/live/rebasar-y-recalcular-stops")
+def rebasar_y_recalcular_stops_live(authorization: str | None = Header(None)):
+    """Recalcula el stop_price de cada posición abierta con el dato
+    más fresco (solo lo sube, nunca lo baja) y re-basa
+    starting_capital/peak_equity al equity actual de cada bucket —
+    para que el retorno acumulado arranque en 0% desde este momento,
+    sin cerrar ni abrir ninguna posición ni mandar ninguna orden."""
+    _verificar_token(authorization)
+    return live_engine.rebasar_y_recalcular_stops()
 
 
 @app.get("/live/posiciones-reales")

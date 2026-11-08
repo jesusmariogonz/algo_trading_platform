@@ -657,3 +657,57 @@ def reconciliar_posiciones_automatico(ib) -> dict[str, list[str]]:
     if resultado:
         save_state(state)
     return resultado
+
+
+def rebasar_y_recalcular_stops() -> dict[str, dict]:
+    """Recalcula el stop_price de cada posición abierta con los datos
+    más frescos (nunca lo baja — toma el máximo contra el guardado,
+    misma regla del trailing stop normal), y re-basa `starting_capital`
+    / `peak_equity` al equity actual de cada bucket — para que el
+    retorno acumulado arranque en 0% desde este momento en vez de
+    arrastrar el rebasamiento de la reconciliación (ADR 0035/0036).
+    No cierra ni abre ninguna posición, no manda ninguna orden."""
+    state = load_state()
+    precios_blend = _precios_blend_hoy()
+    resultado: dict[str, dict] = {}
+
+    for bucket, bucket_state in state.items():
+        config = BUCKET_CONFIG.get(bucket)
+        if config is None:
+            continue
+        open_positions = bucket_state.get("open_positions", [])
+        symbols = [p["symbol"] for p in open_positions]
+        universo = load_universe(symbols=symbols) if symbols else {}
+
+        unrealized = 0.0
+        stops_actualizados = []
+        for pos in open_positions:
+            df = universo.get(pos["symbol"])
+            if df is not None:
+                last_close = _last_row_as_of(df, None)
+                if last_close is not None:
+                    unrealized += float(last_close["close"]) * pos["shares"]
+                signaled = _signals_for_symbol(df, pos["strategy"])
+                last = _last_row_as_of(signaled, None)
+                if last is not None:
+                    nuevo_stop = max(pos["stop_price"], float(last["stop_price"]))
+                    if nuevo_stop != pos["stop_price"]:
+                        stops_actualizados.append(
+                            {"symbol": pos["symbol"], "antes": pos["stop_price"], "despues": round(nuevo_stop, 2)}
+                        )
+                    pos["stop_price"] = round(nuevo_stop, 2)
+
+        valor_blend = _valor_blend(bucket_state, precios_blend)
+        cash = bucket_state.get("cash", 0.0)
+        equity_actual = round(cash + valor_blend + unrealized, 2)
+
+        bucket_state["starting_capital"] = equity_actual
+        bucket_state["peak_equity"] = equity_actual
+        bucket_state["day_start_equity"] = equity_actual
+        bucket_state["day_start_date"] = None
+        bucket_state["start_date"] = date.today().isoformat()
+
+        resultado[bucket] = {"nuevo_starting_capital": equity_actual, "stops_actualizados": stops_actualizados}
+
+    save_state(state)
+    return resultado
