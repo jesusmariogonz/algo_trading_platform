@@ -321,6 +321,25 @@ def liquidar_todo_live(authorization: str | None = Header(None)):
     return resultados
 
 
+@app.post("/admin/live/vender-simbolo")
+def vender_simbolo_live(symbol: str, shares: int, authorization: str | None = Header(None)):
+    """Vende (a mercado) un símbolo puntual que el estado local NO
+    trackea — ej. un residuo huérfano que no pertenece a ningún
+    universo actual (como FOXA, encontrado el 2026-11-08). No toca
+    `state.json`: si el símbolo SÍ está en una posición trackeada,
+    usa el flujo normal del motor (cierre por señal/stop), no este
+    endpoint."""
+    _verificar_token(authorization)
+
+    ib = conectar()
+    try:
+        fill = ejecutar_orden_mercado(ib, symbol, "SELL", shares)
+    finally:
+        desconectar(ib)
+
+    return {"status": "vendido", "shares": fill.shares, "precio": fill.precio_promedio}
+
+
 @app.get("/live/posiciones-reales")
 def posiciones_reales_live(authorization: str | None = Header(None)):
     """Posiciones reales en IBKR con su costo promedio real

@@ -480,6 +480,30 @@ def test_liquidar_todo_live_reporta_falla_sin_detener_las_demas(client, monkeypa
     assert r.json()["MSFT"] == {"status": "vendido", "shares": 5, "precio": 300.0}
 
 
+def test_vender_simbolo_live_requiere_token(client):
+    assert client.post("/admin/live/vender-simbolo?symbol=FOXA&shares=1").status_code == 401
+
+
+def test_vender_simbolo_live_vende_y_desconecta(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
+
+    def ejecutar_falso(ib, symbol, accion, shares):
+        llamadas["orden"] = (symbol, accion, shares)
+        from src.broker.ibkr_adapter import Fill
+        return Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=42.0)
+
+    monkeypatch.setattr(trading_api, "ejecutar_orden_mercado", ejecutar_falso)
+
+    r = client.post("/admin/live/vender-simbolo?symbol=FOXA&shares=1", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json() == {"status": "vendido", "shares": 1, "precio": 42.0}
+    assert llamadas["orden"] == ("FOXA", "SELL", 1)
+    assert llamadas["desconectado"] == "ib-falso"
+
+
 def test_posiciones_reales_live_requiere_token(client):
     assert client.get("/live/posiciones-reales").status_code == 401
 
