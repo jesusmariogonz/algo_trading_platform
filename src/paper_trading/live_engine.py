@@ -456,6 +456,7 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
                     "entry_date": today_label,
                     "entry_price": round(fill.precio_promedio, 2),
                     "stop_price": round(stop_price, 2),
+                    "initial_stop_price": round(stop_price, 2),
                     "shares": shares,
                 }
             )
@@ -646,6 +647,7 @@ def reconciliar_posiciones_automatico(ib) -> dict[str, list[str]]:
                 "entry_date": date.today().isoformat(),
                 "entry_price": round(avg_cost, 2),
                 "stop_price": round(stop_price, 2),
+                "initial_stop_price": round(stop_price, 2),
                 "shares": shares,
             })
             ya_asignados.add(symbol)

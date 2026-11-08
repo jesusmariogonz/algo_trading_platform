@@ -562,6 +562,7 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
                     "entry_date": today_label,
                     "entry_price": round(entry_price, 2),
                     "stop_price": round(stop_price, 2),
+                    "initial_stop_price": round(stop_price, 2),
                     "shares": shares,
                 }
             )

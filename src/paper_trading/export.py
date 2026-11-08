@@ -15,6 +15,7 @@ from pathlib import Path
 from src.backtesting.run import load_universe
 from src.paper_trading.engine import load_history, load_state
 from src.portfolio.allocation import get_usd_mxn_rate
+from src.portfolio.asset_types import asset_type_de
 
 
 def _tipo_de_cambio_hoy() -> dict:
@@ -54,6 +55,7 @@ def _con_precio_en_vivo(open_positions: list[dict]) -> list[dict]:
         df = universe.get(pos["symbol"])
         precio_actual = float(df.sort_values("date")["close"].iloc[-1]) if df is not None and not df.empty else None
         nueva = dict(pos)
+        nueva["asset_type"] = asset_type_de(pos["symbol"])
         if precio_actual is not None:
             valor_actual = precio_actual * pos["shares"]
             costo_entrada = pos["entry_price"] * pos["shares"]
@@ -79,7 +81,9 @@ def build_export() -> dict:
             "starting_capital": bucket_state["starting_capital"],
             "start_date": bucket_state["start_date"],
             "open_positions": _con_precio_en_vivo(bucket_state["open_positions"]),
-            "closed_positions": bucket_state["closed_positions"],
+            "closed_positions": [
+                {**p, "asset_type": asset_type_de(p["symbol"])} for p in bucket_state["closed_positions"]
+            ],
             "daily_history": history_for_bucket,
             "suspended": bucket_state.get("suspended", False),
             "suspended_reason": bucket_state.get("suspended_reason"),

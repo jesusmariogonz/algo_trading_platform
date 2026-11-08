@@ -524,7 +524,7 @@ def test_reconciliar_posiciones_automatico_agrega_lo_que_el_motor_no_sabia(monke
     pos = estado_guardado["largo_plazo"]["open_positions"][0]
     assert pos == {
         "symbol": "VOO", "strategy": "time_series_momentum", "entry_date": pos["entry_date"],
-        "entry_price": 100.0, "stop_price": 95.0, "shares": 3,
+        "entry_price": 100.0, "stop_price": 95.0, "initial_stop_price": 95.0, "shares": 3,
     }
     assert estado_guardado["largo_plazo"]["cash"] == pytest.approx(1000.0 - 3 * 100.0)
 
