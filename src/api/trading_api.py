@@ -351,3 +351,21 @@ def reconciliar_live(authorization: str | None = Header(None)):
         desconectar(ib)
 
     return resultado
+
+
+@app.post("/admin/live/reconciliar-automatico")
+def reconciliar_automatico_live(authorization: str | None = Header(None)):
+    """Agrega al estado local cualquier posición real de IBKR que el
+    motor no sepa que tiene (ADR 0035) — causa típica: una orden
+    quedó encolada fuera de horario y se llenó horas después sin que
+    el motor se enterara. No toca símbolos ya conocidos. Seguro de
+    llamar aunque no haya nada que reconciliar (devuelve {})."""
+    _verificar_token(authorization)
+
+    ib = conectar()
+    try:
+        resultado = live_engine.reconciliar_posiciones_automatico(ib)
+    finally:
+        desconectar(ib)
+
+    return resultado

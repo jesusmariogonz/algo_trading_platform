@@ -29,13 +29,20 @@ from __future__ import annotations
 
 import json
 import math
-from datetime import date
+from datetime import date, datetime, time as dt_time
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
 from src.backtesting.run import load_universe
-from src.broker.ibkr_adapter import Fill, OrdenNoLlenada, ejecutar_orden_mercado, posiciones_reales
+from src.broker.ibkr_adapter import (
+    Fill,
+    OrdenNoLlenada,
+    ejecutar_orden_mercado,
+    posiciones_reales,
+    posiciones_reales_con_costo,
+)
 from src.paper_trading import blend_ledger
 from src.paper_trading.engine import (
     BLEND_WEIGHTS,
@@ -55,6 +62,25 @@ LIVE_HISTORY_PATH = ROOT / "data" / "paper_trading_live" / "history.json"
 LIVE_BLEND_LEDGER_PATH = ROOT / "data" / "paper_trading_live" / "blend_ledger.json"
 
 ACTIVE_BUCKETS = list(BUCKET_CONFIG.keys())
+
+NYSE_TZ = ZoneInfo("America/New_York")
+NYSE_APERTURA = dt_time(9, 30)
+NYSE_CIERRE = dt_time(16, 0)
+
+
+def _mercado_regular_abierto_ahora() -> bool:
+    """Aproximación simple de horario regular de NYSE (9:30am-4:00pm
+    ET, lunes a viernes, sin calendario de feriados) — ver ADR 0035.
+    Mandar una orden fuera de este horario no la rechaza: IBKR la
+    encola para el siguiente open, y nuestro `FILL_TIMEOUT_SEGUNDOS`
+    (30s) nunca la alcanza a ver llenarse, así que el motor la
+    registra como fallida aunque horas después sí se ejecute de
+    verdad — causa real de la divergencia encontrada el 2026-11-08.
+    Esta función evita mandar entradas nuevas en esa ventana ciega."""
+    ahora = datetime.now(NYSE_TZ)
+    if ahora.weekday() >= 5:  # sábado=5, domingo=6
+        return False
+    return NYSE_APERTURA <= ahora.time() <= NYSE_CIERRE
 
 
 def _precios_blend_hoy(as_of: pd.Timestamp | None = None) -> dict[str, float]:
@@ -326,7 +352,14 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
 
     # --- 2. Señales de entrada de hoy ---
     open_symbols = {p["symbol"] for p in open_positions}
-    if blocked:
+    # Fuera de horario regular de NYSE, IBKR encola las órdenes nuevas
+    # para el siguiente open en vez de rechazarlas — nuestro timeout
+    # de 30s nunca las ve llenarse, así que el motor las reportaría
+    # como fallidas aunque horas después sí se ejecuten de verdad
+    # (ver ADR 0035). Mejor no abrir nada nuevo fuera de horario; las
+    # salidas (stop/señal) sí se evalúan siempre, solo las entradas
+    # se saltan.
+    if blocked or not _mercado_regular_abierto_ahora():
         strategies = []
     percentiles_cross_sectional = (
         _percentiles_cross_sectional_hoy(universe, symbols, as_of)
@@ -552,3 +585,75 @@ def posiciones_reconciliadas(ib) -> dict:
         if esperado.get(s, 0) != reales.get(s, 0)
     }
     return {"esperado": esperado, "real": reales, "divergencias": divergencias}
+
+
+def reconciliar_posiciones_automatico(ib) -> dict[str, list[str]]:
+    """Agrega al estado local, bucket por bucket, cualquier posición
+    real de IBKR que el motor no sepa que tiene — causa típica: una
+    orden se mandó fuera de horario regular (IBKR la encola para el
+    siguiente open en vez de rechazarla) y se llenó horas después,
+    sin que el motor lo supiera (ver ADR 0035). No toca símbolos ya
+    conocidos ni SPY/GLD (blend, se trackea aparte). El costo real
+    (`avgCost`) se resta del cash del bucket; el stop_price se calcula
+    con la fórmula real de la estrategia de ese bucket sobre el último
+    dato disponible, igual que una entrada normal.
+
+    Devuelve {bucket: [símbolos agregados]} — vacío si no había nada
+    que reconciliar. Guarda el estado solo si agregó algo."""
+    posiciones = posiciones_reales_con_costo(ib)
+    state = load_state()
+    resultado: dict[str, list[str]] = {}
+    ya_asignados: set[str] = set()
+
+    for bucket, config in BUCKET_CONFIG.items():
+        bucket_state = state.get(bucket)
+        if bucket_state is None:
+            continue
+        symbols_universo = set(read_universe_file(config["universe_file"]))
+        symbols_conocidos = {p["symbol"] for p in bucket_state.get("open_positions", [])}
+        candidatos = [
+            s for s, info in posiciones.items()
+            if s in symbols_universo and s not in symbols_conocidos
+            and s not in ya_asignados and info["shares"] > 0
+        ]
+        if not candidatos:
+            continue
+
+        universo_datos = load_universe(symbols=candidatos)
+        agregadas = []
+        for symbol in candidatos:
+            df = universo_datos.get(symbol)
+            if df is None:
+                continue
+            stop_price = None
+            strategy_usada = None
+            for strategy_key in config["strategies"]:
+                signaled = _signals_for_symbol(df, strategy_key)
+                last = _last_row_as_of(signaled, None)
+                if last is not None:
+                    stop_price = float(last["stop_price"])
+                    strategy_usada = strategy_key
+                    break
+            if stop_price is None:
+                continue
+
+            info = posiciones[symbol]
+            shares, avg_cost = info["shares"], info["avg_cost"]
+            bucket_state["cash"] = round(bucket_state.get("cash", 0.0) - shares * avg_cost, 2)
+            bucket_state["open_positions"].append({
+                "symbol": symbol,
+                "strategy": strategy_usada,
+                "entry_date": date.today().isoformat(),
+                "entry_price": round(avg_cost, 2),
+                "stop_price": round(stop_price, 2),
+                "shares": shares,
+            })
+            ya_asignados.add(symbol)
+            agregadas.append(symbol)
+
+        if agregadas:
+            resultado[bucket] = agregadas
+
+    if resultado:
+        save_state(state)
+    return resultado

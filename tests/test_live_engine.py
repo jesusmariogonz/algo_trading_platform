@@ -9,6 +9,12 @@ from src.paper_trading import blend_ledger, engine, live_engine
 def isolated_paths(tmp_path, monkeypatch):
     monkeypatch.setattr(live_engine, "LIVE_STATE_PATH", tmp_path / "state.json")
     monkeypatch.setattr(live_engine, "LIVE_HISTORY_PATH", tmp_path / "history.json")
+    # Por default los tests corren como si el mercado estuviera
+    # abierto (si no, correr la suite un fin de semana o de noche
+    # rompería silenciosamente todos los tests de apertura de
+    # posiciones) — ver ADR 0035. El test dedicado al candado mismo
+    # lo sobreescribe explícitamente a False.
+    monkeypatch.setattr(live_engine, "_mercado_regular_abierto_ahora", lambda: True)
     yield
 
 
@@ -450,3 +456,104 @@ def test_filtro_cross_sectional_rechaza_simbolo_con_percentil_bajo_en_largo_plaz
     symbols_abiertos = {p["symbol"] for p in bucket_state["open_positions"]}
     assert symbols_abiertos == {"AAA"}
     assert result["open_count"] == 1
+
+
+def test_no_abre_posiciones_nuevas_fuera_de_horario_regular(monkeypatch):
+    """ADR 0035: fuera de horario, IBKR encola la orden en vez de
+    rechazarla, y nuestro timeout nunca la ve llenarse — el motor no
+    debe intentar entradas nuevas en esa ventana."""
+    monkeypatch.setattr(live_engine, "_mercado_regular_abierto_ahora", lambda: False)
+    fake_universe = {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [100.0], "sma_200": [40.0],
+             "atr_14": [1.0], "return_126d": [0.1]}
+        ),
+    }
+    _setup_bucket_unico(
+        monkeypatch, fake_universe, "VOO",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 5),
+    )
+
+    def fallaria_si_se_llama(ib, symbol, accion, shares):
+        pytest.fail("no debería mandar ninguna orden fuera de horario regular")
+
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", fallaria_si_se_llama)
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object())
+
+    assert result["open_count"] == 0
+    assert bucket_state["cash"] == 1000.0
+
+
+def test_reconciliar_posiciones_automatico_agrega_lo_que_el_motor_no_sabia(monkeypatch):
+    """Una posición real de IBKR (ej. orden encolada fuera de horario
+    que se llenó después) que el estado local no conoce debe quedar
+    agregada al bucket correcto, con costo real y stop recalculado."""
+    monkeypatch.setattr(live_engine, "BUCKET_CONFIG", {
+        "largo_plazo": {
+            "universe_file": None,
+            "risk_pct": 0.02,
+            "strategies": ["time_series_momentum"],
+        },
+    })
+    monkeypatch.setattr(live_engine, "read_universe_file", lambda path: ["VOO", "EFA"])
+    monkeypatch.setattr(
+        live_engine, "posiciones_reales_con_costo",
+        lambda ib: {"VOO": {"shares": 3, "avg_cost": 100.0}},
+    )
+    fake_universe = {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [105.0], "sma_200": [40.0],
+             "atr_14": [1.0], "return_126d": [0.1]}
+        ),
+    }
+    monkeypatch.setattr(live_engine, "load_universe", lambda symbols=None: fake_universe)
+    monkeypatch.setitem(
+        engine.SIGNAL_FNS, "time_series_momentum",
+        lambda df: df.assign(signal=0, stop_price=df["close"] - 10),
+    )
+
+    state = {"largo_plazo": {"cash": 1000.0, "open_positions": []}}
+    live_engine.save_state(state)
+
+    resultado = live_engine.reconciliar_posiciones_automatico(ib=object())
+
+    assert resultado == {"largo_plazo": ["VOO"]}
+    estado_guardado = live_engine.load_state()
+    pos = estado_guardado["largo_plazo"]["open_positions"][0]
+    assert pos == {
+        "symbol": "VOO", "strategy": "time_series_momentum", "entry_date": pos["entry_date"],
+        "entry_price": 100.0, "stop_price": 95.0, "shares": 3,
+    }
+    assert estado_guardado["largo_plazo"]["cash"] == pytest.approx(1000.0 - 3 * 100.0)
+
+
+def test_reconciliar_posiciones_automatico_no_toca_simbolos_ya_conocidos(monkeypatch):
+    monkeypatch.setattr(live_engine, "BUCKET_CONFIG", {
+        "largo_plazo": {
+            "universe_file": None,
+            "risk_pct": 0.02,
+            "strategies": ["time_series_momentum"],
+        },
+    })
+    monkeypatch.setattr(live_engine, "read_universe_file", lambda path: ["VOO"])
+    monkeypatch.setattr(
+        live_engine, "posiciones_reales_con_costo",
+        lambda ib: {"VOO": {"shares": 3, "avg_cost": 100.0}},
+    )
+    monkeypatch.setattr(
+        live_engine, "load_universe",
+        lambda symbols=None: pytest.fail("no debería consultar universo si no hay candidatos"),
+    )
+
+    state = {"largo_plazo": {"cash": 1000.0, "open_positions": [
+        {"symbol": "VOO", "strategy": "time_series_momentum", "entry_date": "2026-01-01",
+         "entry_price": 99.0, "stop_price": 90.0, "shares": 3},
+    ]}}
+    live_engine.save_state(state)
+
+    resultado = live_engine.reconciliar_posiciones_automatico(ib=object())
+
+    assert resultado == {}
+    assert live_engine.load_state() == state

@@ -512,3 +512,23 @@ def test_reconciliar_live(client, monkeypatch):
     r = client.get("/live/reconciliar", headers=HEADERS_OK)
     assert r.status_code == 200
     assert r.json()["divergencias"] == {}
+
+
+def test_reconciliar_automatico_live_requiere_token(client):
+    assert client.post("/admin/live/reconciliar-automatico").status_code == 401
+
+
+def test_reconciliar_automatico_live_devuelve_lo_agregado(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
+    monkeypatch.setattr(
+        trading_api.live_engine, "reconciliar_posiciones_automatico",
+        lambda ib: {"largo_plazo": ["VOO"]},
+    )
+
+    r = client.post("/admin/live/reconciliar-automatico", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json() == {"largo_plazo": ["VOO"]}
+    assert llamadas["desconectado"] == "ib-falso"
