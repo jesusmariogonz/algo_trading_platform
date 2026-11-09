@@ -525,8 +525,6 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
                 if not pasa_filtro:
                     continue
 
-            today_label = str(last["date"].date())
-
             entry_price_bruto = float(last["close"])
             stop_price = float(last["stop_price"])
             risk_per_share = entry_price_bruto - stop_price
@@ -544,6 +542,14 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
             cost = shares * entry_price
             if shares < 1 or cost > disponible():
                 continue
+
+            # today_label solo se actualiza aquí, con la entrada ya
+            # confirmada — antes se pisaba en cuanto CUALQUIER símbolo
+            # tenía signal==1, incluso si luego se rechazaba por falta
+            # de cash/shares. Un símbolo con datos atrasados (ej. ROKU
+            # sin descarga nueva) podía así congelar la fecha de todo
+            # el bucket en un día viejo aunque no abriera nada.
+            today_label = str(last["date"].date())
 
             if bench_price:
                 shares_vendidas = cost / bench_price

@@ -174,6 +174,45 @@ def test_run_bucket_tick_sets_date_even_with_no_activity(monkeypatch, tmp_path):
     assert result["open_count"] == 0
 
 
+def test_rejected_entry_no_pisa_la_fecha_del_bucket_con_un_dia_viejo(monkeypatch, tmp_path):
+    """Bug real: un símbolo con signal=1 en una fecha vieja (ej. su
+    descarga quedó atrasada, como pasó con ROKU) pisaba today_label en
+    cuanto se detectaba la señal, aunque la entrada se rechazara después
+    por falta de cash/shares — dejando todo el bucket con una fecha
+    vieja pese a que el resto del universo sí tenía el día de hoy."""
+    fresco = pd.DataFrame({
+        "date": [pd.Timestamp("2026-11-09")],
+        "close": [100.0], "sma_200": [90.0], "atr_14": [1.0],
+    })
+    atrasado = pd.DataFrame({
+        "date": [pd.Timestamp("2026-11-06")],
+        "close": [50.0], "sma_200": [40.0], "atr_14": [1.0],
+    })
+    fake_universe = {"FRESCO": fresco, "VIEJO": atrasado}
+    monkeypatch.setattr(engine, "load_universe", lambda symbols=None: fake_universe)
+    monkeypatch.setattr(engine, "BUCKET_CONFIG", {
+        "test_bucket": {
+            "universe_file": tmp_path / "universe.txt",
+            "risk_pct": 0.01,
+            "strategies": ["trend_following"],
+        }
+    })
+    monkeypatch.setattr(engine, "read_universe_file", lambda path: ["FRESCO", "VIEJO"])
+    # FRESCO nunca da señal; VIEJO da signal=1 pero con stop == close
+    # (risk_per_share <= 0), así que la entrada siempre se rechaza.
+    def signal_fn(df):
+        if df is fresco:
+            return df.assign(signal=0, stop_price=df["close"] - 5)
+        return df.assign(signal=1, stop_price=df["close"])  # risk_per_share=0 -> se rechaza
+    monkeypatch.setitem(engine.SIGNAL_FNS, "trend_following", signal_fn)
+
+    bucket_state = engine.init_bucket_state("test_bucket", 1000.0)
+    result = engine.run_bucket_tick("test_bucket", bucket_state)
+
+    assert result["date"] == "2026-11-09"  # la fecha real del universo, no la del símbolo rechazado
+    assert result["open_count"] == 0
+
+
 def test_closing_a_position_never_creates_money_from_nothing():
     """La suma de cash + valor de posiciones abiertas antes de cerrar
     debe ser igual a cash + P&L después de cerrar — cerrar una posición
