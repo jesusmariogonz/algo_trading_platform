@@ -18,5 +18,15 @@
     "precio": 140.4981,
     "shares": 0.682043,
     "motivo": "financia la compra de VNQ"
+  },
+  {
+    "bucket": "largo_plazo",
+    "fecha": "2026-11-09",
+    "tipo": "venta",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 105.06,
+    "precio": 142.8335,
+    "shares": 0.735577,
+    "motivo": "financia la compra de EFA"
   }
 ]

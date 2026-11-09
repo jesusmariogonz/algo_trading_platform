@@ -3,7 +3,7 @@
     "starting_capital": 428.52,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 0.82811386249282,
+    "bench_shares": 0.09253729505419372,
     "open_positions": [
       {
         "symbol": "IJH",
@@ -28,6 +28,15 @@
         "entry_price": 95.83,
         "stop_price": 92.91464669363839,
         "shares": 1
+      },
+      {
+        "symbol": "EFA",
+        "strategy": "time_series_momentum",
+        "entry_date": "2026-11-09",
+        "entry_price": 105.06,
+        "stop_price": 100.63,
+        "initial_stop_price": 100.63,
+        "shares": 1
       }
     ],
     "closed_positions": [
@@ -49,7 +58,7 @@
     "day_start_date": "2026-11-09",
     "daily_loss_tripped_today": false,
     "peak_equity": 435.43098527618366,
-    "last_equity": 432.28737998659824,
+    "last_equity": 431.58742639620516,
     "blend_last_price": 142.83347748475325,
     "blend_last_date": "2026-11-09",
     "blend_last_components": {
@@ -115,7 +124,7 @@
     "day_start_date": "2026-11-09",
     "daily_loss_tripped_today": false,
     "peak_equity": 369.27973439817663,
-    "last_equity": 364.3113488381338,
+    "last_equity": 363.78994838647367,
     "blend_last_price": 142.83347748475325,
     "blend_last_date": "2026-11-09",
     "blend_last_components": {
@@ -141,5 +150,10 @@
       "SPY": 752.489990234375,
       "GLD": 376.19000244140625
     }
+  },
+  "_blend_tracking": {
+    "starting_capital": 394.13,
+    "start_date": "2026-11-09",
+    "peak_equity": 394.13
   }
 }
