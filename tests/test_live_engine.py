@@ -609,3 +609,91 @@ def test_rebasar_y_recalcular_stops_sube_el_stop_y_rebasa_capital(monkeypatch):
 
     assert resultado["largo_plazo"]["nuevo_starting_capital"] == equity_esperado
     assert resultado["largo_plazo"]["stops_actualizados"] == [{"symbol": "VOO", "antes": 90.0, "despues": 105.0}]
+
+
+def test_nunca_abre_posicion_nueva_en_spy_o_gld(monkeypatch):
+    """SPY y GLD están reservados para el blend de cash ocioso (ADR
+    0028) — abrir una posición real de estrategia en el mismo símbolo
+    colisiona contra la MISMA posición real de IBKR, dejando el ledger
+    del blend creyendo que tiene acciones que en realidad vendió otra
+    parte del motor. Bug real encontrado el 9-nov-2026: el ledger
+    creía tener 24 acciones de SPY y 24 de GLD que la cuenta real no
+    tenía."""
+    fake_universe = {
+        "SPY": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0], "return_126d": [0.1]}
+        ),
+        "GLD": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [50.0], "sma_200": [20.0], "atr_14": [0.5], "return_126d": [0.1]}
+        ),
+    }
+    monkeypatch.setattr(live_engine, "load_universe", lambda symbols=None: fake_universe)
+    monkeypatch.setattr(live_engine, "BUCKET_CONFIG", {
+        "largo_plazo": {
+            "universe_file": None,
+            "risk_pct": 0.01,
+            "strategies": ["time_series_momentum"],
+        }
+    })
+    monkeypatch.setattr(live_engine, "read_universe_file", lambda path: ["SPY", "GLD"])
+    monkeypatch.setitem(engine.SIGNAL_FNS, "time_series_momentum", lambda df: df.assign(signal=1, stop_price=df["close"] - 5))
+
+    def fill_que_nunca_deberia_llamarse(ib, symbol, accion, shares):
+        raise AssertionError(f"no debería colocar una orden de estrategia en {symbol}")
+
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", fill_que_nunca_deberia_llamarse)
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object())
+
+    assert result["open_count"] == 0
+    assert bucket_state["open_positions"] == []
+
+
+def test_reconciliar_blend_automatico_escala_shares_al_total_real(monkeypatch, tmp_path):
+    monkeypatch.setattr(live_engine, "LIVE_BLEND_LEDGER_PATH", tmp_path / "blend_ledger.json")
+    """Bug real del 9-nov-2026: el ledger creía tener 24 SPY/24 GLD
+    repartidos en 2 buckets, IBKR reportaba 0 reales. La corrección
+    debe escalar las shares de cada bucket proporcionalmente (aquí a
+    0, ya que el real es 0) y dejar un ajuste auditable en el ledger."""
+    monkeypatch.setattr(live_engine, "posiciones_reales", lambda ib: {"SPY": 0, "GLD": 0})
+    monkeypatch.setattr(live_engine, "_precios_blend_hoy", lambda as_of=None: {"SPY": 650.0, "GLD": 380.0})
+
+    state = {
+        "largo_plazo": {"blend_spy_shares": 16, "blend_gld_shares": 16, "cash": 0.0, "open_positions": []},
+        "mediano_plazo": {"blend_spy_shares": 8, "blend_gld_shares": 8, "cash": 0.0, "open_positions": []},
+    }
+    live_engine.save_state(state)
+
+    ajustes = live_engine.reconciliar_blend_automatico(ib=object())
+
+    assert ajustes["SPY"]["total_creido_antes"] == 24
+    assert ajustes["SPY"]["total_real"] == 0
+    assert ajustes["SPY"]["por_bucket"]["largo_plazo"] == {"antes": 16, "despues": 0.0}
+    assert ajustes["SPY"]["por_bucket"]["mediano_plazo"] == {"antes": 8, "despues": 0.0}
+
+    estado = live_engine.load_state()
+    assert estado["largo_plazo"]["blend_spy_shares"] == 0.0
+    assert estado["mediano_plazo"]["blend_gld_shares"] == 0.0
+
+    ledger = blend_ledger.load_ledger(live_engine.LIVE_BLEND_LEDGER_PATH)
+    ajuste_spy = [t for t in ledger if t["simbolo"] == "SPY" and t["bucket"] == "_reconciliacion"]
+    assert len(ajuste_spy) == 1
+    assert ajuste_spy[0]["tipo"] == "venta"
+    assert ajuste_spy[0]["shares"] == 24
+    assert ajuste_spy[0]["monto_usd"] == pytest.approx(24 * 650.0)
+
+
+def test_reconciliar_blend_automatico_no_toca_nada_si_ya_cuadra(monkeypatch, tmp_path):
+    monkeypatch.setattr(live_engine, "LIVE_BLEND_LEDGER_PATH", tmp_path / "blend_ledger.json")
+    monkeypatch.setattr(live_engine, "posiciones_reales", lambda ib: {"SPY": 5, "GLD": 5})
+    monkeypatch.setattr(live_engine, "_precios_blend_hoy", lambda as_of=None: {"SPY": 650.0, "GLD": 380.0})
+
+    state = {"largo_plazo": {"blend_spy_shares": 5, "blend_gld_shares": 5, "open_positions": []}}
+    live_engine.save_state(state)
+
+    ajustes = live_engine.reconciliar_blend_automatico(ib=object())
+
+    assert ajustes == {}
+    ledger = blend_ledger.load_ledger(live_engine.LIVE_BLEND_LEDGER_PATH)
+    assert ledger == []  # no se agregó ningún ajuste innecesario

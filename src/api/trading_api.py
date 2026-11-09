@@ -419,3 +419,23 @@ def exportar_live(authorization: str | None = Header(None)):
     from src.paper_trading.export_live import build_export_live
 
     return build_export_live()
+
+
+@app.post("/admin/live/reconciliar-blend-automatico")
+def reconciliar_blend_automatico_live(authorization: str | None = Header(None)):
+    """Corrige las shares de SPY/GLD que el motor cree tener en el
+    blend de cash ocioso cuando no coinciden con las reales en IBKR
+    (ver docstring de live_engine.reconciliar_blend_automatico — bug
+    real encontrado el 9-nov-2026: SPY/GLD también eran operables como
+    posición de estrategia normal, ya corregido, pero el ledger
+    quedó desincronizado de antes). Seguro de llamar aunque ya esté
+    todo cuadrado (devuelve {})."""
+    _verificar_token(authorization)
+
+    ib = conectar()
+    try:
+        resultado = live_engine.reconciliar_blend_automatico(ib)
+    finally:
+        desconectar(ib)
+
+    return resultado

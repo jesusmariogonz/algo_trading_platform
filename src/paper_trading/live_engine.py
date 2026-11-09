@@ -370,6 +370,19 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
         for symbol in symbols:
             if symbol in open_symbols:
                 continue
+            if symbol in BLEND_WEIGHTS:
+                # SPY/GLD están reservados para el blend de cash ocioso
+                # (ADR 0028) — abrir una posición real de estrategia en
+                # el mismo símbolo que el blend también opera colisiona
+                # contra la MISMA posición real en IBKR (el broker no
+                # distingue "esto es una señal de trading" de "esto es
+                # inversión del blend"), dejando el ledger del blend
+                # creyendo que tiene acciones que la estrategia ya
+                # vendió por su cuenta. Nunca se abre una entrada nueva
+                # aquí; si ya hay una posición vieja abierta en estos
+                # símbolos, sigue gestionándose normal (open_symbols ya
+                # la cubre arriba).
+                continue
             df = universe.get(symbol)
             if df is None:
                 continue
@@ -713,3 +726,79 @@ def rebasar_y_recalcular_stops() -> dict[str, dict]:
 
     save_state(state)
     return resultado
+
+
+def reconciliar_blend_automatico(ib) -> dict[str, dict]:
+    """Corrige las shares de SPY/GLD que el motor cree tener en el
+    blend (`blend_spy_shares`/`blend_gld_shares` por bucket) cuando no
+    coinciden con las reales en IBKR.
+
+    Causa real encontrada el 9-nov-2026: SPY y GLD también estaban
+    listados como símbolos operables normales en los universos de
+    trading — una venta de estrategia (no del blend) podía mover la
+    posición real sin que el ledger del blend se enterara, dejándolo
+    creyendo que tenía acciones que ya no existían (24 de SPY y 24 de
+    GLD en este caso real, cuando IBKR reportaba 0). Ya se corrigió
+    la causa (`run_bucket_tick_live` nunca vuelve a abrir una entrada
+    de estrategia en un símbolo del blend), pero el daño ya hecho al
+    ledger necesita esta reconciliación.
+
+    Escala proporcionalmente las shares de cada bucket al total real
+    (nunca inventa de qué bucket específico salió la diferencia —no
+    hay forma de saberlo con certeza) y registra una entrada de ajuste
+    en el ledger, valuada al precio de HOY (la mejor aproximación
+    disponible — no hay un fill real del que sacar el precio exacto
+    de cuándo se perdió la sincronía), para que el costo base quede
+    razonable en vez de seguir sobreestimado.
+
+    Devuelve {} si ya estaba todo cuadrado. Guarda el estado solo si
+    corrigió algo."""
+    reales = posiciones_reales(ib)
+    precios_hoy = _precios_blend_hoy()
+    state = load_state()
+    ajustes: dict[str, dict] = {}
+
+    for simbolo in BLEND_WEIGHTS:
+        clave = f"blend_{simbolo.lower()}_shares"
+        creidas_por_bucket = {
+            bucket: bucket_state.get(clave, 0)
+            for bucket, bucket_state in state.items()
+            if not bucket.startswith("_")
+        }
+        total_creido = sum(creidas_por_bucket.values())
+        total_real = reales.get(simbolo, 0)
+
+        if abs(total_creido - total_real) < 1e-9 or total_creido == 0:
+            continue  # ya cuadra, o no hay nada que escalar
+
+        factor = total_real / total_creido
+        detalle_por_bucket = {}
+        for bucket, creidas in creidas_por_bucket.items():
+            if creidas == 0:
+                continue
+            nuevas = creidas * factor
+            state[bucket][clave] = round(nuevas, 6)
+            detalle_por_bucket[bucket] = {"antes": creidas, "despues": round(nuevas, 6)}
+
+        shares_de_mas = total_creido - total_real
+        precio_hoy = precios_hoy.get(simbolo)
+        blend_ledger.registrar(
+            LIVE_BLEND_LEDGER_PATH, bucket="_reconciliacion", fecha=date.today().isoformat(),
+            tipo="venta" if shares_de_mas > 0 else "compra",
+            simbolo=simbolo, monto_usd=round(abs(shares_de_mas) * (precio_hoy or 0.0), 2),
+            precio=precio_hoy or 0.0, shares=abs(shares_de_mas),
+            motivo=(
+                f"Ajuste de reconciliación automática: el motor creía tener {total_creido:.4f} "
+                f"acciones de {simbolo} repartidas entre buckets, IBKR reporta {total_real} reales "
+                "— ver docstring de reconciliar_blend_automatico. Valuado al precio de hoy, no al "
+                "precio real de cuándo se perdió la sincronía (no hay fill del que sacarlo)."
+            ),
+        )
+        ajustes[simbolo] = {
+            "total_creido_antes": total_creido, "total_real": total_real,
+            "por_bucket": detalle_por_bucket,
+        }
+
+    if ajustes:
+        save_state(state)
+    return ajustes

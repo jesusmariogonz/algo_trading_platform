@@ -607,3 +607,23 @@ def test_exportar_live_no_se_conecta_a_ibkr(client, monkeypatch):
 
     assert r.status_code == 200
     assert r.json()["buckets"] == {}
+
+
+def test_reconciliar_blend_automatico_live_requiere_token(client):
+    assert client.post("/admin/live/reconciliar-blend-automatico").status_code == 401
+
+
+def test_reconciliar_blend_automatico_live_devuelve_lo_ajustado(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
+    monkeypatch.setattr(
+        trading_api.live_engine, "reconciliar_blend_automatico",
+        lambda ib: {"SPY": {"total_creido_antes": 24, "total_real": 0, "por_bucket": {}}},
+    )
+
+    r = client.post("/admin/live/reconciliar-blend-automatico", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json()["SPY"]["total_real"] == 0
+    assert llamadas["desconectado"] == "ib-falso"
