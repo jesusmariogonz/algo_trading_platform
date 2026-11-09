@@ -526,13 +526,53 @@ def test_rebasar_y_recalcular_stops_live_requiere_token(client):
 def test_rebasar_y_recalcular_stops_live_delega_al_motor(client, monkeypatch):
     monkeypatch.setattr(
         trading_api.live_engine, "rebasar_y_recalcular_stops",
-        lambda: {"largo_plazo": {"nuevo_starting_capital": 871.11, "stops_actualizados": []}},
+        lambda buckets=None: {"largo_plazo": {"nuevo_starting_capital": 871.11, "stops_actualizados": []}},
     )
 
     r = client.post("/admin/live/rebasar-y-recalcular-stops", headers=HEADERS_OK)
 
     assert r.status_code == 200
     assert r.json() == {"largo_plazo": {"nuevo_starting_capital": 871.11, "stops_actualizados": []}}
+
+
+def test_rebasar_y_recalcular_stops_live_puede_limitarse_a_un_bucket(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(
+        trading_api.live_engine, "rebasar_y_recalcular_stops",
+        lambda buckets=None: llamadas.setdefault("buckets", buckets) or {},
+    )
+
+    r = client.post("/admin/live/rebasar-y-recalcular-stops?buckets=largo_plazo", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert llamadas["buckets"] == ["largo_plazo"]
+
+
+def test_corregir_retorno_historico_live_requiere_token(client):
+    assert client.post("/admin/live/corregir-retorno-historico?bucket=largo_plazo&fecha=2026-11-09").status_code == 401
+
+
+def test_corregir_retorno_historico_live_delega_al_motor(client, monkeypatch):
+    monkeypatch.setattr(
+        trading_api.live_engine, "corregir_retorno_historico",
+        lambda bucket, fecha: {"bucket": bucket, "fecha": fecha, "nuevo": {"cumulative_return_pct": 0.0, "drawdown_pct": 0.0}},
+    )
+
+    r = client.post("/admin/live/corregir-retorno-historico?bucket=largo_plazo&fecha=2026-11-09", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json()["nuevo"]["cumulative_return_pct"] == 0.0
+
+
+def test_corregir_retorno_historico_live_400_si_no_hay_entrada(client, monkeypatch):
+    def falla(bucket, fecha):
+        raise ValueError(f"No hay entrada de historial para '{bucket}' en {fecha}")
+
+    monkeypatch.setattr(trading_api.live_engine, "corregir_retorno_historico", falla)
+
+    r = client.post("/admin/live/corregir-retorno-historico?bucket=largo_plazo&fecha=2026-11-09", headers=HEADERS_OK)
+
+    assert r.status_code == 400
 
 
 def test_posiciones_reales_live_requiere_token(client):

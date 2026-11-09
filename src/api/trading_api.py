@@ -344,14 +344,33 @@ def vender_simbolo_live(symbol: str, shares: int, authorization: str | None = He
 
 
 @app.post("/admin/live/rebasar-y-recalcular-stops")
-def rebasar_y_recalcular_stops_live(authorization: str | None = Header(None)):
+def rebasar_y_recalcular_stops_live(buckets: str | None = None, authorization: str | None = Header(None)):
     """Recalcula el stop_price de cada posición abierta con el dato
     más fresco (solo lo sube, nunca lo baja) y re-basa
     starting_capital/peak_equity al equity actual de cada bucket —
     para que el retorno acumulado arranque en 0% desde este momento,
-    sin cerrar ni abrir ninguna posición ni mandar ninguna orden."""
+    sin cerrar ni abrir ninguna posición ni mandar ninguna orden.
+
+    `buckets`: opcional, nombres separados por coma (ej.
+    "largo_plazo") para rebasar solo esos — por default rebasa los 3."""
     _verificar_token(authorization)
-    return live_engine.rebasar_y_recalcular_stops()
+    lista_buckets = [b.strip() for b in buckets.split(",")] if buckets else None
+    return live_engine.rebasar_y_recalcular_stops(lista_buckets)
+
+
+@app.post("/admin/live/corregir-retorno-historico")
+def corregir_retorno_historico_live(bucket: str, fecha: str, authorization: str | None = Header(None)):
+    """Recalcula cumulative_return_pct/drawdown_pct de UNA entrada ya
+    guardada en el historial (ver docstring de
+    live_engine.corregir_retorno_historico) — para los casos donde un
+    bug corrompió el baseline contra el que se calculó el % de un día
+    que ya se guardó. Nunca toca equity/cash/posiciones de esa
+    entrada, solo el % derivado."""
+    _verificar_token(authorization)
+    try:
+        return live_engine.corregir_retorno_historico(bucket, fecha)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/live/posiciones-reales")

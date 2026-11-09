@@ -674,19 +674,26 @@ def reconciliar_posiciones_automatico(ib) -> dict[str, list[str]]:
     return resultado
 
 
-def rebasar_y_recalcular_stops() -> dict[str, dict]:
+def rebasar_y_recalcular_stops(buckets: list[str] | None = None) -> dict[str, dict]:
     """Recalcula el stop_price de cada posición abierta con los datos
     más frescos (nunca lo baja — toma el máximo contra el guardado,
     misma regla del trailing stop normal), y re-basa `starting_capital`
     / `peak_equity` al equity actual de cada bucket — para que el
     retorno acumulado arranque en 0% desde este momento en vez de
     arrastrar el rebasamiento de la reconciliación (ADR 0035/0036).
-    No cierra ni abre ninguna posición, no manda ninguna orden."""
+    No cierra ni abre ninguna posición, no manda ninguna orden.
+
+    `buckets`: si se da, solo rebasa esos buckets (ej. uno que se
+    suspendió por un salto de equity espurio) — los demás quedan
+    intactos. Por default (None) rebasa todos, comportamiento
+    original."""
     state = load_state()
     precios_blend = _precios_blend_hoy()
     resultado: dict[str, dict] = {}
 
     for bucket, bucket_state in state.items():
+        if buckets is not None and bucket not in buckets:
+            continue
         config = BUCKET_CONFIG.get(bucket)
         if config is None:
             continue
@@ -874,3 +881,58 @@ def reautorizar_bucket(bucket: str) -> dict:
     save_state(state)
 
     return {"bucket": bucket, "reautorizado": True, **anterior}
+
+
+def corregir_retorno_historico(bucket: str, fecha: str) -> dict:
+    """Recalcula cumulative_return_pct/drawdown_pct de UNA entrada ya
+    guardada en el historial, usando el starting_capital ACTUAL del
+    bucket (normalmente justo después de un rebase) en vez del que
+    estaba vigente ese día.
+
+    Para cuándo sirve esto: un bug puede corromper el baseline contra
+    el que se calculó el % de un día que ya se guardó (ej. el 9-nov-
+    2026, el ledger fantasma del blend inflaba el starting_capital de
+    largo_plazo, y al corregirlo el equity "cayó" -40% en el reporte
+    aunque nada real hubiera pasado). Un rebase normal solo afecta
+    corridas FUTURAS — esto corrige el número YA escrito, para que no
+    quede un día distorsionado permanentemente en el historial público.
+
+    Nunca toca equity/cash/posiciones de esa entrada (esos son reales,
+    tal como se registraron) — solo recalcula el % derivado contra el
+    baseline correcto. Devuelve el antes/después para que quede
+    auditable qué cambió y por qué."""
+    state = load_state()
+    bucket_state = state.get(bucket)
+    if bucket_state is None:
+        raise ValueError(f"'{bucket}' no tiene estado")
+    starting_capital = bucket_state["starting_capital"]
+    if not starting_capital:
+        raise ValueError(f"'{bucket}' no tiene starting_capital válido para recalcular contra")
+
+    history = load_history()
+    entrada = None
+    for h in history:
+        if h["date"] == fecha and bucket in h.get("buckets", {}):
+            entrada = h["buckets"][bucket]
+            break
+    if entrada is None:
+        raise ValueError(f"No hay entrada de historial para '{bucket}' en {fecha}")
+
+    anterior = {
+        "cumulative_return_pct": entrada.get("cumulative_return_pct"),
+        "drawdown_pct": entrada.get("drawdown_pct"),
+    }
+    equity = entrada["equity"]
+    entrada["cumulative_return_pct"] = round((equity / starting_capital - 1) * 100, 2)
+    entrada["drawdown_pct"] = round(max(0.0, (starting_capital - equity) / starting_capital * 100), 2)
+
+    save_history(history)
+    return {
+        "bucket": bucket, "fecha": fecha, "equity": equity,
+        "starting_capital_usado": starting_capital,
+        "anterior": anterior,
+        "nuevo": {
+            "cumulative_return_pct": entrada["cumulative_return_pct"],
+            "drawdown_pct": entrada["drawdown_pct"],
+        },
+    }

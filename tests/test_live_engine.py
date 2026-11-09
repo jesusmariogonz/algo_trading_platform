@@ -797,3 +797,63 @@ def test_reautorizar_bucket_falla_si_no_tiene_estado():
 def test_reautorizar_bucket_falla_si_no_es_bucket_valido():
     with pytest.raises(ValueError, match="no es un bucket válido"):
         live_engine.reautorizar_bucket("bucket_inventado")
+
+
+def test_rebasar_y_recalcular_stops_puede_limitarse_a_buckets_especificos(monkeypatch):
+    monkeypatch.setattr(live_engine, "BUCKET_CONFIG", {
+        "largo_plazo": {"universe_file": None, "risk_pct": 0.02, "strategies": []},
+        "mediano_plazo": {"universe_file": None, "risk_pct": 0.02, "strategies": []},
+    })
+    monkeypatch.setattr(live_engine, "_precios_blend_hoy", lambda as_of=None: {"SPY": 100.0, "GLD": 60.0})
+    monkeypatch.setattr(live_engine, "load_universe", lambda symbols=None: {})
+
+    state = {
+        "largo_plazo": {"cash": 500.0, "blend_spy_shares": 0, "blend_gld_shares": 0,
+                         "starting_capital": 1000.0, "peak_equity": 1000.0, "open_positions": []},
+        "mediano_plazo": {"cash": 300.0, "blend_spy_shares": 0, "blend_gld_shares": 0,
+                           "starting_capital": 800.0, "peak_equity": 800.0, "open_positions": []},
+    }
+    live_engine.save_state(state)
+
+    resultado = live_engine.rebasar_y_recalcular_stops(["largo_plazo"])
+
+    assert "largo_plazo" in resultado
+    assert "mediano_plazo" not in resultado
+    estado = live_engine.load_state()
+    assert estado["largo_plazo"]["starting_capital"] == 500.0  # rebasado
+    assert estado["mediano_plazo"]["starting_capital"] == 800.0  # intacto
+
+
+def test_corregir_retorno_historico_recalcula_contra_el_nuevo_baseline():
+    live_engine.save_state({"largo_plazo": {"starting_capital": 521.81, "open_positions": []}})
+    live_engine.save_history([
+        {"date": "2026-11-09", "buckets": {
+            "largo_plazo": {"equity": 521.81, "cumulative_return_pct": -40.1, "drawdown_pct": 41.84},
+        }},
+    ])
+
+    resultado = live_engine.corregir_retorno_historico("largo_plazo", "2026-11-09")
+
+    assert resultado["anterior"] == {"cumulative_return_pct": -40.1, "drawdown_pct": 41.84}
+    assert resultado["nuevo"] == {"cumulative_return_pct": 0.0, "drawdown_pct": 0.0}
+
+    history = live_engine.load_history()
+    entrada = history[0]["buckets"]["largo_plazo"]
+    assert entrada["cumulative_return_pct"] == 0.0
+    assert entrada["drawdown_pct"] == 0.0
+    assert entrada["equity"] == 521.81  # nunca se tocó el equity real
+
+
+def test_corregir_retorno_historico_falla_si_no_hay_entrada_esa_fecha():
+    live_engine.save_state({"largo_plazo": {"starting_capital": 500.0, "open_positions": []}})
+    live_engine.save_history([])
+
+    with pytest.raises(ValueError, match="No hay entrada de historial"):
+        live_engine.corregir_retorno_historico("largo_plazo", "2026-11-09")
+
+
+def test_corregir_retorno_historico_falla_si_bucket_no_existe():
+    live_engine.save_state({})
+
+    with pytest.raises(ValueError, match="no tiene estado"):
+        live_engine.corregir_retorno_historico("largo_plazo", "2026-11-09")
