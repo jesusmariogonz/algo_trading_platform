@@ -133,3 +133,69 @@ def test_append_historico_ignora_archivo_corrupto(tmp_path):
 
     filas = export.append_historico(_buckets_con_una_abierta_y_una_cerrada(), destino)
     assert len(filas) == 2
+
+
+def _buckets_para_bitacora():
+    return {
+        "largo_plazo": {
+            "starting_capital": 1000.0,
+            "open_positions": [{"symbol": "AAPL"}, {"symbol": "NVDA"}],
+            "closed_positions": [{"symbol": "MSFT", "pnl": 10.0}, {"symbol": "TSLA", "pnl": -5.0}],
+            "daily_history": [{"equity": 1050.0, "cumulative_return_pct": 5.0, "drawdown_pct": 1.2}],
+            "suspended": False,
+        },
+        "riesgo_alto": {
+            "starting_capital": 500.0,
+            "open_positions": [],
+            "closed_positions": [],
+            "daily_history": [],
+            "suspended": False,
+        },
+    }
+
+
+def test_append_bitacora_crea_un_renglon_por_bucket(tmp_path):
+    destino = tmp_path / "bitacora.json"
+    filas = export.append_bitacora(_buckets_para_bitacora(), destino, fecha="2026-11-09")
+
+    assert len(filas) == 2
+    largo = next(f for f in filas if f["bucket"] == "largo_plazo")
+    assert largo["equity"] == 1050.0
+    assert largo["ganancia_perdida"] == 50.0
+    assert largo["retorno_pct"] == 5.0
+    assert largo["abiertas"] == 2
+    assert largo["cerradas"] == 2
+    assert largo["win_rate_pct"] == 50.0
+
+    riesgo = next(f for f in filas if f["bucket"] == "riesgo_alto")
+    assert riesgo["equity"] == 500.0  # sin daily_history, usa starting_capital
+    assert riesgo["win_rate_pct"] is None  # sin cerradas, no hay win rate
+
+
+def test_append_bitacora_no_duplica_el_mismo_dia(tmp_path):
+    destino = tmp_path / "bitacora.json"
+    export.append_bitacora(_buckets_para_bitacora(), destino, fecha="2026-11-09")
+
+    buckets_tarde = _buckets_para_bitacora()
+    buckets_tarde["largo_plazo"]["daily_history"] = [{"equity": 1080.0, "cumulative_return_pct": 8.0, "drawdown_pct": 0.5}]
+    filas = export.append_bitacora(buckets_tarde, destino, fecha="2026-11-09")
+
+    assert len(filas) == 2  # sigue siendo 1 renglón por bucket ese día
+    largo = next(f for f in filas if f["bucket"] == "largo_plazo")
+    assert largo["equity"] == 1080.0  # la corrida de la tarde actualizó el renglón de hoy
+
+
+def test_append_bitacora_acumula_dias_distintos(tmp_path):
+    destino = tmp_path / "bitacora.json"
+    export.append_bitacora(_buckets_para_bitacora(), destino, fecha="2026-11-06")
+    filas = export.append_bitacora(_buckets_para_bitacora(), destino, fecha="2026-11-09")
+
+    assert len(filas) == 4  # 2 buckets x 2 días distintos
+
+
+def test_append_bitacora_ignora_archivo_corrupto(tmp_path):
+    destino = tmp_path / "bitacora.json"
+    destino.write_text("esto no es json valido")
+
+    filas = export.append_bitacora(_buckets_para_bitacora(), destino, fecha="2026-11-09")
+    assert len(filas) == 2

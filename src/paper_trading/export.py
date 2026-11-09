@@ -4,7 +4,7 @@ docs/adr/0002-dashboard-hosting.md). Corre esto después de
 run_daily_tick para que el dashboard de /trading se vea al día.
 
 Uso:
-    python -m src.paper_trading.export /ruta/a/jesus-site/lib/paper-trading-snapshot.json [/ruta/a/jesus-site/lib/trading-historico.json]
+    python -m src.paper_trading.export /ruta/a/jesus-site/lib/paper-trading-snapshot.json [/ruta/a/jesus-site/lib/trading-historico.json] [/ruta/a/jesus-site/lib/trading-bitacora.json]
 
 El segundo argumento (opcional) es un histórico acumulativo: una
 operación por renglón (bucket+symbol+entry_date como llave única),
@@ -12,7 +12,14 @@ que se actualiza cada vez que corre el export en vez de sobreescribirse
 — mientras la posición sigue abierta se refresca con el precio/stop
 actual, y al cerrarse queda fija con sus valores finales. A diferencia
 de paper-trading-snapshot.json (que SÍ se sobreescribe completo en
-cada tick), este archivo nunca pierde una fila ya escrita."""
+cada tick), este archivo nunca pierde una fila ya escrita.
+
+El tercer argumento (opcional, requiere el segundo) es una bitácora
+diaria: un renglón por bucket por día (fecha+bucket como llave única)
+con equity/retorno/drawdown/abiertas/cerradas/win rate de ese bucket a
+esa fecha — para ver la evolución del portafolio en el tiempo, no solo
+el estado actual. Si la rutina corre dos veces el mismo día, la
+segunda corrida actualiza el renglón de hoy en vez de duplicarlo."""
 
 import json
 import sys
@@ -133,6 +140,60 @@ def _fila_historico(bucket: str, p: dict, estado: str) -> dict:
     }
 
 
+def _fila_bitacora(bucket: str, data: dict, fecha: str) -> dict:
+    historial = data["daily_history"]
+    ultimo = historial[-1] if historial else None
+    equity = ultimo["equity"] if ultimo else data["starting_capital"]
+    retorno_pct = ultimo["cumulative_return_pct"] if ultimo else 0.0
+    drawdown_pct = ultimo["drawdown_pct"] if ultimo else 0.0
+    cerradas = data["closed_positions"]
+    ganadoras = sum(1 for p in cerradas if p.get("pnl", 0) > 0)
+
+    return {
+        "fecha": fecha,
+        "bucket": bucket,
+        "bucket_label": BUCKET_LABELS.get(bucket, bucket),
+        "capital_inicial": data["starting_capital"],
+        "equity": round(equity, 2),
+        "ganancia_perdida": round(equity - data["starting_capital"], 2),
+        "retorno_pct": retorno_pct,
+        "drawdown_pct": drawdown_pct,
+        "abiertas": len(data["open_positions"]),
+        "cerradas": len(cerradas),
+        "ganadoras": ganadoras,
+        "win_rate_pct": round(ganadoras / len(cerradas) * 100, 1) if cerradas else None,
+        "suspended": data.get("suspended", False),
+        "actualizado": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def append_bitacora(buckets: dict, bitacora_path: Path, fecha: str | None = None) -> list[dict]:
+    """Bitácora diaria: un renglón por bucket por día (fecha+bucket como
+    llave única), con equity/retorno/drawdown/abiertas/cerradas/win rate
+    de ese bucket a esa fecha. Si la rutina corre dos veces el mismo día
+    (apertura y cierre), la segunda corrida actualiza el renglón de hoy
+    en vez de duplicarlo — el histórico de días anteriores nunca se toca."""
+    fecha = fecha or datetime.now(timezone.utc).date().isoformat()
+
+    existentes: dict[str, dict] = {}
+    if bitacora_path.exists():
+        try:
+            for fila in json.loads(bitacora_path.read_text()):
+                llave = f"{fila['fecha']}:{fila['bucket']}"
+                existentes[llave] = fila
+        except (json.JSONDecodeError, KeyError):
+            existentes = {}  # bitácora corrupta o con formato viejo: empieza limpio en vez de fallar el export
+
+    for bucket, data in buckets.items():
+        llave = f"{fecha}:{bucket}"
+        existentes[llave] = _fila_bitacora(bucket, data, fecha)
+
+    filas = sorted(existentes.values(), key=lambda f: (f["fecha"], f["bucket"]))
+    bitacora_path.parent.mkdir(parents=True, exist_ok=True)
+    bitacora_path.write_text(json.dumps(filas, indent=2, ensure_ascii=False))
+    return filas
+
+
 def append_historico(buckets: dict, historico_path: Path) -> list[dict]:
     """Funde las posiciones del export actual sobre el histórico ya
     guardado en historico_path (si existe), usando bucket+symbol+entry_date
@@ -176,6 +237,11 @@ def main():
             historico_path = Path(sys.argv[2])
             filas = append_historico(export["buckets"], historico_path)
             print(f"Histórico actualizado en {historico_path} ({len(filas)} operaciones)")
+
+        if len(sys.argv) > 3:
+            bitacora_path = Path(sys.argv[3])
+            filas_bitacora = append_bitacora(export["buckets"], bitacora_path)
+            print(f"Bitácora actualizada en {bitacora_path} ({len(filas_bitacora)} renglones)")
     else:
         print(payload)
 
