@@ -627,3 +627,35 @@ def test_reconciliar_blend_automatico_live_devuelve_lo_ajustado(client, monkeypa
     assert r.status_code == 200
     assert r.json()["SPY"]["total_real"] == 0
     assert llamadas["desconectado"] == "ib-falso"
+
+
+def test_reautorizar_bucket_live_requiere_token(client):
+    assert client.post("/admin/live/reautorizar-bucket?bucket=largo_plazo").status_code == 401
+
+
+def test_reautorizar_bucket_live_no_se_conecta_a_ibkr(client, monkeypatch):
+    def falla_si_se_llama():
+        raise AssertionError("reautorizar_bucket_live no debe conectarse a IBKR")
+
+    monkeypatch.setattr(trading_api, "conectar", falla_si_se_llama)
+    monkeypatch.setattr(
+        trading_api.live_engine, "reautorizar_bucket",
+        lambda bucket: {"bucket": bucket, "reautorizado": True, "suspended_since": "2026-11-09", "suspended_reason": "x"},
+    )
+
+    r = client.post("/admin/live/reautorizar-bucket?bucket=largo_plazo", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json()["reautorizado"] is True
+
+
+def test_reautorizar_bucket_live_404_si_no_esta_suspendido(client, monkeypatch):
+    def falla(bucket):
+        raise ValueError(f"'{bucket}' no está suspendido — nada que reautorizar")
+
+    monkeypatch.setattr(trading_api.live_engine, "reautorizar_bucket", falla)
+
+    r = client.post("/admin/live/reautorizar-bucket?bucket=largo_plazo", headers=HEADERS_OK)
+
+    assert r.status_code == 400
+    assert "no está suspendido" in r.json()["detail"]

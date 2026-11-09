@@ -747,3 +747,53 @@ def test_reconciliar_blend_automatico_corrige_tambien_el_ledger_desincronizado(m
     # Después del ajuste, el neto del ledger completo sí cuadra con la realidad.
     neto_final = sum((t["shares"] if t["tipo"] == "compra" else -t["shares"]) for t in ledger if t["simbolo"] == "SPY")
     assert neto_final == 0
+
+
+def test_reautorizar_bucket_levanta_la_suspension():
+    state = {"largo_plazo": {
+        "suspended": True, "suspended_reason": "Drawdown 41.8% alcanzó el límite de revisión (6%)",
+        "suspended_since": "2026-11-09", "open_positions": [],
+    }}
+    live_engine.save_state(state)
+
+    resultado = live_engine.reautorizar_bucket("largo_plazo")
+
+    assert resultado == {
+        "bucket": "largo_plazo", "reautorizado": True,
+        "suspended_since": "2026-11-09",
+        "suspended_reason": "Drawdown 41.8% alcanzó el límite de revisión (6%)",
+    }
+    estado = live_engine.load_state()
+    assert estado["largo_plazo"]["suspended"] is False
+    assert estado["largo_plazo"]["suspended_reason"] is None
+    assert estado["largo_plazo"]["suspended_since"] is None
+
+
+def test_reautorizar_bucket_no_toca_posiciones_abiertas():
+    posiciones = [{"symbol": "VOO", "shares": 3}]
+    state = {"largo_plazo": {"suspended": True, "suspended_reason": "x", "suspended_since": "2026-11-09", "open_positions": posiciones}}
+    live_engine.save_state(state)
+
+    live_engine.reautorizar_bucket("largo_plazo")
+
+    assert live_engine.load_state()["largo_plazo"]["open_positions"] == posiciones
+
+
+def test_reautorizar_bucket_falla_si_no_esta_suspendido():
+    state = {"largo_plazo": {"suspended": False, "open_positions": []}}
+    live_engine.save_state(state)
+
+    with pytest.raises(ValueError, match="no está suspendido"):
+        live_engine.reautorizar_bucket("largo_plazo")
+
+
+def test_reautorizar_bucket_falla_si_no_tiene_estado():
+    live_engine.save_state({})
+
+    with pytest.raises(ValueError, match="no tiene estado"):
+        live_engine.reautorizar_bucket("largo_plazo")
+
+
+def test_reautorizar_bucket_falla_si_no_es_bucket_valido():
+    with pytest.raises(ValueError, match="no es un bucket válido"):
+        live_engine.reautorizar_bucket("bucket_inventado")

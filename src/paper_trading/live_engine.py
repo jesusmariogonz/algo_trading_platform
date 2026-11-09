@@ -839,3 +839,38 @@ def reconciliar_blend_automatico(ib) -> dict[str, dict]:
         ajustes.setdefault(simbolo, {})["ledger_neto_antes"] = neto_ledger
         ajustes[simbolo]["ledger_total_real"] = total_real
     return ajustes
+
+
+def reautorizar_bucket(bucket: str) -> dict:
+    """Levanta la suspensión de un bucket del motor EN VIVO después de
+    que el circuit breaker de drawdown lo detuvo. Acción MANUAL a
+    propósito — el motor nunca se reactiva solo (misma regla que el
+    motor simulado, ver reauthorize.py). No liquida ni modifica
+    posiciones abiertas, solo permite que vuelvan a abrirse posiciones
+    NUEVAS si hay señal. No borra el historial de por qué se suspendió
+    (vive en daily_history, intacto).
+
+    Lanza ValueError si el bucket no existe o no está suspendido —
+    quien llama decide qué hacer con eso (el endpoint lo traduce a
+    400/404), para no reautorizar algo "por accidente" cuando en
+    realidad no había nada que reautorizar."""
+    if bucket not in ACTIVE_BUCKETS:
+        raise ValueError(f"'{bucket}' no es un bucket válido del motor en vivo ({ACTIVE_BUCKETS})")
+
+    state = load_state()
+    bucket_state = state.get(bucket)
+    if bucket_state is None:
+        raise ValueError(f"'{bucket}' no tiene estado todavía (no ha corrido ningún tick)")
+    if not bucket_state.get("suspended"):
+        raise ValueError(f"'{bucket}' no está suspendido — nada que reautorizar")
+
+    anterior = {
+        "suspended_since": bucket_state.get("suspended_since"),
+        "suspended_reason": bucket_state.get("suspended_reason"),
+    }
+    bucket_state["suspended"] = False
+    bucket_state["suspended_reason"] = None
+    bucket_state["suspended_since"] = None
+    save_state(state)
+
+    return {"bucket": bucket, "reautorizado": True, **anterior}

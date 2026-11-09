@@ -439,3 +439,19 @@ def reconciliar_blend_automatico_live(authorization: str | None = Header(None)):
         desconectar(ib)
 
     return resultado
+
+
+@app.post("/admin/live/reautorizar-bucket")
+def reautorizar_bucket_live(bucket: str, authorization: str | None = Header(None)):
+    """Levanta la suspensión de un bucket del motor EN VIVO (ver
+    live_engine.reautorizar_bucket) — acción MANUAL a propósito, el
+    motor nunca se reactiva solo. No toca posiciones abiertas, solo
+    permite abrir posiciones nuevas desde el próximo tick. No necesita
+    conexión a IBKR (no coloca órdenes), solo lee/escribe estado
+    local."""
+    _verificar_token(authorization)
+
+    try:
+        return live_engine.reautorizar_bucket(bucket)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
