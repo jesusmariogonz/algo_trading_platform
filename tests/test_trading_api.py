@@ -587,3 +587,23 @@ def test_reconciliar_automatico_live_devuelve_lo_agregado(client, monkeypatch):
     assert r.status_code == 200
     assert r.json() == {"largo_plazo": ["VOO"]}
     assert llamadas["desconectado"] == "ib-falso"
+
+
+def test_exportar_live_requiere_token(client):
+    assert client.get("/live/exportar").status_code == 401
+
+
+def test_exportar_live_no_se_conecta_a_ibkr(client, monkeypatch):
+    def falla_si_se_llama():
+        raise AssertionError("exportar_live no debe conectarse a IBKR")
+
+    monkeypatch.setattr(trading_api, "conectar", falla_si_se_llama)
+    monkeypatch.setattr(
+        "src.paper_trading.export_live.build_export_live",
+        lambda: {"generated_at": "2026-01-01T00:00:00+00:00", "source": "motor EN VIVO", "buckets": {}},
+    )
+
+    r = client.get("/live/exportar", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json()["buckets"] == {}

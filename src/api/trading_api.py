@@ -402,3 +402,20 @@ def reconciliar_automatico_live(authorization: str | None = Header(None)):
         desconectar(ib)
 
     return resultado
+
+
+@app.get("/live/exportar")
+def exportar_live(authorization: str | None = Header(None)):
+    """Snapshot del motor EN VIVO (posiciones abiertas/cerradas,
+    equity y drawdown por bucket) en el mismo formato que usa
+    export.py para el motor simulado — para que una rutina externa
+    (sin acceso SSH a esta VM) pueda fundirlo sobre el histórico y la
+    bitácora que ya tiene en jesus-site, igual que ya hace con el
+    motor simulado. Solo lee estado local (state.json + history.json
+    + datos procesados en disco), nunca se conecta a IBKR — rápido y
+    sin riesgo de interferir con una corrida en curso."""
+    _verificar_token(authorization)
+
+    from src.paper_trading.export_live import build_export_live
+
+    return build_export_live()
