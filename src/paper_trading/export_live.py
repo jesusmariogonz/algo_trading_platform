@@ -17,7 +17,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from src.paper_trading import live_engine
+from src.backtesting.run import load_universe
+from src.paper_trading import blend_bucket, live_engine
+from src.paper_trading.engine import BLEND_WEIGHTS
 from src.paper_trading.export import _con_precio_en_vivo, append_bitacora, append_historico
 from src.portfolio.asset_types import asset_type_de
 
@@ -42,6 +44,19 @@ def build_export_live() -> dict:
             "daily_history": history_for_bucket,
             "suspended": bucket_state.get("suspended", False),
         }
+
+    precios_blend = {}
+    try:
+        universo_blend = load_universe(symbols=list(BLEND_WEIGHTS))
+        for simbolo, df in universo_blend.items():
+            if not df.empty:
+                precios_blend[simbolo] = float(df.sort_values("date")["close"].iloc[-1])
+    except SystemExit:
+        pass  # faltan datos procesados para SPY/GLD: el bucket de blend simplemente no se agrega
+
+    resumen_blend = blend_bucket.resumen_blend_live(live_engine.LIVE_BLEND_LEDGER_PATH, precios_blend)
+    if resumen_blend is not None:
+        buckets[blend_bucket.BLEND_BUCKET_KEY] = resumen_blend
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),

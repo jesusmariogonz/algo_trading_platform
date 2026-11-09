@@ -81,11 +81,16 @@ def _con_precio_en_vivo(open_positions: list[dict]) -> list[dict]:
 
 
 def build_export() -> dict:
+    from src.paper_trading import blend_bucket
+    from src.paper_trading.engine import save_state
+
     state = load_state()
     history = load_history()
 
     buckets = {}
     for bucket, bucket_state in state.items():
+        if bucket.startswith("_"):
+            continue  # claves internas (ej. _blend_tracking), no son un bucket de trading
         history_for_bucket = [
             {"date": h["date"], **h["buckets"][bucket]}
             for h in history
@@ -103,6 +108,18 @@ def build_export() -> dict:
             "suspended_reason": bucket_state.get("suspended_reason"),
             "suspended_since": bucket_state.get("suspended_since"),
         }
+
+    precios_blend_por_bucket = {
+        bucket: bucket_state.get("blend_last_price")
+        for bucket, bucket_state in state.items()
+        if not bucket.startswith("_")
+    }
+    tracking_antes = blend_bucket.BLEND_TRACKING_STATE_KEY in state
+    resumen_blend = blend_bucket.resumen_blend_simulado(state, precios_blend_por_bucket)
+    if resumen_blend is not None:
+        buckets[blend_bucket.BLEND_BUCKET_KEY] = resumen_blend
+        if not tracking_antes:
+            save_state(state)  # persiste el baseline recién establecido, para no resetearlo en la próxima corrida
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
