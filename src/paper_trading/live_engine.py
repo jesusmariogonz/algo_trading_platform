@@ -801,4 +801,41 @@ def reconciliar_blend_automatico(ib) -> dict[str, dict]:
 
     if ajustes:
         save_state(state)
+
+    # El ledger (blend_ledger.json) es una bitácora APPEND-ONLY
+    # independiente del contador operativo de arriba (state[...][clave])
+    # — puede tener su propia desincronización histórica (ej. entradas
+    # de "capital inicial del bucket" duplicadas de corridas viejas que
+    # fallaron a medias) que el ajuste de arriba, calculado solo sobre
+    # el contador operativo, no necesariamente cubre. resumen_blend_live
+    # (el reporte que ve el usuario) suma el ledger completo, así que
+    # también hay que corregir ESE total, por separado.
+    ledger = blend_ledger.load_ledger(LIVE_BLEND_LEDGER_PATH)
+    for simbolo in BLEND_WEIGHTS:
+        neto_ledger = sum(
+            (tx["shares"] if tx["tipo"] == "compra" else -tx["shares"])
+            for tx in ledger if tx["simbolo"] == simbolo
+        )
+        total_real = reales.get(simbolo, 0)
+        if abs(neto_ledger - total_real) < 1e-9:
+            continue
+
+        shares_de_mas = neto_ledger - total_real
+        precio_hoy = precios_hoy.get(simbolo)
+        blend_ledger.registrar(
+            LIVE_BLEND_LEDGER_PATH, bucket="_reconciliacion_ledger", fecha=date.today().isoformat(),
+            tipo="venta" if shares_de_mas > 0 else "compra",
+            simbolo=simbolo, monto_usd=round(abs(shares_de_mas) * (precio_hoy or 0.0), 2),
+            precio=precio_hoy or 0.0, shares=abs(shares_de_mas),
+            motivo=(
+                f"Ajuste de reconciliación del LEDGER completo (independiente del contador "
+                f"operativo de arriba): sumando todas las transacciones registradas, el ledger "
+                f"neto da {neto_ledger:.4f} acciones de {simbolo}, IBKR reporta {total_real} "
+                "reales. Probablemente de entradas 'capital inicial del bucket' duplicadas de "
+                "corridas viejas. Valuado al precio de hoy, no al precio real de cuándo se perdió "
+                "la sincronía (no hay fill del que sacarlo)."
+            ),
+        )
+        ajustes.setdefault(simbolo, {})["ledger_neto_antes"] = neto_ledger
+        ajustes[simbolo]["ledger_total_real"] = total_real
     return ajustes

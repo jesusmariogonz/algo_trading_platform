@@ -685,15 +685,65 @@ def test_reconciliar_blend_automatico_escala_shares_al_total_real(monkeypatch, t
 
 
 def test_reconciliar_blend_automatico_no_toca_nada_si_ya_cuadra(monkeypatch, tmp_path):
-    monkeypatch.setattr(live_engine, "LIVE_BLEND_LEDGER_PATH", tmp_path / "blend_ledger.json")
+    ledger_path = tmp_path / "blend_ledger.json"
+    monkeypatch.setattr(live_engine, "LIVE_BLEND_LEDGER_PATH", ledger_path)
     monkeypatch.setattr(live_engine, "posiciones_reales", lambda ib: {"SPY": 5, "GLD": 5})
     monkeypatch.setattr(live_engine, "_precios_blend_hoy", lambda as_of=None: {"SPY": 650.0, "GLD": 380.0})
 
     state = {"largo_plazo": {"blend_spy_shares": 5, "blend_gld_shares": 5, "open_positions": []}}
     live_engine.save_state(state)
+    # El ledger también tiene que cuadrar con lo real para que este
+    # caso sea "ya está todo bien" de verdad en ambas fuentes de datos.
+    blend_ledger.registrar(
+        ledger_path, bucket="largo_plazo", fecha="2026-11-01", tipo="compra",
+        simbolo="SPY", monto_usd=3250.0, precio=650.0, shares=5, motivo="capital inicial",
+    )
+    blend_ledger.registrar(
+        ledger_path, bucket="largo_plazo", fecha="2026-11-01", tipo="compra",
+        simbolo="GLD", monto_usd=1900.0, precio=380.0, shares=5, motivo="capital inicial",
+    )
 
     ajustes = live_engine.reconciliar_blend_automatico(ib=object())
 
     assert ajustes == {}
-    ledger = blend_ledger.load_ledger(live_engine.LIVE_BLEND_LEDGER_PATH)
-    assert ledger == []  # no se agregó ningún ajuste innecesario
+    ledger = blend_ledger.load_ledger(ledger_path)
+    assert len(ledger) == 2  # no se agregó ningún ajuste de más, solo quedan las 2 originales
+
+
+def test_reconciliar_blend_automatico_corrige_tambien_el_ledger_desincronizado(monkeypatch, tmp_path):
+    """Caso real del bug: el contador operativo (state) ya estaba bien,
+    pero el LEDGER (lo que lee el reporte del usuario) tenía entradas
+    duplicadas de corridas viejas que lo dejaban sobreestimado — esta
+    desincronización necesita su propio ajuste, independiente del de
+    arriba."""
+    ledger_path = tmp_path / "blend_ledger.json"
+    monkeypatch.setattr(live_engine, "LIVE_BLEND_LEDGER_PATH", ledger_path)
+    monkeypatch.setattr(live_engine, "posiciones_reales", lambda ib: {"SPY": 0, "GLD": 0})
+    monkeypatch.setattr(live_engine, "_precios_blend_hoy", lambda as_of=None: {"SPY": 650.0, "GLD": 380.0})
+
+    state = {"largo_plazo": {"blend_spy_shares": 0, "blend_gld_shares": 0, "open_positions": []}}
+    live_engine.save_state(state)
+    # 3 entradas "capital inicial" duplicadas (bug real: la inicialización
+    # del bucket se corrió varias veces) — el ledger cree tener 3 acciones
+    # que la cuenta real nunca tuvo.
+    for _ in range(3):
+        blend_ledger.registrar(
+            ledger_path, bucket="largo_plazo", fecha="2026-11-05", tipo="compra",
+            simbolo="SPY", monto_usd=650.0, precio=650.0, shares=1, motivo="capital inicial del bucket",
+        )
+
+    ajustes = live_engine.reconciliar_blend_automatico(ib=object())
+
+    assert "SPY" not in ajustes or "total_creido_antes" not in ajustes.get("SPY", {})  # el state ya estaba bien
+    assert ajustes["SPY"]["ledger_neto_antes"] == 3
+    assert ajustes["SPY"]["ledger_total_real"] == 0
+
+    ledger = blend_ledger.load_ledger(ledger_path)
+    ajuste_ledger = [t for t in ledger if t["bucket"] == "_reconciliacion_ledger"]
+    assert len(ajuste_ledger) == 1
+    assert ajuste_ledger[0]["tipo"] == "venta"
+    assert ajuste_ledger[0]["shares"] == 3
+
+    # Después del ajuste, el neto del ledger completo sí cuadra con la realidad.
+    neto_final = sum((t["shares"] if t["tipo"] == "compra" else -t["shares"]) for t in ledger if t["simbolo"] == "SPY")
+    assert neto_final == 0
