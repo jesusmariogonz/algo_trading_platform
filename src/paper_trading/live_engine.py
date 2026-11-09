@@ -918,21 +918,37 @@ def corregir_retorno_historico(bucket: str, fecha: str) -> dict:
     if entrada is None:
         raise ValueError(f"No hay entrada de historial para '{bucket}' en {fecha}")
 
-    anterior = {
-        "cumulative_return_pct": entrada.get("cumulative_return_pct"),
-        "drawdown_pct": entrada.get("drawdown_pct"),
-    }
+    campos_a_corregir = (
+        "cumulative_return_pct", "drawdown_pct",
+        "daily_loss_pct", "daily_loss_breaker_tripped",
+        "suspended", "suspended_reason", "newly_suspended_today",
+    )
+    anterior = {campo: entrada.get(campo) for campo in campos_a_corregir if campo in entrada}
+
     equity = entrada["equity"]
     entrada["cumulative_return_pct"] = round((equity / starting_capital - 1) * 100, 2)
     entrada["drawdown_pct"] = round(max(0.0, (starting_capital - equity) / starting_capital * 100), 2)
+    # daily_loss_pct/daily_loss_breaker_tripped/suspended* de esta
+    # entrada se derivaron del mismo baseline corrompido que ya se
+    # corrigió arriba — si el drawdown recalculado ya no dispara el
+    # breaker, estos campos tampoco deberían seguir marcándolo (si no
+    # se corrigieran, el frontend seguiría mostrando el aviso de
+    # "límite de pérdida diaria alcanzado" aunque ya no aplique).
+    if "daily_loss_pct" in entrada:
+        entrada["daily_loss_pct"] = 0.0
+    if "daily_loss_breaker_tripped" in entrada:
+        entrada["daily_loss_breaker_tripped"] = False
+    if "suspended" in entrada:
+        entrada["suspended"] = False
+    if "suspended_reason" in entrada:
+        entrada["suspended_reason"] = None
+    if "newly_suspended_today" in entrada:
+        entrada["newly_suspended_today"] = False
 
     save_history(history)
     return {
         "bucket": bucket, "fecha": fecha, "equity": equity,
         "starting_capital_usado": starting_capital,
         "anterior": anterior,
-        "nuevo": {
-            "cumulative_return_pct": entrada["cumulative_return_pct"],
-            "drawdown_pct": entrada["drawdown_pct"],
-        },
+        "nuevo": {campo: entrada.get(campo) for campo in campos_a_corregir if campo in entrada},
     }
