@@ -4,8 +4,15 @@ docs/adr/0002-dashboard-hosting.md). Corre esto después de
 run_daily_tick para que el dashboard de /trading se vea al día.
 
 Uso:
-    python -m src.paper_trading.export /ruta/a/jesus-site/lib/paper-trading-snapshot.json
-"""
+    python -m src.paper_trading.export /ruta/a/jesus-site/lib/paper-trading-snapshot.json [/ruta/a/jesus-site/lib/trading-historico.json]
+
+El segundo argumento (opcional) es un histórico acumulativo: una
+operación por renglón (bucket+symbol+entry_date como llave única),
+que se actualiza cada vez que corre el export en vez de sobreescribirse
+— mientras la posición sigue abierta se refresca con el precio/stop
+actual, y al cerrarse queda fija con sus valores finales. A diferencia
+de paper-trading-snapshot.json (que SÍ se sobreescribe completo en
+cada tick), este archivo nunca pierde una fila ya escrita."""
 
 import json
 import sys
@@ -98,6 +105,63 @@ def build_export() -> dict:
     }
 
 
+BUCKET_LABELS = {
+    "largo_plazo": "Largo Plazo",
+    "mediano_plazo": "Mediano Plazo",
+    "riesgo_alto": "Riesgo Alto",
+}
+
+
+def _fila_historico(bucket: str, p: dict, estado: str) -> dict:
+    return {
+        "bucket": bucket,
+        "bucket_label": BUCKET_LABELS.get(bucket, bucket),
+        "symbol": p["symbol"],
+        "asset_type": p.get("asset_type") or asset_type_de(p["symbol"]),
+        "estado": estado,
+        "entry_date": p.get("entry_date"),
+        "entry_price": p.get("entry_price"),
+        "initial_stop_price": p.get("initial_stop_price"),
+        "exit_date": p.get("exit_date"),
+        "exit_price": p.get("exit_price"),
+        "current_price": p.get("current_price"),
+        "stop_price": p.get("stop_price"),
+        "pnl": p.get("pnl") if estado == "Cerrada" else p.get("unrealized_pnl"),
+        "pnl_pct": p.get("pnl_pct") if estado == "Cerrada" else p.get("unrealized_pnl_pct"),
+        "reason": p.get("reason"),
+        "actualizado": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def append_historico(buckets: dict, historico_path: Path) -> list[dict]:
+    """Funde las posiciones del export actual sobre el histórico ya
+    guardado en historico_path (si existe), usando bucket+symbol+entry_date
+    como llave única por operación. Una posición cerrada deja de
+    actualizarse en corridas futuras una vez que ya quedó marcada
+    'Cerrada' con sus valores finales."""
+    existentes: dict[str, dict] = {}
+    if historico_path.exists():
+        try:
+            for fila in json.loads(historico_path.read_text()):
+                llave = f"{fila['bucket']}:{fila['symbol']}:{fila.get('entry_date')}"
+                existentes[llave] = fila
+        except (json.JSONDecodeError, KeyError):
+            existentes = {}  # histórico corrupto o con formato viejo: empieza limpio en vez de fallar el export
+
+    for bucket, data in buckets.items():
+        for p in data["open_positions"]:
+            llave = f"{bucket}:{p['symbol']}:{p.get('entry_date')}"
+            existentes[llave] = _fila_historico(bucket, p, "Abierta")
+        for p in data["closed_positions"]:
+            llave = f"{bucket}:{p['symbol']}:{p.get('entry_date')}"
+            existentes[llave] = _fila_historico(bucket, p, "Cerrada")
+
+    filas = sorted(existentes.values(), key=lambda f: (f["entry_date"] or "", f["bucket"], f["symbol"]))
+    historico_path.parent.mkdir(parents=True, exist_ok=True)
+    historico_path.write_text(json.dumps(filas, indent=2, ensure_ascii=False))
+    return filas
+
+
 def main():
     export = build_export()
     payload = json.dumps(export, indent=2, ensure_ascii=False)
@@ -107,6 +171,11 @@ def main():
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(payload)
         print(f"Exportado a {out_path}")
+
+        if len(sys.argv) > 2:
+            historico_path = Path(sys.argv[2])
+            filas = append_historico(export["buckets"], historico_path)
+            print(f"Histórico actualizado en {historico_path} ({len(filas)} operaciones)")
     else:
         print(payload)
 

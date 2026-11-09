@@ -68,3 +68,68 @@ def test_build_export_incluye_campos_de_tipo_de_cambio(monkeypatch):
     resultado = export.build_export()
     assert resultado["usd_mxn_rate"] == 18.5
     assert "usd_mxn_rate_fecha" in resultado
+
+
+def _buckets_con_una_abierta_y_una_cerrada():
+    return {
+        "largo_plazo": {
+            "open_positions": [
+                {"symbol": "AAPL", "entry_date": "2026-01-01", "entry_price": 100.0,
+                 "initial_stop_price": 90.0, "stop_price": 95.0, "current_price": 102.0,
+                 "unrealized_pnl": 4.0, "unrealized_pnl_pct": 2.0, "asset_type": "Stock"},
+            ],
+            "closed_positions": [
+                {"symbol": "MSFT", "entry_date": "2025-12-01", "entry_price": 50.0,
+                 "exit_date": "2026-01-05", "exit_price": 45.0, "stop_price": 45.0,
+                 "pnl": -5.0, "pnl_pct": -10.0, "reason": "stop_hit", "asset_type": "Stock"},
+            ],
+        }
+    }
+
+
+def test_append_historico_crea_archivo_nuevo(tmp_path):
+    destino = tmp_path / "historico.json"
+    filas = export.append_historico(_buckets_con_una_abierta_y_una_cerrada(), destino)
+
+    assert destino.exists()
+    assert len(filas) == 2
+    abierta = next(f for f in filas if f["symbol"] == "AAPL")
+    cerrada = next(f for f in filas if f["symbol"] == "MSFT")
+    assert abierta["estado"] == "Abierta"
+    assert abierta["pnl"] == 4.0
+    assert cerrada["estado"] == "Cerrada"
+    assert cerrada["pnl"] == -5.0
+    assert cerrada["reason"] == "stop_hit"
+
+
+def test_append_historico_actualiza_posicion_abierta_sin_duplicar(tmp_path):
+    destino = tmp_path / "historico.json"
+    export.append_historico(_buckets_con_una_abierta_y_una_cerrada(), destino)
+
+    buckets_actualizados = _buckets_con_una_abierta_y_una_cerrada()
+    buckets_actualizados["largo_plazo"]["open_positions"][0]["current_price"] = 110.0
+    buckets_actualizados["largo_plazo"]["open_positions"][0]["unrealized_pnl"] = 20.0
+
+    filas = export.append_historico(buckets_actualizados, destino)
+    assert len(filas) == 2  # sigue habiendo 2 filas, no se duplicó
+    abierta = next(f for f in filas if f["symbol"] == "AAPL")
+    assert abierta["current_price"] == 110.0
+    assert abierta["pnl"] == 20.0
+
+
+def test_append_historico_preserva_filas_viejas_que_ya_no_vienen_en_el_export(tmp_path):
+    destino = tmp_path / "historico.json"
+    export.append_historico(_buckets_con_una_abierta_y_una_cerrada(), destino)
+
+    # una corrida futura donde la posición de largo_plazo ya no aparece
+    # (ej. bucket vacío momentáneamente) no debe borrar el histórico ya escrito
+    filas = export.append_historico({"largo_plazo": {"open_positions": [], "closed_positions": []}}, destino)
+    assert len(filas) == 2
+
+
+def test_append_historico_ignora_archivo_corrupto(tmp_path):
+    destino = tmp_path / "historico.json"
+    destino.write_text("esto no es json valido")
+
+    filas = export.append_historico(_buckets_con_una_abierta_y_una_cerrada(), destino)
+    assert len(filas) == 2
