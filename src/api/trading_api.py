@@ -15,6 +15,7 @@ Correr con:
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -58,6 +59,38 @@ def _correr(*args: str, env: dict | None = None) -> None:
         raise RuntimeError(
             f"Falló '{' '.join(args)}' (exit {resultado.returncode}):\n{resultado.stdout}\n{resultado.stderr}"
         )
+
+
+MAX_DESCARGAS_FALLIDAS_TOLERADAS = 5
+
+
+def _descargar_tolerando_fallos_menores() -> list[str]:
+    """Descarga el universo en vivo. `src.data.download` sale con código 1
+    si CUALQUIER símbolo falla (p. ej. yfinance responde 'possibly
+    delisted' para un ticker sano un día cualquiera), y antes eso
+    abortaba toda la corrida con un 500 — el 10-nov-2026 el cierre de
+    las 4:30pm se perdió por un solo ticker (ADBE). Ahora se tolera una
+    falla menor, SOLO si son pocos símbolos y ninguno es una posición
+    abierta del motor en vivo (un precio viejo ahí sí sería peligroso);
+    en cualquier otro caso se propaga el error como antes. Devuelve los
+    símbolos que fallaron para avisarlo como alerta."""
+    try:
+        _correr("src.data.download", "--universe", str(UNIVERSO_LIVE))
+        return []
+    except RuntimeError as e:
+        m = re.search(r"Fallaron: ([^\n]+)", str(e))
+        if not m:
+            raise
+        fallidos = [x.strip() for x in m.group(1).split(",") if x.strip()]
+        abiertos = {
+            pos["symbol"]
+            for bucket in live_engine.load_state().values()
+            if isinstance(bucket, dict)
+            for pos in bucket.get("open_positions", [])
+        }
+        if not fallidos or len(fallidos) > MAX_DESCARGAS_FALLIDAS_TOLERADAS or set(fallidos) & abiertos:
+            raise
+        return fallidos
 
 
 def _git_pull() -> str:
@@ -165,11 +198,16 @@ def refrescar_datos_y_ejecutar_live(authorization: str | None = Header(None)):
     varios pasos por separado (y no necesite más acceso que HTTPS)."""
     _verificar_token(authorization)
 
-    _correr("src.data.download", "--universe", str(UNIVERSO_LIVE))
+    fallidos = _descargar_tolerando_fallos_menores()
     _correr("src.indicators.compute")
     _correr("src.indicators.relative_strength", "--universe", str(UNIVERSO_LIVE))
 
-    return ejecutar_live(authorization)
+    snapshot = ejecutar_live(authorization)
+    if fallidos and isinstance(snapshot, dict):
+        snapshot.setdefault("alertas", []).append(
+            f"Descarga incompleta (tolerada, ninguno es posición abierta): {', '.join(fallidos)}"
+        )
+    return snapshot
 
 
 @app.get("/live/estado")

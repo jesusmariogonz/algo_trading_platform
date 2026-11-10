@@ -699,3 +699,41 @@ def test_reautorizar_bucket_live_404_si_no_esta_suspendido(client, monkeypatch):
 
     assert r.status_code == 400
     assert "no está suspendido" in r.json()["detail"]
+
+
+def _falla_descarga(simbolos):
+    def correr(*args):
+        if args[0] == "src.data.download":
+            raise RuntimeError(f"Falló 'src.data.download' (exit 1):\n\nFallaron: {', '.join(simbolos)}\n")
+    return correr
+
+
+def test_refrescar_tolera_fallo_menor_de_descarga_si_no_es_posicion_abierta(client, monkeypatch):
+    monkeypatch.setattr(trading_api, "_correr", _falla_descarga(["ADBE"]))
+    monkeypatch.setattr(trading_api.live_engine, "load_state", lambda: {"largo_plazo": {"open_positions": [{"symbol": "VTI"}]}})
+    monkeypatch.setattr(trading_api, "ejecutar_live", lambda authorization: {"date": "2026-11-10", "alertas": []})
+
+    r = client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert any("ADBE" in a for a in r.json()["alertas"])
+
+
+def test_refrescar_no_tolera_fallo_de_descarga_de_una_posicion_abierta(client, monkeypatch):
+    monkeypatch.setattr(trading_api, "_correr", _falla_descarga(["VTI"]))
+    monkeypatch.setattr(trading_api.live_engine, "load_state", lambda: {"largo_plazo": {"open_positions": [{"symbol": "VTI"}]}})
+    ejecuto = []
+    monkeypatch.setattr(trading_api, "ejecutar_live", lambda authorization: ejecuto.append(1) or {})
+
+    with pytest.raises(RuntimeError):
+        client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
+    assert ejecuto == []
+
+
+def test_refrescar_no_tolera_demasiados_fallos_de_descarga(client, monkeypatch):
+    monkeypatch.setattr(trading_api, "_correr", _falla_descarga(list("ABCDEF")))
+    monkeypatch.setattr(trading_api.live_engine, "load_state", lambda: {})
+    monkeypatch.setattr(trading_api, "ejecutar_live", lambda authorization: {})
+
+    with pytest.raises(RuntimeError):
+        client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
