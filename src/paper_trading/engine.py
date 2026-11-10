@@ -503,6 +503,12 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
         if bucket in CROSS_SECTIONAL_FILTER_BUCKETS
         else None
     )
+    # Candidatos con señal que NO se tomaron hoy, y por qué — para que
+    # el dashboard pueda mostrar no solo lo que se operó, sino lo que
+    # el motor vio y descartó (ver "Resumen de la mañana" en jesus-site).
+    # Solo registra símbolos donde la estrategia SÍ marcó signal==1; no
+    # loguea el universo completo sin señal (sería puro ruido).
+    candidatos_descartados = []
     for strategy_key in strategies:
         for symbol in symbols:
             if symbol in open_symbols:
@@ -523,12 +529,30 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
                     and perc is not None and perc >= CROSS_SECTIONAL_PERCENTIL_MIN
                 )
                 if not pasa_filtro:
+                    candidatos_descartados.append(
+                        {
+                            "symbol": symbol,
+                            "strategy": strategy_key,
+                            "reason": "cross_sectional_filter",
+                            "return_126d": round(float(ret_126d), 4) if pd.notna(ret_126d) else None,
+                            "percentile": round(float(perc), 4) if perc is not None else None,
+                        }
+                    )
                     continue
 
             entry_price_bruto = float(last["close"])
             stop_price = float(last["stop_price"])
             risk_per_share = entry_price_bruto - stop_price
             if risk_per_share <= 0:
+                candidatos_descartados.append(
+                    {
+                        "symbol": symbol,
+                        "strategy": strategy_key,
+                        "reason": "stop_invalido",
+                        "entry_price": round(entry_price_bruto, 2),
+                        "stop_price": round(stop_price, 2),
+                    }
+                )
                 continue
 
             # Riesgo calculado sobre el EQUITY ACTUAL del bucket (no el
@@ -541,6 +565,19 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
             entry_price = entry_price_bruto * (1 + FRICCION_POR_LADO)  # fricción de entrada
             cost = shares * entry_price
             if shares < 1 or cost > disponible():
+                candidatos_descartados.append(
+                    {
+                        "symbol": symbol,
+                        "strategy": strategy_key,
+                        "reason": "capital_insuficiente" if shares < 1 else "efectivo_insuficiente",
+                        "entry_price": round(entry_price_bruto, 2),
+                        "stop_price": round(stop_price, 2),
+                        "risk_per_share": round(risk_per_share, 2),
+                        "risk_amount": round(risk_amount, 2),
+                        "shares_calculadas": shares,
+                        "costo_estimado": round(cost, 2),
+                    }
+                )
                 continue
 
             # today_label solo se actualiza aquí, con la entrada ya
@@ -608,6 +645,7 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
         "realized_pnl_today": round(realized_pnl_today, 2),
         "cumulative_return_pct": round((equity / bucket_state["starting_capital"] - 1) * 100, 2),
         "closed_today_detail": closed_today,
+        "discarded_candidates_today": candidatos_descartados,
         "daily_loss_pct": round(daily_loss_pct * 100, 2),
         "drawdown_pct": round(drawdown_pct * 100, 2),
         "daily_loss_breaker_tripped": bucket_state.get("daily_loss_tripped_today", False),
