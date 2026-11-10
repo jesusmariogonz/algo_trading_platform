@@ -233,6 +233,26 @@ def init_bucket_state(bucket: str, starting_capital: float, ib=None) -> dict:
     return estado
 
 
+def _fusionar_descartados(previos: dict | None, fecha: str | None, nuevos: list[dict], simbolos_abiertos: set[str]) -> list[dict]:
+    """El motor corre dos veces al día (apertura y cierre) y el snapshot
+    del día se REEMPLAZA en cada corrida. Sin fusionar, la corrida de
+    cierre (mercado cerrado, no se evalúan entradas) borraría lo que la
+    de apertura sí vio. Reglas: lo ya registrado hoy se conserva, salvo
+    'mercado_cerrado' (un motivo provisional que cede ante uno real); lo
+    nuevo se agrega sin duplicar (símbolo+estrategia); y todo símbolo que
+    ya quedó abierto deja de contar como descartado."""
+    previas = []
+    if previos and previos.get("date") == fecha:
+        previas = list(previos.get("lista") or [])
+    por_llave = {(c["symbol"], c["strategy"]): c for c in previas}
+    for c in nuevos:
+        llave = (c["symbol"], c["strategy"])
+        actual = por_llave.get(llave)
+        if actual is None or actual.get("reason") == "mercado_cerrado":
+            por_llave[llave] = c
+    return [c for c in por_llave.values() if c["symbol"] not in simbolos_abiertos]
+
+
 def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestamp | None = None) -> dict:
     """Un día de mercado para un bucket, con órdenes reales vía `ib`
     (una conexión ya conectada de `src.broker.ibkr_adapter.conectar`).
@@ -359,8 +379,16 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
     # (ver ADR 0035). Mejor no abrir nada nuevo fuera de horario; las
     # salidas (stop/señal) sí se evalúan siempre, solo las entradas
     # se saltan.
-    if blocked or not _mercado_regular_abierto_ahora():
-        strategies = []
+    motivo_bloqueo = None
+    if blocked:
+        motivo_bloqueo = "entradas_bloqueadas_riesgo"
+    elif not _mercado_regular_abierto_ahora():
+        motivo_bloqueo = "mercado_cerrado"
+    # Candidatos con señal que NO se tomaron hoy y por qué (igual que el
+    # motor simulado, ver engine.py): solo símbolos con signal==1, no el
+    # universo entero. Con entradas bloqueadas se sigue evaluando la
+    # señal solo para dejar constancia; nunca se manda una orden.
+    candidatos_descartados: list[dict] = []
     percentiles_cross_sectional = (
         _percentiles_cross_sectional_hoy(universe, symbols, as_of)
         if bucket in CROSS_SECTIONAL_FILTER_BUCKETS
@@ -371,6 +399,12 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
             if symbol in open_symbols:
                 continue
             if symbol in BLEND_WEIGHTS:
+                _df_blend = universe.get(symbol)
+                _ult = _last_row_as_of(_signals_for_symbol(_df_blend, strategy_key), as_of) if _df_blend is not None else None
+                if _ult is not None and int(_ult["signal"]) == 1:
+                    candidatos_descartados.append(
+                        {"symbol": symbol, "strategy": strategy_key, "reason": "simbolo_reservado_blend"}
+                    )
                 # SPY/GLD están reservados para el blend de cash ocioso
                 # (ADR 0028) — abrir una posición real de estrategia en
                 # el mismo símbolo que el blend también opera colisiona
@@ -399,14 +433,36 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
                     and perc is not None and perc >= CROSS_SECTIONAL_PERCENTIL_MIN
                 )
                 if not pasa_filtro:
+                    candidatos_descartados.append(
+                        {
+                            "symbol": symbol,
+                            "strategy": strategy_key,
+                            "reason": "cross_sectional_filter",
+                            "return_126d": round(float(ret_126d), 4) if pd.notna(ret_126d) else None,
+                            "percentile": round(float(perc), 4) if perc is not None else None,
+                        }
+                    )
                     continue
 
             today_label = str(last["date"].date())
+
+            if motivo_bloqueo:
+                candidatos_descartados.append({"symbol": symbol, "strategy": strategy_key, "reason": motivo_bloqueo})
+                continue
 
             entry_price_estimado = float(last["close"])
             stop_price = float(last["stop_price"])
             risk_per_share = entry_price_estimado - stop_price
             if risk_per_share <= 0:
+                candidatos_descartados.append(
+                    {
+                        "symbol": symbol,
+                        "strategy": strategy_key,
+                        "reason": "stop_invalido",
+                        "entry_price": round(entry_price_estimado, 2),
+                        "stop_price": round(stop_price, 2),
+                    }
+                )
                 continue
 
             risk_amount = equity_now * risk_pct
@@ -418,6 +474,19 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
             cost_estimado = shares * entry_price_estimado * (1 + FRICCION_POR_LADO)
             disponible = cash + _valor_blend(bucket_state, precios_blend)
             if shares < 1 or cost_estimado > disponible:
+                candidatos_descartados.append(
+                    {
+                        "symbol": symbol,
+                        "strategy": strategy_key,
+                        "reason": "capital_insuficiente" if shares < 1 else "efectivo_insuficiente",
+                        "entry_price": round(entry_price_estimado, 2),
+                        "stop_price": round(stop_price, 2),
+                        "risk_per_share": round(risk_per_share, 2),
+                        "risk_amount": round(risk_amount, 2),
+                        "shares_calculadas": shares,
+                        "costo_estimado": round(cost_estimado, 2),
+                    }
+                )
                 continue
 
             if cost_estimado > cash:
@@ -475,6 +544,11 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
             )
             open_symbols.add(symbol)
 
+    candidatos_descartados = _fusionar_descartados(
+        bucket_state.get("descartados_hoy"), today_label, candidatos_descartados, open_symbols,
+    )
+    bucket_state["descartados_hoy"] = {"date": today_label, "lista": candidatos_descartados}
+
     # --- 3. Equity del bucket ---
     unrealized = 0.0
     for pos in open_positions:
@@ -511,6 +585,7 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
         "cumulative_return_pct": round((equity / bucket_state["starting_capital"] - 1) * 100, 2),
         "closed_today_detail": closed_today,
         "ordenes_fallidas_hoy": ordenes_fallidas_hoy,
+        "discarded_candidates_today": candidatos_descartados,
         "daily_loss_pct": round(daily_loss_pct * 100, 2),
         "drawdown_pct": round(drawdown_pct * 100, 2),
         "daily_loss_breaker_tripped": bucket_state.get("daily_loss_tripped_today", False),

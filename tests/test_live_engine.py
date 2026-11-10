@@ -857,3 +857,107 @@ def test_corregir_retorno_historico_falla_si_bucket_no_existe():
 
     with pytest.raises(ValueError, match="no tiene estado"):
         live_engine.corregir_retorno_historico("largo_plazo", "2026-11-09")
+
+
+def _universo_voo(close=100.0):
+    return {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [close], "sma_200": [40.0], "atr_14": [1.0], "return_126d": [0.1]}
+        ),
+    }
+
+
+def _sin_ordenes(monkeypatch):
+    def fill_falso(ib, symbol, accion, shares):
+        pytest.fail("no debería mandarse ninguna orden")
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", fill_falso)
+
+
+def test_registra_candidato_descartado_por_capital_insuficiente(monkeypatch):
+    # riesgo = 1000*1% = $10; riesgo por acción = $5... forzamos < 1 acción con stop muy lejano
+    _setup_bucket_unico(
+        monkeypatch, _universo_voo(), "VOO",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 50),
+    )
+    _sin_ordenes(monkeypatch)
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object())
+
+    assert result["open_count"] == 0
+    descartados = result["discarded_candidates_today"]
+    assert [(c["symbol"], c["reason"]) for c in descartados] == [("VOO", "capital_insuficiente")]
+
+
+def test_con_el_mercado_cerrado_registra_la_senal_sin_mandar_ordenes(monkeypatch):
+    _setup_bucket_unico(
+        monkeypatch, _universo_voo(), "VOO",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 5),
+    )
+    monkeypatch.setattr(live_engine, "_mercado_regular_abierto_ahora", lambda: False)
+    _sin_ordenes(monkeypatch)
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object())
+
+    assert result["open_count"] == 0
+    assert [(c["symbol"], c["reason"]) for c in result["discarded_candidates_today"]] == [("VOO", "mercado_cerrado")]
+
+
+def test_bucket_bloqueado_registra_entradas_bloqueadas_por_riesgo(monkeypatch):
+    _setup_bucket_unico(
+        monkeypatch, _universo_voo(50.0), "VOO",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 5),
+    )
+    _sin_ordenes(monkeypatch)
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    bucket_state["cash"] = 1000.0
+    bucket_state["peak_equity"] = 1000.0
+    bucket_state["day_start_equity"] = 1200.0
+    bucket_state["day_start_date"] = "2026-01-01"
+
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object())
+
+    assert [(c["symbol"], c["reason"]) for c in result["discarded_candidates_today"]] == [
+        ("VOO", "entradas_bloqueadas_riesgo")
+    ]
+
+
+def test_una_posicion_que_si_entro_no_cuenta_como_descartada(monkeypatch):
+    _setup_bucket_unico(
+        monkeypatch, _universo_voo(), "VOO",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 5),
+    )
+    monkeypatch.setattr(
+        live_engine, "ejecutar_orden_mercado",
+        lambda ib, symbol, accion, shares: Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=100.0),
+    )
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object())
+
+    assert result["open_count"] == 1
+    assert result["discarded_candidates_today"] == []
+
+
+def test_fusion_conserva_lo_de_la_apertura_y_no_lo_pisa_el_mercado_cerrado():
+    apertura = {"date": "2026-11-10", "lista": [{"symbol": "W", "strategy": "tf", "reason": "capital_insuficiente"}]}
+    cierre = [
+        {"symbol": "W", "strategy": "tf", "reason": "mercado_cerrado"},
+        {"symbol": "ETSY", "strategy": "tf", "reason": "mercado_cerrado"},
+    ]
+
+    fusion = live_engine._fusionar_descartados(apertura, "2026-11-10", cierre, set())
+
+    razones = {c["symbol"]: c["reason"] for c in fusion}
+    assert razones == {"W": "capital_insuficiente", "ETSY": "mercado_cerrado"}
+
+
+def test_fusion_ignora_lo_de_otro_dia_y_quita_lo_que_ya_quedo_abierto():
+    ayer = {"date": "2026-11-09", "lista": [{"symbol": "W", "strategy": "tf", "reason": "capital_insuficiente"}]}
+    hoy = [{"symbol": "ETSY", "strategy": "tf", "reason": "mercado_cerrado"}, {"symbol": "VTI", "strategy": "tf", "reason": "capital_insuficiente"}]
+
+    fusion = live_engine._fusionar_descartados(ayer, "2026-11-10", hoy, {"VTI"})
+
+    assert [(c["symbol"], c["reason"]) for c in fusion] == [("ETSY", "mercado_cerrado")]
