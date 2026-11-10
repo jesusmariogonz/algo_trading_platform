@@ -169,7 +169,10 @@ def ejecutar_live(authorization: str | None = Header(None)):
     ya se corrió hoy, re-correrlo reemplaza el snapshot de hoy en vez
     de duplicarlo (lo garantiza `live_engine.save_history`)."""
     _verificar_token(authorization)
+    return _ejecutar_live_sin_auth()
 
+
+def _ejecutar_live_sin_auth():
     ib = conectar()
     try:
         state = live_engine.load_state()
@@ -197,17 +200,57 @@ def refrescar_datos_y_ejecutar_live(authorization: str | None = Header(None)):
     llamada HTTPS, para que una rutina externa no tenga que orquestar
     varios pasos por separado (y no necesite más acceso que HTTPS)."""
     _verificar_token(authorization)
+    return _refrescar_y_ejecutar_sin_auth()
 
+
+def _refrescar_y_ejecutar_sin_auth():
     fallidos = _descargar_tolerando_fallos_menores()
     _correr("src.indicators.compute")
     _correr("src.indicators.relative_strength", "--universe", str(UNIVERSO_LIVE))
 
-    snapshot = ejecutar_live(authorization)
+    snapshot = _ejecutar_live_sin_auth()
     if fallidos and isinstance(snapshot, dict):
         snapshot.setdefault("alertas", []).append(
             f"Descarga incompleta (tolerada, ninguno es posición abierta): {', '.join(fallidos)}"
         )
     return snapshot
+
+
+# Corrida en segundo plano. Una llamada HTTP que dura minutos se corta en
+# el camino (proxies de salida de las rutinas: 502 'upstream request
+# failed', 10-nov-2026) aunque el motor funcione bien. Este endpoint
+# responde al instante y la rutina consulta el resultado después. El
+# candado impide que dos llamadas ejecuten el motor en paralelo (órdenes
+# duplicadas en la cuenta).
+_CORRIDA_LOCK = threading.Lock()
+_ESTADO_CORRIDA: dict = {"estado": "sin_corridas"}
+
+
+def _hilo_corrida() -> None:
+    try:
+        resultado = _refrescar_y_ejecutar_sin_auth()
+        _ESTADO_CORRIDA.update(estado="terminada", fin=time.time(), resultado=resultado, error=None)
+    except BaseException as e:  # noqa: BLE001 - se reporta tal cual en /live/ultima-corrida
+        _ESTADO_CORRIDA.update(estado="fallida", fin=time.time(), resultado=None, error=f"{type(e).__name__}: {e}"[-4000:])
+    finally:
+        _CORRIDA_LOCK.release()
+
+
+@app.post("/live/refrescar-en-segundo-plano", status_code=202)
+def refrescar_en_segundo_plano(authorization: str | None = Header(None)):
+    _verificar_token(authorization)
+    if not _CORRIDA_LOCK.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="Ya hay una corrida en curso; no se inicia otra (evita órdenes duplicadas).")
+    _ESTADO_CORRIDA.clear()
+    _ESTADO_CORRIDA.update(estado="en_curso", inicio=time.time())
+    threading.Thread(target=_hilo_corrida, daemon=True).start()
+    return {"estado": "en_curso", "mensaje": "Consulta GET /live/ultima-corrida hasta que estado sea 'terminada' o 'fallida'."}
+
+
+@app.get("/live/ultima-corrida")
+def ultima_corrida(authorization: str | None = Header(None)):
+    _verificar_token(authorization)
+    return dict(_ESTADO_CORRIDA)
 
 
 @app.get("/live/estado")

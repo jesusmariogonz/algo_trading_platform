@@ -223,7 +223,7 @@ def test_refrescar_datos_y_ejecutar_corre_los_3_pasos_en_orden_y_luego_ejecuta(c
         llamadas.append(args)
 
     monkeypatch.setattr(trading_api, "_correr", correr_falso)
-    monkeypatch.setattr(trading_api, "ejecutar_live", lambda authorization: {"date": "2026-11-05"})
+    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda: {"date": "2026-11-05"})
 
     r = client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
 
@@ -711,7 +711,7 @@ def _falla_descarga(simbolos):
 def test_refrescar_tolera_fallo_menor_de_descarga_si_no_es_posicion_abierta(client, monkeypatch):
     monkeypatch.setattr(trading_api, "_correr", _falla_descarga(["ADBE"]))
     monkeypatch.setattr(trading_api.live_engine, "load_state", lambda: {"largo_plazo": {"open_positions": [{"symbol": "VTI"}]}})
-    monkeypatch.setattr(trading_api, "ejecutar_live", lambda authorization: {"date": "2026-11-10", "alertas": []})
+    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda: {"date": "2026-11-10", "alertas": []})
 
     r = client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
 
@@ -723,7 +723,7 @@ def test_refrescar_no_tolera_fallo_de_descarga_de_una_posicion_abierta(client, m
     monkeypatch.setattr(trading_api, "_correr", _falla_descarga(["VTI"]))
     monkeypatch.setattr(trading_api.live_engine, "load_state", lambda: {"largo_plazo": {"open_positions": [{"symbol": "VTI"}]}})
     ejecuto = []
-    monkeypatch.setattr(trading_api, "ejecutar_live", lambda authorization: ejecuto.append(1) or {})
+    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda: ejecuto.append(1) or {})
 
     with pytest.raises(RuntimeError):
         client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
@@ -733,7 +733,63 @@ def test_refrescar_no_tolera_fallo_de_descarga_de_una_posicion_abierta(client, m
 def test_refrescar_no_tolera_demasiados_fallos_de_descarga(client, monkeypatch):
     monkeypatch.setattr(trading_api, "_correr", _falla_descarga(list("ABCDEF")))
     monkeypatch.setattr(trading_api.live_engine, "load_state", lambda: {})
-    monkeypatch.setattr(trading_api, "ejecutar_live", lambda authorization: {})
+    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda: {})
 
     with pytest.raises(RuntimeError):
         client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
+
+
+def _esperar_fin_de_corrida(timeout=5):
+    import time as _t
+    fin = _t.time() + timeout
+    while trading_api._CORRIDA_LOCK.locked() and _t.time() < fin:
+        _t.sleep(0.01)
+
+
+def test_segundo_plano_responde_202_y_guarda_el_resultado(client, monkeypatch):
+    monkeypatch.setattr(trading_api, "_refrescar_y_ejecutar_sin_auth", lambda: {"date": "2026-11-11", "alertas": []})
+
+    r = client.post("/live/refrescar-en-segundo-plano", headers=HEADERS_OK)
+    assert r.status_code == 202
+    _esperar_fin_de_corrida()
+
+    estado = client.get("/live/ultima-corrida", headers=HEADERS_OK).json()
+    assert estado["estado"] == "terminada"
+    assert estado["resultado"]["date"] == "2026-11-11"
+
+
+def test_segundo_plano_registra_el_error_si_la_corrida_falla_y_libera_el_candado(client, monkeypatch):
+    def falla():
+        raise RuntimeError("Gateway sin sesión")
+    monkeypatch.setattr(trading_api, "_refrescar_y_ejecutar_sin_auth", falla)
+
+    assert client.post("/live/refrescar-en-segundo-plano", headers=HEADERS_OK).status_code == 202
+    _esperar_fin_de_corrida()
+
+    estado = client.get("/live/ultima-corrida", headers=HEADERS_OK).json()
+    assert estado["estado"] == "fallida"
+    assert "Gateway sin sesión" in estado["error"]
+    assert not trading_api._CORRIDA_LOCK.locked()
+
+
+def test_segundo_plano_rechaza_una_segunda_corrida_si_ya_hay_una_en_curso(client, monkeypatch):
+    import threading as _th
+    liberar = _th.Event()
+    ejecuciones = []
+
+    def lenta():
+        ejecuciones.append(1)
+        liberar.wait(5)
+        return {}
+    monkeypatch.setattr(trading_api, "_refrescar_y_ejecutar_sin_auth", lenta)
+
+    assert client.post("/live/refrescar-en-segundo-plano", headers=HEADERS_OK).status_code == 202
+    assert client.post("/live/refrescar-en-segundo-plano", headers=HEADERS_OK).status_code == 409
+    liberar.set()
+    _esperar_fin_de_corrida()
+    assert ejecuciones == [1]
+
+
+def test_segundo_plano_y_ultima_corrida_requieren_token(client):
+    assert client.post("/live/refrescar-en-segundo-plano").status_code == 401
+    assert client.get("/live/ultima-corrida").status_code == 401
