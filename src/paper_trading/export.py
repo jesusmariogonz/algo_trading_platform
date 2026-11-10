@@ -112,10 +112,17 @@ def build_export() -> dict:
     if resumen_blend is not None:
         buckets[blend_bucket.BLEND_BUCKET_KEY] = resumen_blend
 
+    from src.paper_trading import blend_ledger
+    from src.paper_trading.engine import BLEND_LEDGER_PATH
+
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source": "algo_trading_platform paper trading engine (simulado, sin dinero real)",
         "buckets": buckets,
+        # Movimientos registrados del cash ocioso (blend). El ledger del
+        # motor simulado quedó incompleto antes del 6-nov-2026: la UI
+        # completa lo anterior reconstruyéndolo de las posiciones.
+        "blend_movimientos": blend_ledger.load_ledger(BLEND_LEDGER_PATH),
         **_tipo_de_cambio_hoy(),
     }
 
