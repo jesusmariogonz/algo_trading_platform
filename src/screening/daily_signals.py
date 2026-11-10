@@ -55,7 +55,7 @@ BUCKET_CONFIG = {
     },
     "riesgo_alto": {
         "universe_file": ROOT / "config" / "universe_riesgo_alto.txt",
-        "risk_pct": 0.03,
+        "risk_pct": 0.05,
         "strategies": ["trend_following", "momentum_breakout"],
     },
     # Mean Reversion RSI(2) (agregado 1-nov-2026, ADR 0019) se
