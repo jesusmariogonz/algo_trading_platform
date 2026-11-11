@@ -38,5 +38,15 @@
     "precio": 141.7122,
     "shares": 0.411223,
     "motivo": "producto de cerrar PFE"
+  },
+  {
+    "bucket": "riesgo_alto",
+    "fecha": "2026-11-11",
+    "tipo": "venta",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 47.61,
+    "precio": 140.7029,
+    "shares": 0.338355,
+    "motivo": "financia la compra de S"
   }
 ]
