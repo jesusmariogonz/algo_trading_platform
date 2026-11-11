@@ -590,5 +590,138 @@
       }
     },
     "alertas": []
+  },
+  {
+    "date": "2026-11-11",
+    "buckets": {
+      "largo_plazo": {
+        "date": "2026-11-11",
+        "equity": 429.68,
+        "cash": 13.11,
+        "unrealized_pnl": 1.91,
+        "open_count": 4,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": 0.27,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [
+          {
+            "symbol": "SPY",
+            "strategy": "time_series_momentum",
+            "reason": "capital_insuficiente",
+            "entry_price": 756.28,
+            "stop_price": 720.8,
+            "risk_per_share": 35.48,
+            "risk_amount": 8.59,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "VTI",
+            "strategy": "time_series_momentum",
+            "reason": "capital_insuficiente",
+            "entry_price": 372.56,
+            "stop_price": 355.99,
+            "risk_per_share": 16.58,
+            "risk_amount": 8.59,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "DIA",
+            "strategy": "time_series_momentum",
+            "reason": "capital_insuficiente",
+            "entry_price": 521.2,
+            "stop_price": 498.38,
+            "risk_per_share": 22.82,
+            "risk_amount": 8.59,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "IWM",
+            "strategy": "time_series_momentum",
+            "reason": "cross_sectional_filter",
+            "return_126d": 0.0023,
+            "percentile": 0.6538
+          },
+          {
+            "symbol": "SHY",
+            "strategy": "time_series_momentum",
+            "reason": "cross_sectional_filter",
+            "return_126d": 0.0038,
+            "percentile": 0.6923
+          },
+          {
+            "symbol": "USO",
+            "strategy": "time_series_momentum",
+            "reason": "capital_insuficiente",
+            "entry_price": 142.79,
+            "stop_price": 125.15,
+            "risk_per_share": 17.64,
+            "risk_amount": 8.59,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          }
+        ],
+        "daily_loss_pct": 0.03,
+        "drawdown_pct": 1.32,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "mediano_plazo": {
+        "date": "2026-11-11",
+        "equity": 363.53,
+        "cash": 118.22,
+        "unrealized_pnl": 2.6,
+        "open_count": 3,
+        "closed_today": 1,
+        "realized_pnl_today": -2.76,
+        "cumulative_return_pct": -1.08,
+        "closed_today_detail": [
+          {
+            "symbol": "PFE",
+            "strategy": "trend_following",
+            "entry_date": "2026-10-30",
+            "entry_price": 30.52,
+            "stop_price": 29.16678660256522,
+            "shares": 2,
+            "exit_date": "2026-11-11",
+            "exit_price": 29.17,
+            "pnl": -2.76,
+            "pnl_pct": -4.53,
+            "reason": "stop_hit"
+          }
+        ],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 0.27,
+        "drawdown_pct": 1.56,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "riesgo_alto": {
+        "date": "2026-11-11",
+        "equity": 213.74,
+        "cash": 213.74,
+        "unrealized_pnl": 0.0,
+        "open_count": 0,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": 0.99,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": -0.64,
+        "drawdown_pct": 1.19,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      }
+    },
+    "alertas": []
   }
 ]
