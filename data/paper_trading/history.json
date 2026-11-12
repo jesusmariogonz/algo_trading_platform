@@ -725,5 +725,110 @@
       }
     },
     "alertas": []
+  },
+  {
+    "date": "2026-11-12",
+    "buckets": {
+      "largo_plazo": {
+        "date": "2026-11-12",
+        "equity": 430.12,
+        "cash": 12.92,
+        "unrealized_pnl": 2.56,
+        "open_count": 4,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": 0.37,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [
+          {
+            "symbol": "SPY",
+            "strategy": "time_series_momentum",
+            "reason": "capital_insuficiente",
+            "entry_price": 757.4,
+            "stop_price": 720.76,
+            "risk_per_share": 36.64,
+            "risk_amount": 8.6,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "VTI",
+            "strategy": "time_series_momentum",
+            "reason": "capital_insuficiente",
+            "entry_price": 373.05,
+            "stop_price": 355.97,
+            "risk_per_share": 17.07,
+            "risk_amount": 8.6,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "DIA",
+            "strategy": "time_series_momentum",
+            "reason": "capital_insuficiente",
+            "entry_price": 524.2,
+            "stop_price": 502.27,
+            "risk_per_share": 21.93,
+            "risk_amount": 8.6,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "SHY",
+            "strategy": "time_series_momentum",
+            "reason": "efectivo_insuficiente",
+            "entry_price": 81.24,
+            "stop_price": 80.83,
+            "risk_per_share": 0.41,
+            "risk_amount": 8.6,
+            "shares_calculadas": 21,
+            "costo_estimado": 1707.64
+          }
+        ],
+        "daily_loss_pct": 0.4,
+        "drawdown_pct": 1.22,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "mediano_plazo": {
+        "date": "2026-11-12",
+        "equity": 364.14,
+        "cash": 116.44,
+        "unrealized_pnl": 4.99,
+        "open_count": 3,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -0.91,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 0.47,
+        "drawdown_pct": 1.39,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "riesgo_alto": {
+        "date": "2026-11-12",
+        "equity": 209.29,
+        "cash": 163.63,
+        "unrealized_pnl": -1.94,
+        "open_count": 1,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -1.11,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 2.06,
+        "drawdown_pct": 3.25,
+        "daily_loss_breaker_tripped": true,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      }
+    },
+    "alertas": []
   }
 ]
