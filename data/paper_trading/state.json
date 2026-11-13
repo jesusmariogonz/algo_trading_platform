@@ -58,7 +58,7 @@
     "day_start_date": "2026-11-13",
     "daily_loss_tripped_today": false,
     "peak_equity": 435.43098527618366,
-    "last_equity": 426.50535824932854,
+    "last_equity": 427.8484673801879,
     "blend_last_price": 138.63027582131747,
     "blend_last_date": "2026-11-13",
     "blend_last_components": {
@@ -85,7 +85,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-10-30",
         "entry_price": 94.17,
-        "stop_price": 94.28500202723912,
+        "stop_price": 94.53750147138324,
         "shares": 1
       },
       {
@@ -93,7 +93,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-11-04",
         "entry_price": 92.03,
-        "stop_price": 87.9771592276437,
+        "stop_price": 88.2410695212228,
         "shares": 1
       }
     ],
@@ -129,7 +129,7 @@
     "day_start_date": "2026-11-13",
     "daily_loss_tripped_today": false,
     "peak_equity": 369.27973439817663,
-    "last_equity": 365.19984589168314,
+    "last_equity": 365.92984543391947,
     "blend_last_price": 138.63027582131747,
     "blend_last_date": "2026-11-13",
     "blend_last_components": {
@@ -158,7 +158,7 @@
     "day_start_date": "2026-11-13",
     "daily_loss_tripped_today": false,
     "peak_equity": 216.31439994821412,
-    "last_equity": 205.83897117253667,
+    "last_equity": 206.91897300359136,
     "blend_last_price": 137.6429475824096,
     "blend_last_date": "2026-11-13",
     "blend_last_components": {
