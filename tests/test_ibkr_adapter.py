@@ -276,3 +276,55 @@ def test_posiciones_reales_con_costo_pondera_lotes_del_mismo_symbol():
 
     assert out["AAPL"]["shares"] == 20
     assert out["AAPL"]["avg_cost"] == pytest.approx(110.0)
+
+
+def test_conectar_reintenta_tras_timeout_transitorio_y_al_final_conecta(monkeypatch):
+    intentos = []
+
+    class _IBConTimeoutTransitorio:
+        def connect(self, host, port, clientId, timeout):
+            intentos.append(1)
+            if len(intentos) < 3:
+                raise TimeoutError()
+
+    monkeypatch.setattr(ibkr_adapter, "IB", _IBConTimeoutTransitorio)
+    monkeypatch.setattr(ibkr_adapter.time, "sleep", lambda _: None)
+
+    ib = ibkr_adapter.conectar()
+
+    assert len(intentos) == 3
+    assert isinstance(ib, _IBConTimeoutTransitorio)
+
+
+def test_conectar_lanza_el_ultimo_error_si_agota_los_reintentos(monkeypatch):
+    intentos = []
+
+    class _IBSiempreFalla:
+        def connect(self, host, port, clientId, timeout):
+            intentos.append(1)
+            raise TimeoutError("Gateway no responde")
+
+    monkeypatch.setattr(ibkr_adapter, "IB", _IBSiempreFalla)
+    monkeypatch.setattr(ibkr_adapter.time, "sleep", lambda _: None)
+
+    with pytest.raises(TimeoutError):
+        ibkr_adapter.conectar()
+
+    assert len(intentos) == ibkr_adapter.CONNECT_REINTENTOS
+
+
+def test_conectar_no_reintenta_si_el_primer_intento_ya_conecta(monkeypatch):
+    intentos = []
+
+    class _IBConectaAlPrimero:
+        def connect(self, host, port, clientId, timeout):
+            intentos.append(1)
+
+    dormido = []
+    monkeypatch.setattr(ibkr_adapter, "IB", _IBConectaAlPrimero)
+    monkeypatch.setattr(ibkr_adapter.time, "sleep", lambda s: dormido.append(s))
+
+    ibkr_adapter.conectar()
+
+    assert len(intentos) == 1
+    assert dormido == []

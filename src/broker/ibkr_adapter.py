@@ -20,6 +20,9 @@ from ib_async import IB, MarketOrder, Stock
 GATEWAY_HOST = "127.0.0.1"
 GATEWAY_PORT = 4002
 FILL_TIMEOUT_SEGUNDOS = 30
+CONNECT_TIMEOUT_SEGUNDOS = 15
+CONNECT_REINTENTOS = 3
+CONNECT_ESPERA_ENTRE_REINTENTOS_SEGUNDOS = 5
 
 
 class OrdenNoLlenada(RuntimeError):
@@ -35,9 +38,27 @@ class Fill:
 
 
 def conectar(client_id: int = 1) -> IB:
-    ib = IB()
-    ib.connect(GATEWAY_HOST, GATEWAY_PORT, clientId=client_id, timeout=15)
-    return ib
+    """Conecta a IB Gateway. Reintenta hasta CONNECT_REINTENTOS veces si
+    un intento truena (ej. timeout porque IBC está a mitad de un
+    reciclo de reautenticación 2FA en ese instante exacto) — un solo
+    intento fallido no debe tirar la corrida completa del día (ver
+    incidente del 13-nov-2026: TimeoutError sin reintento perdió la
+    corrida de apertura aunque el Gateway ya estaba disponible segundos
+    después). IB() se recrea en cada intento: un objeto que ya falló
+    al conectar no se reutiliza."""
+    ultimo_error: Exception | None = None
+    for intento in range(1, CONNECT_REINTENTOS + 1):
+        ib = IB()
+        try:
+            ib.connect(GATEWAY_HOST, GATEWAY_PORT, clientId=client_id, timeout=CONNECT_TIMEOUT_SEGUNDOS)
+            return ib
+        except Exception as e:  # noqa: BLE001 - cualquier falla de conexión amerita reintentar igual
+            ultimo_error = e
+            print(f"conectar(): intento {intento}/{CONNECT_REINTENTOS} falló ({type(e).__name__}: {e})")
+            if intento < CONNECT_REINTENTOS:
+                time.sleep(CONNECT_ESPERA_ENTRE_REINTENTOS_SEGUNDOS)
+    assert ultimo_error is not None
+    raise ultimo_error
 
 
 def desconectar(ib: IB) -> None:
