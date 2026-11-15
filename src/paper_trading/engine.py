@@ -112,21 +112,47 @@ SIGNAL_FNS = {
 # explícita del usuario tras medir el trade-off real (reduce el
 # drawdown máximo de 13.63% a 12.22% a cambio de ~4.5 puntos de
 # retorno, sobre datos congelados y reproducibles).
+#
+# "benchmark_diversificado" (ADR 0039) reusa el MISMO mecanismo de
+# blend, pero como la canasta completa (no solo el cash ocioso): no
+# tiene estrategias (ver BUCKET_CONFIG), así que el 100% de su capital
+# se queda invertido en el blend desde el día 1 y para siempre —
+# exactamente "comprar y mantener" la asignación de abajo.
 BENCHMARK_SYMBOL = {
     "largo_plazo": "BLEND_SPY_GLD",
     "mediano_plazo": "BLEND_SPY_GLD",
     "riesgo_alto": "BLEND_SPY_GLD",
+    "benchmark_diversificado": "BLEND_DIVERSIFICADO",
 }
 BLEND_WEIGHTS = {"SPY": 0.5, "GLD": 0.5}
+BENCHMARK_DIVERSIFICADO_WEIGHTS = {"SPY": 0.40, "AGG": 0.30, "GLD": 0.20, "VNQ": 0.10}
+BLEND_DEFINITIONS = {
+    "BLEND_SPY_GLD": BLEND_WEIGHTS,
+    "BLEND_DIVERSIFICADO": BENCHMARK_DIVERSIFICADO_WEIGHTS,
+}
+
+# Capital inicial de "benchmark_diversificado" (ADR 0039): igual al
+# equity real total de las 3 canastas del motor EN VIVO (IBKR paper) al
+# 2026-11-13 ($512.27 + $703.27 + $467.69), para que la comparación sea
+# "la misma cantidad de dinero, invertida de dos formas distintas" en
+# vez de un número arbitrario. No se liga al libro de inyecciones de
+# allocation.py (ese libro es del motor de 3 canastas con estrategia;
+# esta canasta es un punto de comparación aparte, ver ADR 0039).
+BENCHMARK_DIVERSIFICADO_STARTING_CAPITAL = 1683.23
 
 # Circuit breakers por bucket — misma mecánica que src/quant_portfolios
 # (ver ADR 0008), con límites crecientes según el riesgo de cada
 # bucket (1%/1.5%/2% riesgo por operación -> límites de pérdida diaria
-# y drawdown también crecientes).
+# y drawdown también crecientes). "benchmark_diversificado" no opera
+# (sin estrategias), así que sus límites están puestos deliberadamente
+# altos (nunca se dispara un breaker) — se incluye solo para que
+# daily_loss_pct/drawdown_pct se calculen y se puedan comparar en el
+# dashboard, no para bloquear nada.
 RISK_LIMITS = {
     "largo_plazo": {"daily_loss_limit_pct": 0.01, "drawdown_review_pct": 0.06},
     "mediano_plazo": {"daily_loss_limit_pct": 0.015, "drawdown_review_pct": 0.10},
     "riesgo_alto": {"daily_loss_limit_pct": 0.02, "drawdown_review_pct": 0.15},
+    "benchmark_diversificado": {"daily_loss_limit_pct": 1.0, "drawdown_review_pct": 1.0},
 }
 
 ACTIVE_BUCKETS = list(BUCKET_CONFIG.keys())  # buckets con estrategia real — ver BUCKET_CONFIG
@@ -213,9 +239,12 @@ def _blend_component_closes(weights: dict[str, float]) -> pd.DataFrame:
     return merged.sort_values("date").reset_index(drop=True)
 
 
-def _blend_incremental_price(bucket_state: dict, as_of: pd.Timestamp | None) -> float | None:
-    """Precio del blend SPY/GLD, avanzado INCREMENTALMENTE desde el
-    último precio conocido (persistido en `bucket_state["blend_last_price"]`/
+def _blend_incremental_price(
+    bucket_state: dict, as_of: pd.Timestamp | None, weights: dict[str, float] = BLEND_WEIGHTS
+) -> float | None:
+    """Precio de un blend (p. ej. SPY/GLD, o el diversificado de ADR
+    0039), avanzado INCREMENTALMENTE desde el último precio conocido
+    (persistido en `bucket_state["blend_last_price"]`/
     `["blend_last_date"]`) en vez de recomputar el cumprod completo
     desde el inicio del historial en cada tick (ver ADR 0020).
 
@@ -244,15 +273,15 @@ def _blend_incremental_price(bucket_state: dict, as_of: pd.Timestamp | None) -> 
     día conocido en cada tick, una revisión futura a ese mismo día
     seguiría colándose un día después, sin resolver nada."""
     if bucket_state.get("blend_last_price") is None or bucket_state.get("blend_last_date") is None:
-        serie = _blend_price_series(BLEND_WEIGHTS)
+        serie = _blend_price_series(weights)
         last = _last_row_as_of(serie, as_of)
         if last is None:
             return None
-        closes = _blend_component_closes(BLEND_WEIGHTS)
+        closes = _blend_component_closes(weights)
         ultimo_componentes = _last_row_as_of(closes, as_of)
         bucket_state["blend_last_price"] = float(last["close"])
         bucket_state["blend_last_date"] = str(last["date"].date())
-        bucket_state["blend_last_components"] = {s: float(ultimo_componentes[s]) for s in BLEND_WEIGHTS}
+        bucket_state["blend_last_components"] = {s: float(ultimo_componentes[s]) for s in weights}
         return float(last["close"])
 
     last_price = bucket_state["blend_last_price"]
@@ -265,9 +294,9 @@ def _blend_incremental_price(bucket_state: dict, as_of: pd.Timestamp | None) -> 
         # completo — después de esto ya nunca vuelve a pasar.
         bucket_state["blend_last_price"] = None
         bucket_state["blend_last_date"] = None
-        return _blend_incremental_price(bucket_state, as_of)
+        return _blend_incremental_price(bucket_state, as_of, weights)
 
-    closes = _blend_component_closes(BLEND_WEIGHTS)
+    closes = _blend_component_closes(weights)
     ventana = closes[closes["date"] > last_date_ts]
     if as_of is not None:
         ventana = ventana[ventana["date"] <= as_of]
@@ -278,10 +307,10 @@ def _blend_incremental_price(bucket_state: dict, as_of: pd.Timestamp | None) -> 
     componentes_previos = dict(last_components)
     for _, fila in ventana.iterrows():
         ret_dia = 0.0
-        for symbol, weight in BLEND_WEIGHTS.items():
+        for symbol, weight in weights.items():
             ret_dia += weight * (float(fila[symbol]) / componentes_previos[symbol] - 1.0)
         factor_acumulado *= 1 + ret_dia
-        componentes_previos = {s: float(fila[s]) for s in BLEND_WEIGHTS}
+        componentes_previos = {s: float(fila[s]) for s in weights}
 
     nuevo_precio = last_price * factor_acumulado
 
@@ -295,8 +324,9 @@ def _benchmark_price(bucket: str, bucket_state: dict | None, as_of: pd.Timestamp
     bench_symbol = BENCHMARK_SYMBOL.get(bucket)
     if bench_symbol is None:
         return None
-    if bench_symbol == "BLEND_SPY_GLD":
-        return _blend_incremental_price(bucket_state if bucket_state is not None else {}, as_of)
+    weights = BLEND_DEFINITIONS.get(bench_symbol)
+    if weights is not None:
+        return _blend_incremental_price(bucket_state if bucket_state is not None else {}, as_of, weights)
     df = load_universe(symbols=[bench_symbol])[bench_symbol]
     last = _last_row_as_of(df, as_of)
     return None if last is None else float(last["close"])
@@ -311,8 +341,8 @@ def init_bucket_state(bucket: str, starting_capital: float, as_of: pd.Timestamp 
     if bench_price:
         blend_ledger.registrar(
             BLEND_LEDGER_PATH, bucket=bucket, fecha=date.today().isoformat(), tipo="compra",
-            simbolo="BLEND_SPY_GLD", monto_usd=starting_capital, precio=bench_price,
-            shares=bench_shares, motivo="capital inicial del bucket",
+            simbolo=BENCHMARK_SYMBOL.get(bucket, "BLEND_SPY_GLD"), monto_usd=starting_capital,
+            precio=bench_price, shares=bench_shares, motivo="capital inicial del bucket",
         )
     nuevo_estado = {
         "starting_capital": round(starting_capital, 2),
@@ -432,8 +462,8 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
                 bench_shares += shares_compradas
                 blend_ledger.registrar(
                     BLEND_LEDGER_PATH, bucket=bucket, fecha=today_label, tipo="compra",
-                    simbolo="BLEND_SPY_GLD", monto_usd=proceeds, precio=bench_price,
-                    shares=shares_compradas, motivo=f"producto de cerrar {symbol}",
+                    simbolo=BENCHMARK_SYMBOL.get(bucket, "BLEND_SPY_GLD"), monto_usd=proceeds,
+                    precio=bench_price, shares=shares_compradas, motivo=f"producto de cerrar {symbol}",
                 )
             else:
                 bucket_state["cash"] = bucket_state.get("cash", 0.0) + proceeds
@@ -593,8 +623,8 @@ def run_bucket_tick(bucket: str, bucket_state: dict, as_of: pd.Timestamp | None 
                 bench_shares -= shares_vendidas
                 blend_ledger.registrar(
                     BLEND_LEDGER_PATH, bucket=bucket, fecha=today_label, tipo="venta",
-                    simbolo="BLEND_SPY_GLD", monto_usd=cost, precio=bench_price,
-                    shares=shares_vendidas, motivo=f"financia la compra de {symbol}",
+                    simbolo=BENCHMARK_SYMBOL.get(bucket, "BLEND_SPY_GLD"), monto_usd=cost,
+                    precio=bench_price, shares=shares_vendidas, motivo=f"financia la compra de {symbol}",
                 )
             else:
                 bucket_state["cash"] = bucket_state.get("cash", 0.0) - cost
@@ -662,7 +692,14 @@ def run_daily_tick(as_of: pd.Timestamp | None = None) -> dict:
     snapshot = {"date": None, "buckets": {}, "alertas": []}
     for bucket in ACTIVE_BUCKETS:
         if bucket not in state:
-            starting_capital = balances.get(bucket, 0.0)
+            # "benchmark_diversificado" (ADR 0039) no es parte del libro de
+            # inyecciones de allocation.py — es un punto de comparación
+            # aparte, con su propio capital inicial fijo (ver ADR 0039 y el
+            # comentario en BENCHMARK_DIVERSIFICADO_STARTING_CAPITAL).
+            if bucket == "benchmark_diversificado":
+                starting_capital = BENCHMARK_DIVERSIFICADO_STARTING_CAPITAL
+            else:
+                starting_capital = balances.get(bucket, 0.0)
             if starting_capital <= 0:
                 continue  # sin capital registrado para este bucket todavía
             state[bucket] = init_bucket_state(bucket, starting_capital, as_of)

@@ -65,6 +65,17 @@ BUCKET_CONFIG = {
     # promedio negativo (-0.032) con ningún peso de asignación
     # mejorando el portafolio de control. Capital redistribuido a los
     # 3 buckets de arriba en su proporción original (13/10/7).
+    "benchmark_diversificado": {
+        # Canasta de comparación (ADR 0039): sin estrategia (strategies
+        # vacío) y sin riesgo por operación — nunca abre ni cierra una
+        # posición. El único símbolo de su "universo" (SPY) solo ancla
+        # la fecha de "hoy" en el motor; la asignación real (40% SPY /
+        # 30% AGG / 20% GLD / 10% VNQ) se invierte completa desde el
+        # día 1 vía el blend de BENCHMARK_SYMBOL en engine.py.
+        "universe_file": ROOT / "config" / "universe_benchmark_diversificado.txt",
+        "risk_pct": 0.0,
+        "strategies": [],
+    },
 }
 
 

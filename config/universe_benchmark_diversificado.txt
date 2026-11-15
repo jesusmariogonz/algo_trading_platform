@@ -1,0 +1,10 @@
+# Universo del bucket "benchmark_diversificado" (ADR 0039). Esta
+# canasta no opera ninguna estrategia (strategies = [] en
+# BUCKET_CONFIG): el único símbolo listado aquí (SPY) sirve solo para
+# anclar la fecha de "hoy" en el motor de paper trading simulado — la
+# composición real del benchmark (40% SPY / 30% AGG / 20% GLD / 10%
+# VNQ) vive en BENCHMARK_DIVERSIFICADO_WEIGHTS, en
+# src/paper_trading/engine.py, y se invierte completa desde el día 1
+# vía el mecanismo de blend ya usado para el cash ocioso de las otras
+# 3 canastas (ver ADR 0007/0014) — nunca abre ni cierra una posición.
+SPY
