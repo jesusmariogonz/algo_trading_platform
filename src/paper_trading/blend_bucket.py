@@ -122,8 +122,20 @@ def resumen_blend_simulado(buckets: dict) -> dict | None:
     campo "cash" de cada bucket real (carga hacia adelante el último
     valor conocido de un bucket si ese día no tiene registro propio,
     igual que la curva de equity combinada del frontend — nunca
-    inventa un valor nuevo)."""
-    items = [(k, v) for k, v in buckets.items() if not k.startswith("_") and v.get("starting_capital")]
+    inventa un valor nuevo).
+
+    "benchmark_diversificado" (ADR 0039) se excluye a propósito: este
+    resumen es del CASH OCIOSO de los buckets con estrategia real (solo
+    una fracción de su capital, variable día a día), mientras que esa
+    canasta tiene el 100% de su capital siempre en un blend distinto
+    (40/30/20/10, no 50/50 SPY/GLD) — sumarla aquí inflaría el equity
+    agregado y desalinearía el % de retorno (que se calcula sobre el
+    índice 50/50) contra el dólar real. Su propio equity/retorno ya se
+    reporta aparte, en `buckets["benchmark_diversificado"]`."""
+    items = [
+        (k, v) for k, v in buckets.items()
+        if not k.startswith("_") and k != "benchmark_diversificado" and v.get("starting_capital")
+    ]
     if not items:
         return None
 

@@ -131,6 +131,7 @@ BUCKET_LABELS = {
     "largo_plazo": "Largo Plazo",
     "mediano_plazo": "Mediano Plazo",
     "riesgo_alto": "Riesgo Alto",
+    "benchmark_diversificado": "Benchmark Diversificado",
 }
 
 

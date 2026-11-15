@@ -154,3 +154,22 @@ def test_resumen_blend_simulado_ignora_claves_internas(monkeypatch):
     resumen = blend_bucket.resumen_blend_simulado(buckets)
 
     assert resumen["starting_capital"] == 100.0  # no sumó la clave interna
+
+
+def test_resumen_blend_simulado_excluye_benchmark_diversificado(monkeypatch):
+    """ADR 0039: benchmark_diversificado tiene el 100% de su capital
+    siempre en SU PROPIO blend (40/30/20/10), no cash ocioso de una
+    estrategia real — sumarlo aquí inflaría el equity agregado y
+    desalinearía el retorno (calculado sobre el índice 50/50 SPY/GLD)
+    contra el valor en dólares."""
+    monkeypatch.setattr(blend_bucket, "_retorno_indice_por_fecha", lambda fechas: None)
+    buckets = {
+        "largo_plazo": _bucket_export(100.0, "2026-10-30", [{"date": "2026-10-30", "cash": 100.0}]),
+        "benchmark_diversificado": _bucket_export(1683.23, "2026-11-15", [
+            {"date": "2026-11-15", "cash": 1683.23},
+        ]),
+    }
+
+    resumen = blend_bucket.resumen_blend_simulado(buckets)
+
+    assert resumen["starting_capital"] == 100.0  # no sumó benchmark_diversificado
