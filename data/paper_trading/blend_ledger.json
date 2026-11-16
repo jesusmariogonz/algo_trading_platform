@@ -58,5 +58,15 @@
     "precio": 120.1902,
     "shares": 14.004725,
     "motivo": "capital inicial del bucket"
+  },
+  {
+    "bucket": "riesgo_alto",
+    "fecha": "2026-11-16",
+    "tipo": "venta",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 57.69,
+    "precio": 137.3577,
+    "shares": 0.419981,
+    "motivo": "financia la compra de BILL"
   }
 ]
