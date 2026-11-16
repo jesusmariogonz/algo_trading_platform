@@ -48,5 +48,15 @@
     "precio": 140.7029,
     "shares": 0.338355,
     "motivo": "financia la compra de S"
+  },
+  {
+    "bucket": "benchmark_diversificado",
+    "fecha": "2026-11-16",
+    "tipo": "compra",
+    "simbolo": "BLEND_DIVERSIFICADO",
+    "monto_usd": 1683.23,
+    "precio": 120.1902,
+    "shares": 14.004725,
+    "motivo": "capital inicial del bucket"
   }
 ]

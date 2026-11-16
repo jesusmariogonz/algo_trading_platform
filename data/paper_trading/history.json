@@ -1013,5 +1013,142 @@
       }
     },
     "alertas": []
+  },
+  {
+    "date": "2026-11-16",
+    "buckets": {
+      "largo_plazo": {
+        "date": "2026-11-16",
+        "equity": 426.41,
+        "cash": 12.8,
+        "unrealized_pnl": -1.05,
+        "open_count": 4,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -0.49,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [
+          {
+            "symbol": "SPY",
+            "strategy": "time_series_momentum",
+            "reason": "capital_insuficiente",
+            "entry_price": 747.3,
+            "stop_price": 708.66,
+            "risk_per_share": 38.64,
+            "risk_amount": 8.53,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "VTI",
+            "strategy": "time_series_momentum",
+            "reason": "capital_insuficiente",
+            "entry_price": 367.67,
+            "stop_price": 349.67,
+            "risk_per_share": 18.0,
+            "risk_amount": 8.53,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "DIA",
+            "strategy": "time_series_momentum",
+            "reason": "capital_insuficiente",
+            "entry_price": 521.36,
+            "stop_price": 498.64,
+            "risk_per_share": 22.72,
+            "risk_amount": 8.53,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "IWM",
+            "strategy": "time_series_momentum",
+            "reason": "cross_sectional_filter",
+            "return_126d": 0.003,
+            "percentile": 0.6923
+          },
+          {
+            "symbol": "EWJ",
+            "strategy": "time_series_momentum",
+            "reason": "cross_sectional_filter",
+            "return_126d": 0.0006,
+            "percentile": 0.6538
+          },
+          {
+            "symbol": "SHY",
+            "strategy": "time_series_momentum",
+            "reason": "efectivo_insuficiente",
+            "entry_price": 81.24,
+            "stop_price": 80.79,
+            "risk_per_share": 0.44,
+            "risk_amount": 8.53,
+            "shares_calculadas": 19,
+            "costo_estimado": 1545.01
+          }
+        ],
+        "daily_loss_pct": 0.34,
+        "drawdown_pct": 2.07,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "mediano_plazo": {
+        "date": "2026-11-16",
+        "equity": 367.22,
+        "cash": 115.41,
+        "unrealized_pnl": 9.1,
+        "open_count": 3,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -0.08,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": -0.35,
+        "drawdown_pct": 0.56,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "riesgo_alto": {
+        "date": "2026-11-16",
+        "equity": 206.14,
+        "cash": 162.18,
+        "unrealized_pnl": -3.64,
+        "open_count": 1,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -2.6,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 0.38,
+        "drawdown_pct": 4.7,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "benchmark_diversificado": {
+        "date": "2026-11-16",
+        "equity": 1683.23,
+        "cash": 1683.23,
+        "unrealized_pnl": 0.0,
+        "open_count": 0,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": 0.0,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 0.0,
+        "drawdown_pct": 0.0,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      }
+    },
+    "alertas": []
   }
 ]
