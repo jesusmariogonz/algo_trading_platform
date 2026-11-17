@@ -68,5 +68,45 @@
     "precio": 137.3577,
     "shares": 0.419981,
     "motivo": "financia la compra de BILL"
+  },
+  {
+    "bucket": "largo_plazo",
+    "fecha": "2026-11-17",
+    "tipo": "compra",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 136.87,
+    "precio": 137.3011,
+    "shares": 0.99683,
+    "motivo": "producto de cerrar IJR"
+  },
+  {
+    "bucket": "mediano_plazo",
+    "fecha": "2026-11-17",
+    "tipo": "compra",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 57.06,
+    "precio": 137.3011,
+    "shares": 0.415595,
+    "motivo": "producto de cerrar XLF"
+  },
+  {
+    "bucket": "mediano_plazo",
+    "fecha": "2026-11-17",
+    "tipo": "venta",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 114.25,
+    "precio": 137.3011,
+    "shares": 0.832143,
+    "motivo": "financia la compra de XLF"
+  },
+  {
+    "bucket": "riesgo_alto",
+    "fecha": "2026-11-17",
+    "tipo": "venta",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 76.01,
+    "precio": 136.3233,
+    "shares": 0.557542,
+    "motivo": "financia la compra de DOCU"
   }
 ]
