@@ -958,6 +958,70 @@ def reautorizar_bucket(bucket: str) -> dict:
     return {"bucket": bucket, "reautorizado": True, **anterior}
 
 
+def cerrar_posicion_manual(bucket: str, symbol: str, ib) -> dict:
+    """Cierra a mercado UNA posición trackeada de un bucket, fuera del
+    ciclo normal de señal/stop — para deslaverancar manualmente (ver
+    incidente del 5/9-nov-2026, ADR 0035: el cash negativo deja al
+    bucket con más exposición real que capital propio).
+
+    A diferencia de `/admin/live/vender-simbolo` (pensado para
+    símbolos huérfanos que el estado local NO conoce, y que no toca
+    `state.json`), esta función SÍ actualiza el estado: mueve la
+    posición de `open_positions` a `closed_positions` con razón
+    `"cierre_manual_deslaverancaje"` (distinta de stop_hit/signal_exit,
+    para que quede claro en el historial que fue una decisión humana,
+    no la estrategia). El producto completo de la venta va a cash —
+    nunca se reinvierte en el blend SPY/GLD, porque el objetivo es
+    reducir exposición total, no movérsela a otro símbolo.
+
+    Lanza ValueError si el bucket no existe o no tiene esa posición
+    abierta. Si la orden no se llena, deja que `OrdenNoLlenada` se
+    propague tal cual — nunca se asume un cierre que no ocurrió, la
+    posición se queda intacta en `open_positions`."""
+    if bucket not in ACTIVE_BUCKETS:
+        raise ValueError(f"'{bucket}' no es un bucket válido del motor en vivo ({ACTIVE_BUCKETS})")
+
+    state = load_state()
+    bucket_state = state.get(bucket)
+    if bucket_state is None:
+        raise ValueError(f"'{bucket}' no tiene estado todavía (no ha corrido ningún tick)")
+
+    open_positions = bucket_state.get("open_positions", [])
+    pos = next((p for p in open_positions if p["symbol"] == symbol), None)
+    if pos is None:
+        raise ValueError(f"'{symbol}' no está abierto en '{bucket}' — nada que cerrar")
+
+    fill: Fill = ejecutar_orden_mercado(ib, symbol, "SELL", pos["shares"])
+
+    proceeds = fill.precio_promedio * pos["shares"]
+    pnl = proceeds - pos["entry_price"] * pos["shares"]
+    hoy = date.today().isoformat()
+
+    cerrada = {
+        **pos,
+        "exit_date": hoy,
+        "exit_price": round(fill.precio_promedio, 2),
+        "pnl": round(pnl, 2),
+        "pnl_pct": round((proceeds / (pos["entry_price"] * pos["shares"]) - 1) * 100, 2),
+        "reason": "cierre_manual_deslaverancaje",
+    }
+
+    bucket_state["open_positions"] = [p for p in open_positions if p["symbol"] != symbol]
+    bucket_state.setdefault("closed_positions", []).append(cerrada)
+    bucket_state["cash"] = round(bucket_state.get("cash", 0.0) + proceeds, 2)
+    save_state(state)
+
+    return {
+        "bucket": bucket,
+        "symbol": symbol,
+        "shares": pos["shares"],
+        "precio_venta": round(fill.precio_promedio, 2),
+        "proceeds_usd": round(proceeds, 2),
+        "pnl": round(pnl, 2),
+        "cash_resultante": bucket_state["cash"],
+    }
+
+
 def corregir_retorno_historico(bucket: str, fecha: str) -> dict:
     """Recalcula cumulative_return_pct/drawdown_pct de UNA entrada ya
     guardada en el historial, usando el starting_capital ACTUAL del

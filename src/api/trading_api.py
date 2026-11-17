@@ -555,3 +555,24 @@ def reautorizar_bucket_live(bucket: str, authorization: str | None = Header(None
         return live_engine.reautorizar_bucket(bucket)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/admin/live/cerrar-posicion-manual")
+def cerrar_posicion_manual_live(bucket: str, symbol: str, authorization: str | None = Header(None)):
+    """Cierra a mercado UNA posición trackeada de un bucket fuera del
+    ciclo normal de señal/stop (ver live_engine.cerrar_posicion_manual)
+    — para deslaverancar manualmente un bucket con cash negativo
+    (ADR 0035). A diferencia de /admin/live/vender-simbolo, esta SÍ
+    actualiza state.json (mueve la posición a closed_positions,
+    nunca reinvierte el producto en el blend). Requiere Gateway."""
+    _verificar_token(authorization)
+
+    ib = conectar()
+    try:
+        return live_engine.cerrar_posicion_manual(bucket, symbol, ib)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except OrdenNoLlenada as e:
+        raise HTTPException(status_code=502, detail=f"Orden no se llenó, posición sigue abierta: {e}")
+    finally:
+        desconectar(ib)
