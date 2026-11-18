@@ -799,6 +799,91 @@ def test_reautorizar_bucket_falla_si_no_es_bucket_valido():
         live_engine.reautorizar_bucket("bucket_inventado")
 
 
+def test_cerrar_posicion_manual_mueve_la_posicion_a_cerradas_y_suma_el_producto_al_cash(monkeypatch):
+    pos = {"symbol": "DBC", "strategy": "time_series_momentum", "entry_date": "2026-11-08", "entry_price": 31.55, "stop_price": 29.84, "shares": 10}
+    otra = {"symbol": "VTI", "strategy": "time_series_momentum", "entry_date": "2026-11-08", "entry_price": 362.31, "stop_price": 357.21, "shares": 1}
+    state = {"largo_plazo": {"cash": -1154.07, "open_positions": [pos, otra], "closed_positions": []}}
+    live_engine.save_state(state)
+
+    monkeypatch.setattr(
+        live_engine, "ejecutar_orden_mercado",
+        lambda ib, symbol, accion, shares: Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=30.25),
+    )
+
+    resultado = live_engine.cerrar_posicion_manual("largo_plazo", "DBC", ib=object())
+
+    assert resultado["symbol"] == "DBC"
+    assert resultado["shares"] == 10
+    assert resultado["proceeds_usd"] == 302.5
+    assert resultado["pnl"] == pytest.approx(302.5 - 315.5)
+    assert resultado["cash_resultante"] == pytest.approx(-1154.07 + 302.5)
+
+    estado = live_engine.load_state()["largo_plazo"]
+    assert [p["symbol"] for p in estado["open_positions"]] == ["VTI"]  # DBC ya no está abierta; VTI no se tocó
+    assert estado["cash"] == pytest.approx(-1154.07 + 302.5)
+    cerradas = estado["closed_positions"]
+    assert len(cerradas) == 1
+    assert cerradas[0]["symbol"] == "DBC"
+    assert cerradas[0]["reason"] == "cierre_manual_deslaverancaje"
+    assert cerradas[0]["exit_price"] == 30.25
+    assert cerradas[0]["entry_price"] == 31.55  # el resto de la posición original se conserva
+
+
+def test_cerrar_posicion_manual_no_reinvierte_el_producto_en_el_blend(monkeypatch):
+    state = {"largo_plazo": {"cash": 0.0, "blend_spy_shares": 5, "blend_gld_shares": 2, "open_positions": [
+        {"symbol": "DBC", "entry_price": 31.55, "stop_price": 29.84, "shares": 10},
+    ], "closed_positions": []}}
+    live_engine.save_state(state)
+    monkeypatch.setattr(
+        live_engine, "ejecutar_orden_mercado",
+        lambda ib, symbol, accion, shares: Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=30.25),
+    )
+
+    live_engine.cerrar_posicion_manual("largo_plazo", "DBC", ib=object())
+
+    estado = live_engine.load_state()["largo_plazo"]
+    assert estado["blend_spy_shares"] == 5  # sin cambios: el producto fue todo a cash
+    assert estado["blend_gld_shares"] == 2
+    assert estado["cash"] == pytest.approx(302.5)
+
+
+def test_cerrar_posicion_manual_falla_si_el_simbolo_no_esta_abierto():
+    live_engine.save_state({"largo_plazo": {"cash": 0.0, "open_positions": [], "closed_positions": []}})
+
+    with pytest.raises(ValueError, match="no está abierto"):
+        live_engine.cerrar_posicion_manual("largo_plazo", "DBC", ib=object())
+
+
+def test_cerrar_posicion_manual_falla_si_no_tiene_estado():
+    live_engine.save_state({})
+
+    with pytest.raises(ValueError, match="no tiene estado"):
+        live_engine.cerrar_posicion_manual("largo_plazo", "DBC", ib=object())
+
+
+def test_cerrar_posicion_manual_falla_si_no_es_bucket_valido():
+    with pytest.raises(ValueError, match="no es un bucket válido"):
+        live_engine.cerrar_posicion_manual("bucket_inventado", "DBC", ib=object())
+
+
+def test_cerrar_posicion_manual_propaga_orden_no_llenada_sin_tocar_el_estado(monkeypatch):
+    pos = {"symbol": "DBC", "entry_price": 31.55, "stop_price": 29.84, "shares": 10}
+    state = {"largo_plazo": {"cash": -1154.07, "open_positions": [pos], "closed_positions": []}}
+    live_engine.save_state(state)
+
+    def falla(ib, symbol, accion, shares):
+        raise OrdenNoLlenada("timeout")
+
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", falla)
+
+    with pytest.raises(OrdenNoLlenada):
+        live_engine.cerrar_posicion_manual("largo_plazo", "DBC", ib=object())
+
+    estado = live_engine.load_state()["largo_plazo"]
+    assert estado["open_positions"] == [pos]
+    assert estado["cash"] == -1154.07
+
+
 def test_rebasar_y_recalcular_stops_puede_limitarse_a_buckets_especificos(monkeypatch):
     monkeypatch.setattr(live_engine, "BUCKET_CONFIG", {
         "largo_plazo": {"universe_file": None, "risk_pct": 0.02, "strategies": []},

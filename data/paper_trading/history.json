@@ -1013,5 +1013,290 @@
       }
     },
     "alertas": []
+  },
+  {
+    "date": "2026-11-16",
+    "buckets": {
+      "largo_plazo": {
+        "date": "2026-11-16",
+        "equity": 423.27,
+        "cash": 12.8,
+        "unrealized_pnl": -4.18,
+        "open_count": 4,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -1.22,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 1.07,
+        "drawdown_pct": 2.79,
+        "daily_loss_breaker_tripped": true,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "mediano_plazo": {
+        "date": "2026-11-16",
+        "equity": 365.67,
+        "cash": 115.41,
+        "unrealized_pnl": 7.55,
+        "open_count": 3,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -0.5,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [
+          {
+            "symbol": "LLY",
+            "strategy": "trend_following",
+            "reason": "capital_insuficiente",
+            "entry_price": 1431.67,
+            "stop_price": 1300.21,
+            "risk_per_share": 131.46,
+            "risk_amount": 7.31,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "JNJ",
+            "strategy": "trend_following",
+            "reason": "capital_insuficiente",
+            "entry_price": 282.55,
+            "stop_price": 264.07,
+            "risk_per_share": 18.48,
+            "risk_amount": 7.31,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "DIS",
+            "strategy": "trend_following",
+            "reason": "efectivo_insuficiente",
+            "entry_price": 118.7,
+            "stop_price": 112.23,
+            "risk_per_share": 6.47,
+            "risk_amount": 7.31,
+            "shares_calculadas": 1,
+            "costo_estimado": 118.82
+          },
+          {
+            "symbol": "V",
+            "strategy": "trend_following",
+            "reason": "capital_insuficiente",
+            "entry_price": 426.46,
+            "stop_price": 400.71,
+            "risk_per_share": 25.75,
+            "risk_amount": 7.31,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          }
+        ],
+        "daily_loss_pct": 0.07,
+        "drawdown_pct": 0.98,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "riesgo_alto": {
+        "date": "2026-11-16",
+        "equity": 206.02,
+        "cash": 104.49,
+        "unrealized_pnl": -3.76,
+        "open_count": 2,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -2.65,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 0.4,
+        "drawdown_pct": 4.73,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "benchmark_diversificado": {
+        "date": "2026-11-16",
+        "equity": 1683.23,
+        "cash": 1683.23,
+        "unrealized_pnl": 0.0,
+        "open_count": 0,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": 0.0,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 0.0,
+        "drawdown_pct": 0.0,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      }
+    },
+    "alertas": []
+  },
+  {
+    "date": "2026-11-17",
+    "buckets": {
+      "largo_plazo": {
+        "date": "2026-11-17",
+        "equity": 417.56,
+        "cash": 149.57,
+        "unrealized_pnl": -6.23,
+        "open_count": 3,
+        "closed_today": 1,
+        "realized_pnl_today": -3.56,
+        "cumulative_return_pct": -2.56,
+        "closed_today_detail": [
+          {
+            "symbol": "IJR",
+            "strategy": "time_series_momentum",
+            "entry_date": "2026-10-30",
+            "entry_price": 140.43,
+            "stop_price": 137.00284903390067,
+            "shares": 1,
+            "exit_date": "2026-11-17",
+            "exit_price": 137.0,
+            "pnl": -3.56,
+            "pnl_pct": -2.54,
+            "reason": "stop_hit"
+          }
+        ],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 1.35,
+        "drawdown_pct": 4.1,
+        "daily_loss_breaker_tripped": true,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "mediano_plazo": {
+        "date": "2026-11-17",
+        "equity": 361.74,
+        "cash": 57.35,
+        "unrealized_pnl": 3.93,
+        "open_count": 3,
+        "closed_today": 1,
+        "realized_pnl_today": 0.55,
+        "cumulative_return_pct": -1.57,
+        "closed_today_detail": [
+          {
+            "symbol": "XLF",
+            "strategy": "trend_following",
+            "entry_date": "2026-10-30",
+            "entry_price": 56.51,
+            "stop_price": 57.11875098092215,
+            "shares": 1,
+            "exit_date": "2026-11-17",
+            "exit_price": 57.12,
+            "pnl": 0.55,
+            "pnl_pct": 0.98,
+            "reason": "stop_hit"
+          }
+        ],
+        "discarded_candidates_today": [
+          {
+            "symbol": "CVX",
+            "strategy": "trend_following",
+            "reason": "capital_insuficiente",
+            "entry_price": 216.13,
+            "stop_price": 202.92,
+            "risk_per_share": 13.21,
+            "risk_amount": 7.24,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "JNJ",
+            "strategy": "trend_following",
+            "reason": "capital_insuficiente",
+            "entry_price": 278.7,
+            "stop_price": 260.85,
+            "risk_per_share": 17.85,
+            "risk_amount": 7.24,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "DIS",
+            "strategy": "trend_following",
+            "reason": "capital_insuficiente",
+            "entry_price": 116.94,
+            "stop_price": 109.55,
+            "risk_per_share": 7.39,
+            "risk_amount": 7.24,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "PYPL",
+            "strategy": "trend_following",
+            "reason": "efectivo_insuficiente",
+            "entry_price": 58.11,
+            "stop_price": 54.11,
+            "risk_per_share": 4.0,
+            "risk_amount": 7.24,
+            "shares_calculadas": 1,
+            "costo_estimado": 58.17
+          },
+          {
+            "symbol": "XLV",
+            "strategy": "trend_following",
+            "reason": "capital_insuficiente",
+            "entry_price": 185.24,
+            "stop_price": 175.81,
+            "risk_per_share": 9.43,
+            "risk_amount": 7.24,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          }
+        ],
+        "daily_loss_pct": 1.04,
+        "drawdown_pct": 2.01,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "riesgo_alto": {
+        "date": "2026-11-17",
+        "equity": 210.81,
+        "cash": 27.7,
+        "unrealized_pnl": 1.81,
+        "open_count": 3,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -0.39,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": -2.36,
+        "drawdown_pct": 2.51,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "benchmark_diversificado": {
+        "date": "2026-11-17",
+        "equity": 1671.78,
+        "cash": 1671.78,
+        "unrealized_pnl": 0.0,
+        "open_count": 0,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -0.68,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 0.68,
+        "drawdown_pct": 0.68,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      }
+    },
+    "alertas": []
   }
 ]

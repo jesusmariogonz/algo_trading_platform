@@ -701,6 +701,63 @@ def test_reautorizar_bucket_live_404_si_no_esta_suspendido(client, monkeypatch):
     assert "no está suspendido" in r.json()["detail"]
 
 
+def test_cerrar_posicion_manual_live_requiere_token(client):
+    assert client.post("/admin/live/cerrar-posicion-manual?bucket=largo_plazo&symbol=DBC").status_code == 401
+
+
+def test_cerrar_posicion_manual_live_conecta_delega_y_desconecta(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
+    def cerrar_falso(bucket, symbol, ib):
+        llamadas["delegado"] = (bucket, symbol, ib)
+        return {
+            "bucket": bucket, "symbol": symbol, "shares": 10, "precio_venta": 30.25,
+            "proceeds_usd": 302.5, "pnl": -13.0, "cash_resultante": -851.57,
+        }
+
+    monkeypatch.setattr(trading_api.live_engine, "cerrar_posicion_manual", cerrar_falso)
+
+    r = client.post("/admin/live/cerrar-posicion-manual?bucket=largo_plazo&symbol=DBC", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json()["cash_resultante"] == -851.57
+    assert llamadas["delegado"] == ("largo_plazo", "DBC", "ib-falso")
+    assert llamadas["desconectado"] == "ib-falso"
+
+
+def test_cerrar_posicion_manual_live_400_si_no_esta_abierta(client, monkeypatch):
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
+
+    def falla(bucket, symbol, ib):
+        raise ValueError(f"'{symbol}' no está abierto en '{bucket}' — nada que cerrar")
+
+    monkeypatch.setattr(trading_api.live_engine, "cerrar_posicion_manual", falla)
+
+    r = client.post("/admin/live/cerrar-posicion-manual?bucket=largo_plazo&symbol=DBC", headers=HEADERS_OK)
+
+    assert r.status_code == 400
+    assert "no está abierto" in r.json()["detail"]
+
+
+def test_cerrar_posicion_manual_live_502_y_desconecta_si_la_orden_no_se_llena(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
+
+    def falla(bucket, symbol, ib):
+        raise trading_api.OrdenNoLlenada("DBC SELL 10: timeout")
+
+    monkeypatch.setattr(trading_api.live_engine, "cerrar_posicion_manual", falla)
+
+    r = client.post("/admin/live/cerrar-posicion-manual?bucket=largo_plazo&symbol=DBC", headers=HEADERS_OK)
+
+    assert r.status_code == 502
+    assert "sigue abierta" in r.json()["detail"]
+    assert llamadas["desconectado"] == "ib-falso"
+
+
 def _falla_descarga(simbolos):
     def correr(*args):
         if args[0] == "src.data.download":
