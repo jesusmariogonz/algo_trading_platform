@@ -108,5 +108,35 @@
     "precio": 136.3233,
     "shares": 0.557542,
     "motivo": "financia la compra de DOCU"
+  },
+  {
+    "bucket": "largo_plazo",
+    "fecha": "2026-11-18",
+    "tipo": "compra",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 71.55,
+    "precio": 134.807,
+    "shares": 0.530747,
+    "motivo": "producto de cerrar IJH"
+  },
+  {
+    "bucket": "largo_plazo",
+    "fecha": "2026-11-18",
+    "tipo": "compra",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 100.53,
+    "precio": 134.807,
+    "shares": 0.745728,
+    "motivo": "producto de cerrar EFA"
+  },
+  {
+    "bucket": "largo_plazo",
+    "fecha": "2026-11-18",
+    "tipo": "venta",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 137.2,
+    "precio": 134.807,
+    "shares": 1.01773,
+    "motivo": "financia la compra de IJR"
   }
 ]

@@ -109,6 +109,106 @@ def test_cierra_posicion_usa_el_fill_real_no_el_stop_guardado(monkeypatch):
     assert bucket_state["open_positions"] == []
 
 
+def test_cierra_por_precio_en_vivo_aunque_el_cierre_diario_no_toque_el_stop(monkeypatch):
+    fake_universe = {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [90.0], "sma_200": [40.0], "atr_14": [1.0]}
+        ),
+    }
+    _setup_bucket_unico(
+        monkeypatch, fake_universe, "VOO",
+        lambda df: df.assign(signal=0, stop_price=df["close"] - 100),
+    )
+    # Cierre diario = 90.0, por encima del stop guardado (85.0) -> por
+    # sí solo NO dispararía el cierre. El precio en vivo (82.0) sí lo
+    # rompe: la posición debe cerrarse de todos modos.
+    monkeypatch.setattr(live_engine, "precio_en_vivo", lambda ib, symbol: 82.0)
+
+    def fill_falso(ib, symbol, accion, shares):
+        assert accion == "SELL"
+        return Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=82.1)
+
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", fill_falso)
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    bucket_state["cash"] = 200.0
+    bucket_state["open_positions"] = [
+        {"symbol": "VOO", "strategy": "time_series_momentum", "entry_date": "2025-12-01",
+         "entry_price": 90.0, "stop_price": 85.0, "shares": 10}
+    ]
+
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object())
+
+    assert result["closed_today"] == 1
+    cerrada = bucket_state["closed_positions"][0]
+    assert cerrada["exit_price"] == 82.1
+    assert cerrada["reason"] == "stop_hit"
+    assert bucket_state["open_positions"] == []
+
+
+def test_no_cierra_por_precio_en_vivo_si_sigue_por_arriba_del_stop(monkeypatch):
+    fake_universe = {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [90.0], "sma_200": [40.0], "atr_14": [1.0]}
+        ),
+    }
+    _setup_bucket_unico(
+        monkeypatch, fake_universe, "VOO",
+        lambda df: df.assign(signal=0, stop_price=df["close"] - 100),
+    )
+    monkeypatch.setattr(live_engine, "precio_en_vivo", lambda ib, symbol: 86.0)
+    monkeypatch.setattr(
+        live_engine, "ejecutar_orden_mercado",
+        lambda ib, symbol, accion, shares: pytest.fail("no debería intentar cerrar"),
+    )
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    bucket_state["open_positions"] = [
+        {"symbol": "VOO", "strategy": "time_series_momentum", "entry_date": "2025-12-01",
+         "entry_price": 90.0, "stop_price": 85.0, "shares": 10}
+    ]
+
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object())
+
+    assert result["closed_today"] == 0
+    assert len(bucket_state["open_positions"]) == 1
+
+
+def test_si_precio_en_vivo_falla_cae_al_cierre_diario_para_el_stop(monkeypatch):
+    fake_universe = {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [80.0], "sma_200": [40.0], "atr_14": [1.0]}
+        ),
+    }
+    _setup_bucket_unico(
+        monkeypatch, fake_universe, "VOO",
+        lambda df: df.assign(signal=0, stop_price=df["close"] - 100),
+    )
+
+    def precio_en_vivo_falla(ib, symbol):
+        raise TimeoutError("Gateway no respondió")
+
+    monkeypatch.setattr(live_engine, "precio_en_vivo", precio_en_vivo_falla)
+
+    def fill_falso(ib, symbol, accion, shares):
+        assert accion == "SELL"
+        return Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=84.5)
+
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", fill_falso)
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    bucket_state["cash"] = 200.0
+    bucket_state["open_positions"] = [
+        {"symbol": "VOO", "strategy": "time_series_momentum", "entry_date": "2025-12-01",
+         "entry_price": 90.0, "stop_price": 85.0, "shares": 10}
+    ]  # stop guardado = 85.0, close de hoy = 80.0 -> stop se toca por el cierre diario (respaldo)
+
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object())
+
+    assert result["closed_today"] == 1
+    assert bucket_state["closed_positions"][0]["reason"] == "stop_hit"
+
+
 def test_orden_no_llenada_al_cerrar_deja_la_posicion_abierta(monkeypatch):
     fake_universe = {
         "VOO": pd.DataFrame(

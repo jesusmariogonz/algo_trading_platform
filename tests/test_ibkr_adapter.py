@@ -242,6 +242,21 @@ def test_equity_de_cuenta_usd_lanza_error_si_no_hay_desglose_en_usd():
         ibkr_adapter.equity_de_cuenta_usd(ib)
 
 
+def test_precio_en_vivo_usa_market_price():
+    ib = _IBFalso(_TradeFalso("Filled"), ticker=_TickerFalso(market_price=123.45, close=120.0))
+    assert ibkr_adapter.precio_en_vivo(ib, "VOO") == 123.45
+
+
+def test_precio_en_vivo_cae_al_close_del_ticker_si_no_hay_market_price():
+    ib = _IBFalso(_TradeFalso("Filled"), ticker=_TickerFalso(market_price=0.0, close=118.2))
+    assert ibkr_adapter.precio_en_vivo(ib, "VOO") == 118.2
+
+
+def test_precio_en_vivo_devuelve_none_si_no_hay_ningun_precio_disponible():
+    ib = _IBFalso(_TradeFalso("Filled"), ticker=_TickerFalso(market_price=0.0, close=0.0))
+    assert ibkr_adapter.precio_en_vivo(ib, "VOO") is None
+
+
 def test_posiciones_reales_agrupa_por_symbol_y_filtra_no_acciones():
     posiciones = [
         _PosicionFalsa("AAPL", 10),
