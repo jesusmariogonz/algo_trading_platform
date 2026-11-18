@@ -1,0 +1,231 @@
+{
+  "criterio": {
+    "VALIDATED": "Sharpe dentro de +-15% de cualquier parametro no cae mas del 50% respecto al valor de produccion",
+    "INCONCLUSIVE": "malla demasiado ruidosa (muy pocas operaciones) para distinguir meseta de pico",
+    "REJECTED": "alguna perturbacion <=15% produce una caida de Sharpe >50%"
+  },
+  "resultado": {
+    "largo_plazo": {
+      "atr_stop_multiple": {
+        "valor_produccion": 3.0,
+        "puntos": {
+          "-20": {
+            "sharpe": 1.37,
+            "return_pct": 102.85,
+            "max_dd_pct": 11.11,
+            "n_trades": 92
+          },
+          "-10": {
+            "sharpe": 1.1,
+            "return_pct": 84.26,
+            "max_dd_pct": 17.03,
+            "n_trades": 94
+          },
+          "0": {
+            "sharpe": 0.78,
+            "return_pct": 45.96,
+            "max_dd_pct": 15.52,
+            "n_trades": 96
+          },
+          "10": {
+            "sharpe": 0.52,
+            "return_pct": 27.87,
+            "max_dd_pct": 16.57,
+            "n_trades": 90
+          },
+          "20": {
+            "sharpe": 0.64,
+            "return_pct": 37.45,
+            "max_dd_pct": 14.29,
+            "n_trades": 89
+          }
+        },
+        "label": "VALIDATED"
+      }
+    },
+    "mediano_plazo": {
+      "atr_stop_multiple": {
+        "valor_produccion": 2.5,
+        "puntos": {
+          "-20": {
+            "sharpe": 1.28,
+            "return_pct": 176.6,
+            "max_dd_pct": 18.99,
+            "n_trades": 137
+          },
+          "-10": {
+            "sharpe": 1.44,
+            "return_pct": 268.91,
+            "max_dd_pct": 18.31,
+            "n_trades": 130
+          },
+          "0": {
+            "sharpe": 1.39,
+            "return_pct": 209.36,
+            "max_dd_pct": 18.53,
+            "n_trades": 130
+          },
+          "10": {
+            "sharpe": 1.0,
+            "return_pct": 114.71,
+            "max_dd_pct": 22.42,
+            "n_trades": 112
+          },
+          "20": {
+            "sharpe": 0.98,
+            "return_pct": 112.03,
+            "max_dd_pct": 18.27,
+            "n_trades": 119
+          }
+        },
+        "label": "VALIDATED"
+      }
+    },
+    "riesgo_alto": {
+      "atr_stop_multiple": {
+        "valor_produccion": 1.75,
+        "puntos": {
+          "-20": {
+            "sharpe": 0.78,
+            "return_pct": 119.7,
+            "max_dd_pct": 24.64,
+            "n_trades": 48
+          },
+          "-10": {
+            "sharpe": 0.64,
+            "return_pct": 79.31,
+            "max_dd_pct": 25.83,
+            "n_trades": 50
+          },
+          "0": {
+            "sharpe": 0.91,
+            "return_pct": 165.28,
+            "max_dd_pct": 26.19,
+            "n_trades": 44
+          },
+          "10": {
+            "sharpe": 0.92,
+            "return_pct": 188.85,
+            "max_dd_pct": 27.92,
+            "n_trades": 47
+          },
+          "20": {
+            "sharpe": 0.84,
+            "return_pct": 150.69,
+            "max_dd_pct": 26.61,
+            "n_trades": 49
+          }
+        },
+        "label": "VALIDATED"
+      },
+      "min_breakout_volume": {
+        "valor_produccion": 1.5,
+        "puntos": {
+          "-20": {
+            "sharpe": 0.69,
+            "return_pct": 110.45,
+            "max_dd_pct": 37.77,
+            "n_trades": 54
+          },
+          "-10": {
+            "sharpe": 0.81,
+            "return_pct": 132.9,
+            "max_dd_pct": 31.66,
+            "n_trades": 47
+          },
+          "0": {
+            "sharpe": 0.91,
+            "return_pct": 165.28,
+            "max_dd_pct": 26.19,
+            "n_trades": 44
+          },
+          "10": {
+            "sharpe": 1.08,
+            "return_pct": 213.92,
+            "max_dd_pct": 27.3,
+            "n_trades": 38
+          },
+          "20": {
+            "sharpe": 1.12,
+            "return_pct": 219.83,
+            "max_dd_pct": 23.27,
+            "n_trades": 35
+          }
+        },
+        "label": "VALIDATED"
+      },
+      "min_relative_strength": {
+        "valor_produccion": 1.0,
+        "puntos": {
+          "-20": {
+            "sharpe": 0.6,
+            "return_pct": 78.78,
+            "max_dd_pct": 28.26,
+            "n_trades": 54
+          },
+          "-10": {
+            "sharpe": 0.67,
+            "return_pct": 95.41,
+            "max_dd_pct": 27.74,
+            "n_trades": 50
+          },
+          "0": {
+            "sharpe": 0.91,
+            "return_pct": 165.28,
+            "max_dd_pct": 26.19,
+            "n_trades": 44
+          },
+          "10": {
+            "sharpe": 1.21,
+            "return_pct": 277.31,
+            "max_dd_pct": 18.97,
+            "n_trades": 34
+          },
+          "20": {
+            "sharpe": 1.27,
+            "return_pct": 289.33,
+            "max_dd_pct": 19.36,
+            "n_trades": 31
+          }
+        },
+        "label": "VALIDATED"
+      },
+      "max_atr_contraction": {
+        "valor_produccion": 1.0,
+        "puntos": {
+          "-20": {
+            "sharpe": 0.75,
+            "return_pct": 77.11,
+            "max_dd_pct": 25.82,
+            "n_trades": 23
+          },
+          "-10": {
+            "sharpe": 0.96,
+            "return_pct": 127.87,
+            "max_dd_pct": 20.47,
+            "n_trades": 32
+          },
+          "0": {
+            "sharpe": 0.91,
+            "return_pct": 165.28,
+            "max_dd_pct": 26.19,
+            "n_trades": 44
+          },
+          "10": {
+            "sharpe": 1.09,
+            "return_pct": 258.7,
+            "max_dd_pct": 31.46,
+            "n_trades": 48
+          },
+          "20": {
+            "sharpe": 1.21,
+            "return_pct": 333.53,
+            "max_dd_pct": 33.86,
+            "n_trades": 50
+          }
+        },
+        "label": "VALIDATED"
+      }
+    }
+  }
+}

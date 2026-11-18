@@ -44,3 +44,30 @@ más de la mitad del Sharpe pero se mantienen netos positivos). Ver
 
 Suite completa: 249/249 (sin cambios de producción). Pendiente:
 Capa 6 (perturbación de parámetros), después Capa 4 (placebo).
+
+## 2026-11-18 — Capa 6
+
+**Capa 6** (`capa6_perturbacion.py`): perturbación ±10%/±20% de cada
+parámetro continuo real de las 3 estrategias (`atr_stop_multiple` en
+las 3; además `min_breakout_volume`/`min_relative_strength`/
+`max_atr_contraction` en `momentum_breakout`/riesgo_alto —
+`breakout_window` se excluyó por ser un switch discreto 20/55, no
+continuo), backtest de período completo (sin ventanas, eso es Capa 1)
+con el mismo motor de simulación del harness de ADR 0040.
+
+Resultado: **los 3 buckets VALIDATED en todos los parámetros
+perturbados** — ninguna caída de Sharpe dentro de ±10% (la banda que
+decide el label, ±20% es solo contexto) supera el 50%. Sin evidencia
+de pico aislado.
+
+Hallazgo adicional documentado (no cambia el label): en varios
+parámetros la superficie no es simétrica — `atr_stop_multiple` más
+ajustado en largo_plazo casi duplica el Sharpe (1.37 vs. 0.78 de
+producción en -20%), y los 3 filtros de calidad de riesgo_alto
+mejoran de forma consistente al volverse más estrictos. El valor de
+producción no está en un máximo local en 2 de los 3 buckets — válido,
+no necesariamente óptimo. No se propone ningún cambio de parámetro:
+fuera del alcance de esta capa. Ver `CAPA-6-perturbacion-parametros.md`.
+
+Suite completa: 249/249 (sin cambios de producción). Pendiente: Capa 4
+(placebo con potencia verificada).
