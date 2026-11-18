@@ -1,0 +1,165 @@
+{
+  "criterio": {
+    "VALIDATED": ">=4/5 ventanas con Sharpe OOS>0 Y ninguna ventana aporta >60% del retorno compuesto",
+    "INCONCLUSIVE": "exactamente 3/5 ventanas positivas, o alguna ventana con <10 operaciones",
+    "REJECTED": "<=2/5 ventanas con Sharpe OOS>0"
+  },
+  "resultado": {
+    "largo_plazo": {
+      "windows": [
+        {
+          "sharpe": 0.57,
+          "return_pct": 3.65,
+          "max_dd_pct": 11.73,
+          "n_trades": 12,
+          "window": 1,
+          "test_start": "2025-01-17",
+          "test_end": "2025-07-17"
+        },
+        {
+          "sharpe": 1.48,
+          "return_pct": 9.2,
+          "max_dd_pct": 5.14,
+          "n_trades": 9,
+          "window": 2,
+          "test_start": "2025-05-17",
+          "test_end": "2025-11-17"
+        },
+        {
+          "sharpe": 0.64,
+          "return_pct": 3.89,
+          "max_dd_pct": 5.69,
+          "n_trades": 10,
+          "window": 3,
+          "test_start": "2025-09-17",
+          "test_end": "2026-03-17"
+        },
+        {
+          "sharpe": 0.07,
+          "return_pct": -0.24,
+          "max_dd_pct": 11.64,
+          "n_trades": 18,
+          "window": 4,
+          "test_start": "2026-01-17",
+          "test_end": "2026-07-17"
+        },
+        {
+          "sharpe": -0.54,
+          "return_pct": -4.67,
+          "max_dd_pct": 7.81,
+          "n_trades": 20,
+          "window": 5,
+          "test_start": "2026-05-17",
+          "test_end": "2026-11-17"
+        }
+      ],
+      "aggregate_sharpe_oos": 0.44,
+      "ventanas_positivas": 4,
+      "label": "INCONCLUSIVE (ventana con <10 operaciones)"
+    },
+    "mediano_plazo": {
+      "windows": [
+        {
+          "sharpe": -0.68,
+          "return_pct": -6.78,
+          "max_dd_pct": 18.95,
+          "n_trades": 19,
+          "window": 1,
+          "test_start": "2025-01-17",
+          "test_end": "2025-07-17"
+        },
+        {
+          "sharpe": 1.18,
+          "return_pct": 14.29,
+          "max_dd_pct": 10.55,
+          "n_trades": 18,
+          "window": 2,
+          "test_start": "2025-05-17",
+          "test_end": "2025-11-17"
+        },
+        {
+          "sharpe": 0.59,
+          "return_pct": 6.05,
+          "max_dd_pct": 12.16,
+          "n_trades": 24,
+          "window": 3,
+          "test_start": "2025-09-17",
+          "test_end": "2026-03-17"
+        },
+        {
+          "sharpe": 1.14,
+          "return_pct": 14.33,
+          "max_dd_pct": 10.67,
+          "n_trades": 25,
+          "window": 4,
+          "test_start": "2026-01-17",
+          "test_end": "2026-07-17"
+        },
+        {
+          "sharpe": -1.2,
+          "return_pct": -10.08,
+          "max_dd_pct": 11.6,
+          "n_trades": 21,
+          "window": 5,
+          "test_start": "2026-05-17",
+          "test_end": "2026-11-17"
+        }
+      ],
+      "aggregate_sharpe_oos": 0.21,
+      "ventanas_positivas": 3,
+      "label": "INCONCLUSIVE (exactamente 3/5 ventanas positivas)"
+    },
+    "riesgo_alto": {
+      "windows": [
+        {
+          "sharpe": 2.7,
+          "return_pct": 56.27,
+          "max_dd_pct": 11.58,
+          "n_trades": 7,
+          "window": 1,
+          "test_start": "2025-01-17",
+          "test_end": "2025-07-17"
+        },
+        {
+          "sharpe": 1.13,
+          "return_pct": 24.24,
+          "max_dd_pct": 15.58,
+          "n_trades": 10,
+          "window": 2,
+          "test_start": "2025-05-17",
+          "test_end": "2025-11-17"
+        },
+        {
+          "sharpe": -2.91,
+          "return_pct": -24.65,
+          "max_dd_pct": 24.65,
+          "n_trades": 8,
+          "window": 3,
+          "test_start": "2025-09-17",
+          "test_end": "2026-03-17"
+        },
+        {
+          "sharpe": 0.92,
+          "return_pct": 9.21,
+          "max_dd_pct": 7.04,
+          "n_trades": 3,
+          "window": 4,
+          "test_start": "2026-01-17",
+          "test_end": "2026-07-17"
+        },
+        {
+          "sharpe": 0.1,
+          "return_pct": -0.62,
+          "max_dd_pct": 11.47,
+          "n_trades": 6,
+          "window": 5,
+          "test_start": "2026-05-17",
+          "test_end": "2026-11-17"
+        }
+      ],
+      "aggregate_sharpe_oos": 0.39,
+      "ventanas_positivas": 4,
+      "label": "INCONCLUSIVE (ventana con <10 operaciones)"
+    }
+  }
+}

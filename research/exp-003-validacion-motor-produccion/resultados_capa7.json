@@ -1,0 +1,65 @@
+{
+  "criterio": {
+    "VALIDATED": "Sharpe>0 Y retorno neto positivo bajo AMBOS supuestos pesimistas combinados",
+    "REJECTED": "Sharpe<=0 o retorno neto negativo bajo esos supuestos"
+  },
+  "resultado": {
+    "largo_plazo": {
+      "periodo": {
+        "start": "2022-09-08",
+        "end": "2026-11-17"
+      },
+      "baseline_close_mismo_dia": {
+        "sharpe": 0.78,
+        "return_pct": 45.96,
+        "max_dd_pct": 15.52,
+        "n_trades": 96
+      },
+      "pesimista_open_dia_siguiente_2x_friccion": {
+        "sharpe": -0.09,
+        "return_pct": -9.28,
+        "max_dd_pct": 22.72,
+        "n_trades": 100
+      },
+      "label": "REJECTED"
+    },
+    "mediano_plazo": {
+      "periodo": {
+        "start": "2022-09-08",
+        "end": "2026-11-17"
+      },
+      "baseline_close_mismo_dia": {
+        "sharpe": 1.39,
+        "return_pct": 209.36,
+        "max_dd_pct": 18.53,
+        "n_trades": 130
+      },
+      "pesimista_open_dia_siguiente_2x_friccion": {
+        "sharpe": 0.53,
+        "return_pct": 49.19,
+        "max_dd_pct": 37.44,
+        "n_trades": 133
+      },
+      "label": "VALIDATED"
+    },
+    "riesgo_alto": {
+      "periodo": {
+        "start": "2022-09-08",
+        "end": "2026-11-17"
+      },
+      "baseline_close_mismo_dia": {
+        "sharpe": 0.91,
+        "return_pct": 165.28,
+        "max_dd_pct": 26.19,
+        "n_trades": 44
+      },
+      "pesimista_open_dia_siguiente_2x_friccion": {
+        "sharpe": 0.33,
+        "return_pct": 25.65,
+        "max_dd_pct": 32.95,
+        "n_trades": 44
+      },
+      "label": "VALIDATED"
+    }
+  }
+}
