@@ -95,6 +95,20 @@ def equity_de_cuenta_usd(ib: IB) -> float:
     raise RuntimeError("No se encontró NetLiquidationByCurrency en USD en accountValues()")
 
 
+def precio_en_vivo(ib: IB, symbol: str) -> float | None:
+    """Cotización de mercado en tiempo real para `symbol`, vía
+    Gateway — mismo mecanismo que ejecutar_orden_mercado ya usa como
+    respaldo de precio tras una orden (reqTickers + marketPrice, con
+    el último cierre conocido del ticker como segundo respaldo si no
+    hay mid-price). Devuelve None si Gateway no tiene nada disponible
+    (en vez de tronar) — quien llama decide si cae al dato diario."""
+    contrato = Stock(symbol, "SMART", "USD")
+    ib.qualifyContracts(contrato)
+    [ticker] = ib.reqTickers(contrato)
+    precio = ticker.marketPrice() or ticker.close
+    return float(precio) if precio else None
+
+
 def posiciones_reales(ib: IB) -> dict[str, int]:
     """symbol -> shares netas, solo para acciones (Stock)."""
     out: dict[str, int] = {}

@@ -42,6 +42,7 @@ from src.broker.ibkr_adapter import (
     ejecutar_orden_mercado,
     posiciones_reales,
     posiciones_reales_con_costo,
+    precio_en_vivo,
 )
 from src.paper_trading import blend_ledger
 from src.paper_trading.engine import (
@@ -295,7 +296,23 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
 
         pos["stop_price"] = max(pos["stop_price"], float(last["stop_price"]))
         close_price = float(last["close"])
-        stop_hit = close_price <= pos["stop_price"]
+        # Stop contra precio EN VIVO cuando Gateway lo tiene disponible,
+        # en vez de esperar al cierre del día — si una posición rompe su
+        # stop a media mañana, no hay razón para dejarla correr hasta
+        # las 4pm. Respaldo: si la cotización en vivo falla (sin
+        # suscripción de datos, símbolo no encontrado, Gateway lento),
+        # cae al mismo chequeo contra el cierre diario que ya existía.
+        # La SEÑAL de salida (exit_signal) sigue siendo diaria a
+        # propósito — eso depende de indicadores calculados sobre velas
+        # diarias, no tiene un equivalente "en vivo" sin rediseñar la
+        # estrategia misma.
+        try:
+            precio_vivo = precio_en_vivo(ib, symbol)
+        except Exception as e:  # noqa: BLE001 - cualquier falla de cotización cae al cierre diario
+            precio_vivo = None
+            print(f"precio_en_vivo({symbol}) falló, usando cierre diario como respaldo: {type(e).__name__}: {e}")
+        precio_referencia = precio_vivo if precio_vivo else close_price
+        stop_hit = precio_referencia <= pos["stop_price"]
         exit_signal = int(last["signal"]) == -1
 
         if not (stop_hit or exit_signal):
