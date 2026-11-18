@@ -18,7 +18,7 @@
         "strategy": "time_series_momentum",
         "entry_date": "2026-11-18",
         "entry_price": 137.2,
-        "stop_price": 129.42,
+        "stop_price": 129.91811588832311,
         "initial_stop_price": 129.42,
         "shares": 1
       }
@@ -82,7 +82,7 @@
     "day_start_date": "2026-11-18",
     "daily_loss_tripped_today": false,
     "peak_equity": 435.43098527618366,
-    "last_equity": 413.58496212471096,
+    "last_equity": 414.81495785225,
     "blend_last_price": 134.8069890587844,
     "blend_last_date": "2026-11-18",
     "blend_last_components": {
@@ -167,7 +167,7 @@
     "day_start_date": "2026-11-18",
     "daily_loss_tripped_today": false,
     "peak_equity": 369.27973439817663,
-    "last_equity": 359.99676140248823,
+    "last_equity": 358.41675957143354,
     "blend_last_price": 134.8069890587844,
     "blend_last_date": "2026-11-18",
     "blend_last_components": {
@@ -195,7 +195,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-11-16",
         "entry_price": 57.69,
-        "stop_price": 57.906250953674316,
+        "stop_price": 58.858055795942036,
         "initial_stop_price": 52.06,
         "shares": 1
       },
@@ -204,7 +204,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-11-17",
         "entry_price": 76.01,
-        "stop_price": 69.3392881665911,
+        "stop_price": 69.45839391435895,
         "initial_stop_price": 68.51,
         "shares": 1
       }
@@ -213,8 +213,8 @@
     "day_start_equity": 210.81168029100573,
     "day_start_date": "2026-11-18",
     "daily_loss_tripped_today": false,
-    "peak_equity": 216.31439994821412,
-    "last_equity": 211.2384705248507,
+    "peak_equity": 216.46847006708703,
+    "last_equity": 216.46847006708703,
     "blend_last_price": 133.84689036236807,
     "blend_last_date": "2026-11-18",
     "blend_last_components": {
