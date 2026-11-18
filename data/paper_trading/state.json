@@ -3,16 +3,8 @@
     "starting_capital": 428.52,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 1.0893668875884792,
+    "bench_shares": 1.3481123265155184,
     "open_positions": [
-      {
-        "symbol": "IJH",
-        "strategy": "time_series_momentum",
-        "entry_date": "2026-10-30",
-        "entry_price": 73.33,
-        "stop_price": 71.62000111171177,
-        "shares": 1
-      },
       {
         "symbol": "VNQ",
         "strategy": "time_series_momentum",
@@ -22,12 +14,12 @@
         "shares": 1
       },
       {
-        "symbol": "EFA",
+        "symbol": "IJR",
         "strategy": "time_series_momentum",
-        "entry_date": "2026-11-09",
-        "entry_price": 105.06,
-        "stop_price": 100.63,
-        "initial_stop_price": 100.63,
+        "entry_date": "2026-11-18",
+        "entry_price": 137.2,
+        "stop_price": 129.42,
+        "initial_stop_price": 129.42,
         "shares": 1
       }
     ],
@@ -57,18 +49,45 @@
         "pnl": -3.56,
         "pnl_pct": -2.54,
         "reason": "stop_hit"
+      },
+      {
+        "symbol": "IJH",
+        "strategy": "time_series_momentum",
+        "entry_date": "2026-10-30",
+        "entry_price": 73.33,
+        "stop_price": 71.62000111171177,
+        "shares": 1,
+        "exit_date": "2026-11-18",
+        "exit_price": 71.62,
+        "pnl": -1.78,
+        "pnl_pct": -2.43,
+        "reason": "stop_hit"
+      },
+      {
+        "symbol": "EFA",
+        "strategy": "time_series_momentum",
+        "entry_date": "2026-11-09",
+        "entry_price": 105.06,
+        "stop_price": 100.63,
+        "initial_stop_price": 100.63,
+        "shares": 1,
+        "exit_date": "2026-11-18",
+        "exit_price": 100.63,
+        "pnl": -4.53,
+        "pnl_pct": -4.31,
+        "reason": "stop_hit"
       }
     ],
-    "day_start_equity": 423.2718794844399,
-    "day_start_date": "2026-11-17",
-    "daily_loss_tripped_today": true,
+    "day_start_equity": 417.56132077816596,
+    "day_start_date": "2026-11-18",
+    "daily_loss_tripped_today": false,
     "peak_equity": 435.43098527618366,
-    "last_equity": 417.56132077816596,
-    "blend_last_price": 137.30114676562366,
-    "blend_last_date": "2026-11-17",
+    "last_equity": 413.58496212471096,
+    "blend_last_price": 134.8069890587844,
+    "blend_last_date": "2026-11-18",
     "blend_last_components": {
-      "SPY": 738.6004028320312,
-      "GLD": 354.010009765625
+      "SPY": 730.3350219726562,
+      "GLD": 345.1099853515625
     }
   },
   "mediano_plazo": {
@@ -144,16 +163,16 @@
         "reason": "stop_hit"
       }
     ],
-    "day_start_equity": 365.6701839707972,
-    "day_start_date": "2026-11-17",
+    "day_start_equity": 361.73853656501353,
+    "day_start_date": "2026-11-18",
     "daily_loss_tripped_today": false,
     "peak_equity": 369.27973439817663,
-    "last_equity": 361.73853656501353,
-    "blend_last_price": 137.30114676562366,
-    "blend_last_date": "2026-11-17",
+    "last_equity": 359.99676140248823,
+    "blend_last_price": 134.8069890587844,
+    "blend_last_date": "2026-11-18",
     "blend_last_components": {
-      "SPY": 738.6004028320312,
-      "GLD": 354.010009765625
+      "SPY": 730.3350219726562,
+      "GLD": 345.1099853515625
     }
   },
   "riesgo_alto": {
@@ -176,7 +195,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-11-16",
         "entry_price": 57.69,
-        "stop_price": 57.89767483302525,
+        "stop_price": 57.906250953674316,
         "initial_stop_price": 52.06,
         "shares": 1
       },
@@ -185,22 +204,22 @@
         "strategy": "trend_following",
         "entry_date": "2026-11-17",
         "entry_price": 76.01,
-        "stop_price": 68.51,
+        "stop_price": 69.3392881665911,
         "initial_stop_price": 68.51,
         "shares": 1
       }
     ],
     "closed_positions": [],
-    "day_start_equity": 206.02454981877446,
-    "day_start_date": "2026-11-17",
+    "day_start_equity": 210.81168029100573,
+    "day_start_date": "2026-11-18",
     "daily_loss_tripped_today": false,
     "peak_equity": 216.31439994821412,
-    "last_equity": 210.81168029100573,
-    "blend_last_price": 136.3232846165873,
-    "blend_last_date": "2026-11-17",
+    "last_equity": 211.2384705248507,
+    "blend_last_price": 133.84689036236807,
+    "blend_last_date": "2026-11-18",
     "blend_last_components": {
-      "SPY": 738.6004028320312,
-      "GLD": 354.010009765625
+      "SPY": 730.3350219726562,
+      "GLD": 345.1099853515625
     }
   },
   "_blend_tracking": {
@@ -216,20 +235,20 @@
     "open_positions": [],
     "closed_positions": [],
     "peak_equity": 1683.23,
-    "day_start_equity": 1683.23,
-    "day_start_date": "2026-11-17",
+    "day_start_equity": 1671.77518538534,
+    "day_start_date": "2026-11-18",
     "suspended": false,
     "suspended_reason": null,
     "suspended_since": null,
     "daily_loss_tripped_today": false,
-    "blend_last_price": 119.37222687986404,
-    "blend_last_date": "2026-11-17",
+    "blend_last_price": 118.24299099710265,
+    "blend_last_date": "2026-11-18",
     "blend_last_components": {
-      "SPY": 738.6004028320312,
-      "AGG": 95.11180114746094,
-      "GLD": 354.010009765625,
-      "VNQ": 95.83000183105469
+      "SPY": 730.3350219726562,
+      "AGG": 95.47000122070312,
+      "GLD": 345.1099853515625,
+      "VNQ": 94.79000091552734
     },
-    "last_equity": 1671.77518538534
+    "last_equity": 1655.9605476208362
   }
 }

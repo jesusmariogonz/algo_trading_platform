@@ -1298,5 +1298,134 @@
       }
     },
     "alertas": []
+  },
+  {
+    "date": "2026-11-18",
+    "buckets": {
+      "largo_plazo": {
+        "date": "2026-11-18",
+        "equity": 413.58,
+        "cash": 181.73,
+        "unrealized_pnl": -1.18,
+        "open_count": 2,
+        "closed_today": 2,
+        "realized_pnl_today": -6.31,
+        "cumulative_return_pct": -3.49,
+        "closed_today_detail": [
+          {
+            "symbol": "IJH",
+            "strategy": "time_series_momentum",
+            "entry_date": "2026-10-30",
+            "entry_price": 73.33,
+            "stop_price": 71.62000111171177,
+            "shares": 1,
+            "exit_date": "2026-11-18",
+            "exit_price": 71.62,
+            "pnl": -1.78,
+            "pnl_pct": -2.43,
+            "reason": "stop_hit"
+          },
+          {
+            "symbol": "EFA",
+            "strategy": "time_series_momentum",
+            "entry_date": "2026-11-09",
+            "entry_price": 105.06,
+            "stop_price": 100.63,
+            "initial_stop_price": 100.63,
+            "shares": 1,
+            "exit_date": "2026-11-18",
+            "exit_price": 100.63,
+            "pnl": -4.53,
+            "pnl_pct": -4.31,
+            "reason": "stop_hit"
+          }
+        ],
+        "discarded_candidates_today": [
+          {
+            "symbol": "DIA",
+            "strategy": "time_series_momentum",
+            "reason": "capital_insuficiente",
+            "entry_price": 503.96,
+            "stop_price": 478.36,
+            "risk_per_share": 25.6,
+            "risk_amount": 8.27,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "SHY",
+            "strategy": "time_series_momentum",
+            "reason": "efectivo_insuficiente",
+            "entry_price": 81.33,
+            "stop_price": 80.91,
+            "risk_per_share": 0.43,
+            "risk_amount": 8.27,
+            "shares_calculadas": 19,
+            "costo_estimado": 1546.91
+          }
+        ],
+        "daily_loss_pct": 0.92,
+        "drawdown_pct": 4.99,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "mediano_plazo": {
+        "date": "2026-11-18",
+        "equity": 360.0,
+        "cash": 56.31,
+        "unrealized_pnl": 3.23,
+        "open_count": 3,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -2.04,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 0.48,
+        "drawdown_pct": 2.51,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "riesgo_alto": {
+        "date": "2026-11-18",
+        "equity": 211.24,
+        "cash": 27.2,
+        "unrealized_pnl": 2.74,
+        "open_count": 3,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -0.19,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": -0.2,
+        "drawdown_pct": 2.35,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "benchmark_diversificado": {
+        "date": "2026-11-18",
+        "equity": 1655.96,
+        "cash": 1655.96,
+        "unrealized_pnl": 0.0,
+        "open_count": 0,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -1.62,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 0.95,
+        "drawdown_pct": 1.62,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      }
+    },
+    "alertas": []
   }
 ]
