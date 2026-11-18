@@ -254,12 +254,21 @@ def _fusionar_descartados(previos: dict | None, fecha: str | None, nuevos: list[
     return [c for c in por_llave.values() if c["symbol"] not in simbolos_abiertos]
 
 
-def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestamp | None = None) -> dict:
+def run_bucket_tick_live(
+    bucket: str, bucket_state: dict, ib, as_of: pd.Timestamp | None = None, evaluar_entradas: bool = True,
+) -> dict:
     """Un día de mercado para un bucket, con órdenes reales vía `ib`
     (una conexión ya conectada de `src.broker.ibkr_adapter.conectar`).
 
     `as_of` solo existe para pruebas con mocks — en uso real se deja
-    en None y usa el último dato descargado, igual que el simulado."""
+    en None y usa el último dato descargado, igual que el simulado.
+
+    `evaluar_entradas=False` salta la sección de entradas por completo
+    (ninguna señal nueva se evalúa ni se manda ninguna orden BUY) —
+    para una corrida de medio día dedicada solo a revisar salidas
+    (stop/señal) contra precio en vivo, sin repetir la misma decisión
+    de entrada que ya se tomó en la corrida de apertura (las señales
+    son diarias, no cambian de valor entre apertura y mediodía)."""
     config = BUCKET_CONFIG[bucket]
     symbols = read_universe_file(config["universe_file"])
     risk_pct = config["risk_pct"]
@@ -389,29 +398,31 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
 
     # --- 2. Señales de entrada de hoy ---
     open_symbols = {p["symbol"] for p in open_positions}
-    # Fuera de horario regular de NYSE, IBKR encola las órdenes nuevas
-    # para el siguiente open en vez de rechazarlas — nuestro timeout
-    # de 30s nunca las ve llenarse, así que el motor las reportaría
-    # como fallidas aunque horas después sí se ejecuten de verdad
-    # (ver ADR 0035). Mejor no abrir nada nuevo fuera de horario; las
-    # salidas (stop/señal) sí se evalúan siempre, solo las entradas
-    # se saltan.
-    motivo_bloqueo = None
-    if blocked:
-        motivo_bloqueo = "entradas_bloqueadas_riesgo"
-    elif not _mercado_regular_abierto_ahora():
-        motivo_bloqueo = "mercado_cerrado"
-    # Candidatos con señal que NO se tomaron hoy y por qué (igual que el
-    # motor simulado, ver engine.py): solo símbolos con signal==1, no el
-    # universo entero. Con entradas bloqueadas se sigue evaluando la
-    # señal solo para dejar constancia; nunca se manda una orden.
     candidatos_descartados: list[dict] = []
-    percentiles_cross_sectional = (
-        _percentiles_cross_sectional_hoy(universe, symbols, as_of)
-        if bucket in CROSS_SECTIONAL_FILTER_BUCKETS
-        else None
-    )
-    for strategy_key in strategies:
+    if evaluar_entradas:
+        # Fuera de horario regular de NYSE, IBKR encola las órdenes
+        # nuevas para el siguiente open en vez de rechazarlas — nuestro
+        # timeout de 30s nunca las ve llenarse, así que el motor las
+        # reportaría como fallidas aunque horas después sí se ejecuten
+        # de verdad (ver ADR 0035). Mejor no abrir nada nuevo fuera de
+        # horario; las salidas (stop/señal) sí se evalúan siempre, solo
+        # las entradas se saltan.
+        motivo_bloqueo = None
+        if blocked:
+            motivo_bloqueo = "entradas_bloqueadas_riesgo"
+        elif not _mercado_regular_abierto_ahora():
+            motivo_bloqueo = "mercado_cerrado"
+        # Candidatos con señal que NO se tomaron hoy y por qué (igual que
+        # el motor simulado, ver engine.py): solo símbolos con signal==1,
+        # no el universo entero. Con entradas bloqueadas se sigue
+        # evaluando la señal solo para dejar constancia; nunca se manda
+        # una orden.
+        percentiles_cross_sectional = (
+            _percentiles_cross_sectional_hoy(universe, symbols, as_of)
+            if bucket in CROSS_SECTIONAL_FILTER_BUCKETS
+            else None
+        )
+    for strategy_key in strategies if evaluar_entradas else ():
         for symbol in symbols:
             if symbol in open_symbols:
                 continue
@@ -612,13 +623,18 @@ def run_bucket_tick_live(bucket: str, bucket_state: dict, ib, as_of: pd.Timestam
     }
 
 
-def run_daily_tick_live(ib, starting_capital_por_bucket: dict[str, float]) -> dict:
+def run_daily_tick_live(
+    ib, starting_capital_por_bucket: dict[str, float], evaluar_entradas: bool = True,
+) -> dict:
     """`starting_capital_por_bucket`: capital inicial por bucket, fijado
     una sola vez (igual que el motor simulado) — se pasa explícito en
     vez de leer de `allocation.get_balances()` porque esa función
     reporta el capital del PORTAFOLIO SIMULADO, no de la cuenta real de
     IBKR; quien llama a esto decide cómo repartir el equity real de la
-    cuenta paper entre los 4 buckets."""
+    cuenta paper entre los 4 buckets.
+
+    `evaluar_entradas=False`: ver docstring de `run_bucket_tick_live` —
+    para la corrida de medio día, solo revisión de salidas."""
     state = load_state()
     snapshot = {"date": None, "buckets": {}, "alertas": []}
 
@@ -631,7 +647,7 @@ def run_daily_tick_live(ib, starting_capital_por_bucket: dict[str, float]) -> di
 
         equity_antes = state[bucket].get("last_equity")
         try:
-            result = run_bucket_tick_live(bucket, state[bucket], ib)
+            result = run_bucket_tick_live(bucket, state[bucket], ib, evaluar_entradas=evaluar_entradas)
         finally:
             # Guarda SIEMPRE después de cada bucket, no solo al final
             # del for — si una orden real ya se ejecutó en este bucket

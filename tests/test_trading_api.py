@@ -116,14 +116,14 @@ def test_ejecutar_live_primera_corrida_reparte_equity_usd_por_buckets(client, mo
     monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
     monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", lambda ib: 1000.0)
-    monkeypatch.setattr(live_engine, "load_state", lambda: {})  # estado vacío: primera corrida
+    monkeypatch.setattr(live_engine, "load_state", lambda **kwargs: {})  # estado vacío: primera corrida
     monkeypatch.setattr(
         trading_api,
         "equity_de_cuenta",
         lambda ib: pytest.fail("no debería usarse MXN si equity_de_cuenta_usd ya respondió"),
     )
 
-    def run_daily_tick_live_falso(ib, capital_por_bucket):
+    def run_daily_tick_live_falso(ib, capital_por_bucket, **kwargs):
         llamadas["ib"] = ib
         llamadas["capital_por_bucket"] = capital_por_bucket
         return {"date": "2026-11-04", "buckets": {}, "alertas": []}
@@ -156,9 +156,9 @@ def test_ejecutar_live_sin_segmento_usd_convierte_desde_mxn(client, monkeypatch)
     monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", sin_segmento_usd)
     monkeypatch.setattr(trading_api, "equity_de_cuenta", lambda ib: 18866.36)  # MXN
     monkeypatch.setattr(trading_api, "get_usd_mxn_rate", lambda: 18.4)
-    monkeypatch.setattr(live_engine, "load_state", lambda: {})
+    monkeypatch.setattr(live_engine, "load_state", lambda **kwargs: {})
 
-    def run_daily_tick_live_falso(ib, capital_por_bucket):
+    def run_daily_tick_live_falso(ib, capital_por_bucket, **kwargs):
         llamadas["capital_por_bucket"] = capital_por_bucket
         return {"date": "2026-11-04", "buckets": {}, "alertas": []}
 
@@ -182,7 +182,7 @@ def test_ejecutar_live_corridas_siguientes_no_vuelve_a_pedir_equity(client, monk
     monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", equity_no_deberia_llamarse)
     monkeypatch.setattr(live_engine, "load_state", lambda: {"largo_plazo": {"open_positions": []}})
 
-    def run_daily_tick_live_falso(ib, capital_por_bucket):
+    def run_daily_tick_live_falso(ib, capital_por_bucket, **kwargs):
         llamadas["capital_por_bucket"] = capital_por_bucket
         return {"date": "2026-11-05", "buckets": {}, "alertas": []}
 
@@ -200,7 +200,7 @@ def test_ejecutar_live_desconecta_aunque_falle(client, monkeypatch):
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", True))
     monkeypatch.setattr(live_engine, "load_state", lambda: {"largo_plazo": {}})
 
-    def falla(ib, capital_por_bucket):
+    def falla(ib, capital_por_bucket, **kwargs):
         raise RuntimeError("boom")
 
     monkeypatch.setattr(trading_api.live_engine, "run_daily_tick_live", falla)
@@ -223,7 +223,7 @@ def test_refrescar_datos_y_ejecutar_corre_los_3_pasos_en_orden_y_luego_ejecuta(c
         llamadas.append(args)
 
     monkeypatch.setattr(trading_api, "_correr", correr_falso)
-    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda: {"date": "2026-11-05"})
+    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda **kwargs: {"date": "2026-11-05"})
 
     r = client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
 
@@ -268,7 +268,7 @@ def test_reiniciar_capital_live_reparte_por_bucket_e_invierte_en_blend(client, m
     llamadas = {}
     monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
-    monkeypatch.setattr(live_engine, "load_state", lambda: {})
+    monkeypatch.setattr(live_engine, "load_state", lambda **kwargs: {})
 
     def init_bucket_state_falso(bucket, starting_capital, ib):
         llamadas.setdefault("buckets", {})[bucket] = (starting_capital, ib)
@@ -368,7 +368,7 @@ def test_fijar_estado_bucket_live_requiere_token(client):
 
 
 def test_fijar_estado_bucket_live_404_si_no_existe(client, monkeypatch):
-    monkeypatch.setattr(live_engine, "load_state", lambda: {})
+    monkeypatch.setattr(live_engine, "load_state", lambda **kwargs: {})
     r = client.post("/admin/live/fijar-estado-bucket?bucket=largo_plazo&cash=100", headers=HEADERS_OK)
     assert r.status_code == 404
 
@@ -514,6 +514,45 @@ def test_vender_simbolo_live_reporta_encolada_en_vez_de_500(client, monkeypatch)
     monkeypatch.setattr(trading_api, "ejecutar_orden_mercado", orden_falla)
 
     r = client.post("/admin/live/vender-simbolo?symbol=FOXA&shares=1", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json()["status"] == "encolada_o_fallida"
+
+
+def test_comprar_simbolo_live_requiere_token(client):
+    assert client.post("/admin/live/comprar-simbolo?symbol=DBC&shares=10").status_code == 401
+
+
+def test_comprar_simbolo_live_compra_y_desconecta(client, monkeypatch):
+    llamadas = {}
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
+
+    def ejecutar_falso(ib, symbol, accion, shares):
+        llamadas["orden"] = (symbol, accion, shares)
+        from src.broker.ibkr_adapter import Fill
+        return Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=29.8)
+
+    monkeypatch.setattr(trading_api, "ejecutar_orden_mercado", ejecutar_falso)
+
+    r = client.post("/admin/live/comprar-simbolo?symbol=DBC&shares=10", headers=HEADERS_OK)
+
+    assert r.status_code == 200
+    assert r.json() == {"status": "comprado", "shares": 10, "precio": 29.8}
+    assert llamadas["orden"] == ("DBC", "BUY", 10)
+    assert llamadas["desconectado"] == "ib-falso"
+
+
+def test_comprar_simbolo_live_reporta_encolada_en_vez_de_500(client, monkeypatch):
+    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
+    monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
+
+    def orden_falla(ib, symbol, accion, shares):
+        raise trading_api.OrdenNoLlenada("DBC BUY 10: estado final = 'PreSubmitted'")
+
+    monkeypatch.setattr(trading_api, "ejecutar_orden_mercado", orden_falla)
+
+    r = client.post("/admin/live/comprar-simbolo?symbol=DBC&shares=10", headers=HEADERS_OK)
 
     assert r.status_code == 200
     assert r.json()["status"] == "encolada_o_fallida"
@@ -768,7 +807,7 @@ def _falla_descarga(simbolos):
 def test_refrescar_tolera_fallo_menor_de_descarga_si_no_es_posicion_abierta(client, monkeypatch):
     monkeypatch.setattr(trading_api, "_correr", _falla_descarga(["ADBE"]))
     monkeypatch.setattr(trading_api.live_engine, "load_state", lambda: {"largo_plazo": {"open_positions": [{"symbol": "VTI"}]}})
-    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda: {"date": "2026-11-10", "alertas": []})
+    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda **kwargs: {"date": "2026-11-10", "alertas": []})
 
     r = client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
 
@@ -780,7 +819,7 @@ def test_refrescar_no_tolera_fallo_de_descarga_de_una_posicion_abierta(client, m
     monkeypatch.setattr(trading_api, "_correr", _falla_descarga(["VTI"]))
     monkeypatch.setattr(trading_api.live_engine, "load_state", lambda: {"largo_plazo": {"open_positions": [{"symbol": "VTI"}]}})
     ejecuto = []
-    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda: ejecuto.append(1) or {})
+    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda **kwargs: ejecuto.append(1) or {})
 
     with pytest.raises(RuntimeError):
         client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
@@ -789,8 +828,8 @@ def test_refrescar_no_tolera_fallo_de_descarga_de_una_posicion_abierta(client, m
 
 def test_refrescar_no_tolera_demasiados_fallos_de_descarga(client, monkeypatch):
     monkeypatch.setattr(trading_api, "_correr", _falla_descarga(list("ABCDEF")))
-    monkeypatch.setattr(trading_api.live_engine, "load_state", lambda: {})
-    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda: {})
+    monkeypatch.setattr(trading_api.live_engine, "load_state", lambda **kwargs: {})
+    monkeypatch.setattr(trading_api, "_ejecutar_live_sin_auth", lambda **kwargs: {})
 
     with pytest.raises(RuntimeError):
         client.post("/live/refrescar-datos-y-ejecutar", headers=HEADERS_OK)
@@ -804,7 +843,7 @@ def _esperar_fin_de_corrida(timeout=5):
 
 
 def test_segundo_plano_responde_202_y_guarda_el_resultado(client, monkeypatch):
-    monkeypatch.setattr(trading_api, "_refrescar_y_ejecutar_sin_auth", lambda: {"date": "2026-11-11", "alertas": []})
+    monkeypatch.setattr(trading_api, "_refrescar_y_ejecutar_sin_auth", lambda **kwargs: {"date": "2026-11-11", "alertas": []})
 
     r = client.post("/live/refrescar-en-segundo-plano", headers=HEADERS_OK)
     assert r.status_code == 202
@@ -816,7 +855,7 @@ def test_segundo_plano_responde_202_y_guarda_el_resultado(client, monkeypatch):
 
 
 def test_segundo_plano_registra_el_error_si_la_corrida_falla_y_libera_el_candado(client, monkeypatch):
-    def falla():
+    def falla(**kwargs):
         raise RuntimeError("Gateway sin sesión")
     monkeypatch.setattr(trading_api, "_refrescar_y_ejecutar_sin_auth", falla)
 
@@ -834,7 +873,7 @@ def test_segundo_plano_rechaza_una_segunda_corrida_si_ya_hay_una_en_curso(client
     liberar = _th.Event()
     ejecuciones = []
 
-    def lenta():
+    def lenta(**kwargs):
         ejecuciones.append(1)
         liberar.wait(5)
         return {}

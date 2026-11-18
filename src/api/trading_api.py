@@ -163,16 +163,19 @@ def desplegar(authorization: str | None = Header(None)):
 
 
 @app.post("/live/ejecutar")
-def ejecutar_live(authorization: str | None = Header(None)):
+def ejecutar_live(evaluar_entradas: bool = True, authorization: str | None = Header(None)):
     """Corre un día del motor en vivo para los 4 buckets (ADR 0023) y
     devuelve el snapshot. Idempotente: igual que el motor simulado, si
     ya se corrió hoy, re-correrlo reemplaza el snapshot de hoy en vez
-    de duplicarlo (lo garantiza `live_engine.save_history`)."""
+    de duplicarlo (lo garantiza `live_engine.save_history`).
+
+    `evaluar_entradas=False`: solo revisa salidas (stop/señal, contra
+    precio en vivo) — para una corrida de medio día, ver ADR 0043."""
     _verificar_token(authorization)
-    return _ejecutar_live_sin_auth()
+    return _ejecutar_live_sin_auth(evaluar_entradas=evaluar_entradas)
 
 
-def _ejecutar_live_sin_auth():
+def _ejecutar_live_sin_auth(evaluar_entradas: bool = True):
     ib = conectar()
     try:
         state = live_engine.load_state()
@@ -184,7 +187,7 @@ def _ejecutar_live_sin_auth():
             equity_usd = _equity_usd_con_fallback(ib)
             capital_por_bucket = {bucket: equity_usd * pct for bucket, pct in BUCKETS.items()}
 
-        snapshot = live_engine.run_daily_tick_live(ib, capital_por_bucket)
+        snapshot = live_engine.run_daily_tick_live(ib, capital_por_bucket, evaluar_entradas=evaluar_entradas)
     finally:
         desconectar(ib)
 
@@ -192,7 +195,7 @@ def _ejecutar_live_sin_auth():
 
 
 @app.post("/live/refrescar-datos-y-ejecutar")
-def refrescar_datos_y_ejecutar_live(authorization: str | None = Header(None)):
+def refrescar_datos_y_ejecutar_live(evaluar_entradas: bool = True, authorization: str | None = Header(None)):
     """Pensado para dispararse desde un cron/Routine automática, sin
     pasos intermedios: descarga el universo combinado de los 4 buckets
     (config/universe_live_4_buckets.txt), recalcula indicadores y
@@ -200,15 +203,15 @@ def refrescar_datos_y_ejecutar_live(authorization: str | None = Header(None)):
     llamada HTTPS, para que una rutina externa no tenga que orquestar
     varios pasos por separado (y no necesite más acceso que HTTPS)."""
     _verificar_token(authorization)
-    return _refrescar_y_ejecutar_sin_auth()
+    return _refrescar_y_ejecutar_sin_auth(evaluar_entradas=evaluar_entradas)
 
 
-def _refrescar_y_ejecutar_sin_auth():
+def _refrescar_y_ejecutar_sin_auth(evaluar_entradas: bool = True):
     fallidos = _descargar_tolerando_fallos_menores()
     _correr("src.indicators.compute")
     _correr("src.indicators.relative_strength", "--universe", str(UNIVERSO_LIVE))
 
-    snapshot = _ejecutar_live_sin_auth()
+    snapshot = _ejecutar_live_sin_auth(evaluar_entradas=evaluar_entradas)
     if fallidos and isinstance(snapshot, dict):
         snapshot.setdefault("alertas", []).append(
             f"Descarga incompleta (tolerada, ninguno es posición abierta): {', '.join(fallidos)}"
@@ -226,9 +229,9 @@ _CORRIDA_LOCK = threading.Lock()
 _ESTADO_CORRIDA: dict = {"estado": "sin_corridas"}
 
 
-def _hilo_corrida() -> None:
+def _hilo_corrida(evaluar_entradas: bool = True) -> None:
     try:
-        resultado = _refrescar_y_ejecutar_sin_auth()
+        resultado = _refrescar_y_ejecutar_sin_auth(evaluar_entradas=evaluar_entradas)
         _ESTADO_CORRIDA.update(estado="terminada", fin=time.time(), resultado=resultado, error=None)
     except BaseException as e:  # noqa: BLE001 - se reporta tal cual en /live/ultima-corrida
         _ESTADO_CORRIDA.update(estado="fallida", fin=time.time(), resultado=None, error=f"{type(e).__name__}: {e}"[-4000:])
@@ -237,13 +240,17 @@ def _hilo_corrida() -> None:
 
 
 @app.post("/live/refrescar-en-segundo-plano", status_code=202)
-def refrescar_en_segundo_plano(authorization: str | None = Header(None)):
+def refrescar_en_segundo_plano(evaluar_entradas: bool = True, authorization: str | None = Header(None)):
+    """`evaluar_entradas=false`: corrida de medio día, solo revisión de
+    salidas (stop/señal, contra precio en vivo) — no abre posiciones
+    nuevas. Pensada para un chequeo adicional entre apertura y cierre
+    (ver ADR 0043), sin repetir la decisión de entrada del día."""
     _verificar_token(authorization)
     if not _CORRIDA_LOCK.acquire(blocking=False):
         raise HTTPException(status_code=409, detail="Ya hay una corrida en curso; no se inicia otra (evita órdenes duplicadas).")
     _ESTADO_CORRIDA.clear()
     _ESTADO_CORRIDA.update(estado="en_curso", inicio=time.time())
-    threading.Thread(target=_hilo_corrida, daemon=True).start()
+    threading.Thread(target=_hilo_corrida, args=(evaluar_entradas,), daemon=True).start()
     return {"estado": "en_curso", "mensaje": "Consulta GET /live/ultima-corrida hasta que estado sea 'terminada' o 'fallida'."}
 
 
@@ -422,6 +429,29 @@ def vender_simbolo_live(symbol: str, shares: int, authorization: str | None = He
         desconectar(ib)
 
     return {"status": "vendido", "shares": fill.shares, "precio": fill.precio_promedio}
+
+
+@app.post("/admin/live/comprar-simbolo")
+def comprar_simbolo_live(symbol: str, shares: int, authorization: str | None = Header(None)):
+    """Compra (a mercado) un símbolo puntual que el estado local NO
+    trackea — simétrico a /admin/live/vender-simbolo, para aplanar un
+    residuo corto que quedó fuera de cualquier bucket (ej. una venta
+    que se ejecutó dos veces sobre una posición que ya estaba en cero
+    por un desajuste anterior, dejando la cuenta real en corto sin que
+    ningún bucket lo sepa). No toca `state.json`: si el símbolo SÍ
+    está en una posición trackeada, usa el flujo normal del motor."""
+    _verificar_token(authorization)
+
+    ib = conectar()
+    try:
+        try:
+            fill = ejecutar_orden_mercado(ib, symbol, "BUY", shares)
+        except OrdenNoLlenada as e:
+            return {"status": "encolada_o_fallida", "detalle": str(e)}
+    finally:
+        desconectar(ib)
+
+    return {"status": "comprado", "shares": fill.shares, "precio": fill.precio_promedio}
 
 
 @app.post("/admin/live/rebasar-y-recalcular-stops")
