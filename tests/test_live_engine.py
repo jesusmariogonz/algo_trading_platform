@@ -74,6 +74,62 @@ def test_abre_posicion_usa_el_fill_real_no_el_precio_de_cierre(monkeypatch):
     assert bucket_state["cash"] == pytest.approx(1000.0 - 101.37 * pos["shares"])
 
 
+def test_evaluar_entradas_false_no_abre_posiciones_aunque_haya_senal(monkeypatch):
+    fake_universe = {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-01")], "close": [100.0], "sma_200": [40.0], "atr_14": [1.0], "return_126d": [0.1]}
+        ),
+    }
+    _setup_bucket_unico(
+        monkeypatch, fake_universe, "VOO",
+        lambda df: df.assign(signal=1, stop_price=df["close"] - 5),
+    )
+    monkeypatch.setattr(
+        live_engine, "ejecutar_orden_mercado",
+        lambda ib, symbol, accion, shares: pytest.fail("no debería mandar ninguna orden de entrada"),
+    )
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object(), evaluar_entradas=False)
+
+    assert result["open_count"] == 0
+    assert bucket_state["open_positions"] == []
+    assert bucket_state["cash"] == 1000.0
+    assert result["discarded_candidates_today"] == []
+
+
+def test_evaluar_entradas_false_sigue_revisando_salidas(monkeypatch):
+    fake_universe = {
+        "VOO": pd.DataFrame(
+            {"date": [pd.Timestamp("2026-01-02")], "close": [90.0], "sma_200": [40.0], "atr_14": [1.0]}
+        ),
+    }
+    _setup_bucket_unico(
+        monkeypatch, fake_universe, "VOO",
+        lambda df: df.assign(signal=0, stop_price=df["close"] - 100),
+    )
+    monkeypatch.setattr(live_engine, "precio_en_vivo", lambda ib, symbol: 82.0)
+
+    def fill_falso(ib, symbol, accion, shares):
+        assert accion == "SELL"
+        return Fill(symbol=symbol, accion=accion, shares=shares, precio_promedio=82.1)
+
+    monkeypatch.setattr(live_engine, "ejecutar_orden_mercado", fill_falso)
+
+    bucket_state = live_engine.init_bucket_state("largo_plazo", 1000.0)
+    bucket_state["cash"] = 200.0
+    bucket_state["open_positions"] = [
+        {"symbol": "VOO", "strategy": "time_series_momentum", "entry_date": "2025-12-01",
+         "entry_price": 90.0, "stop_price": 85.0, "shares": 10}
+    ]
+
+    result = live_engine.run_bucket_tick_live("largo_plazo", bucket_state, ib=object(), evaluar_entradas=False)
+
+    assert result["closed_today"] == 1
+    assert bucket_state["closed_positions"][0]["exit_price"] == 82.1
+    assert bucket_state["open_positions"] == []
+
+
 def test_cierra_posicion_usa_el_fill_real_no_el_stop_guardado(monkeypatch):
     fake_universe = {
         "VOO": pd.DataFrame(
