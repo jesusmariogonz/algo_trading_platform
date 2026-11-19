@@ -1,0 +1,938 @@
+{
+  "largo_plazo": {
+    "variantes_comparadas": [
+      "baseline",
+      "trend_efficiency",
+      "correlation_adjusted"
+    ],
+    "particiones_evaluadas": 20,
+    "veces_ganador_is_cae_en_mitad_inferior_oos": 0,
+    "pbo": 0.0,
+    "detalle": [
+      {
+        "ventanas_is": [
+          1,
+          2
+        ],
+        "ventanas_oos": [
+          3,
+          4,
+          5
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          3
+        ],
+        "ventanas_oos": [
+          2,
+          4,
+          5
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 2,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          4
+        ],
+        "ventanas_oos": [
+          2,
+          3,
+          5
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 2,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          5
+        ],
+        "ventanas_oos": [
+          2,
+          3,
+          4
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          3
+        ],
+        "ventanas_oos": [
+          1,
+          4,
+          5
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          4
+        ],
+        "ventanas_oos": [
+          1,
+          3,
+          5
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          3,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 2,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          3,
+          4
+        ],
+        "ventanas_oos": [
+          1,
+          2,
+          5
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 2,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          3,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          2,
+          4
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          2,
+          3
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          2,
+          3
+        ],
+        "ventanas_oos": [
+          4,
+          5
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          2,
+          4
+        ],
+        "ventanas_oos": [
+          3,
+          5
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          2,
+          5
+        ],
+        "ventanas_oos": [
+          3,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 2,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          3,
+          4
+        ],
+        "ventanas_oos": [
+          2,
+          5
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 2,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          3,
+          5
+        ],
+        "ventanas_oos": [
+          2,
+          4
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          2,
+          3
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          3,
+          4
+        ],
+        "ventanas_oos": [
+          1,
+          5
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          3,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 2,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          3
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 2,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          3,
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          2
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      }
+    ]
+  },
+  "mediano_plazo": {
+    "variantes_comparadas": [
+      "baseline",
+      "trend_efficiency",
+      "correlation_adjusted"
+    ],
+    "particiones_evaluadas": 20,
+    "veces_ganador_is_cae_en_mitad_inferior_oos": 0,
+    "pbo": 0.0,
+    "detalle": [
+      {
+        "ventanas_is": [
+          1,
+          2
+        ],
+        "ventanas_oos": [
+          3,
+          4,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          3
+        ],
+        "ventanas_oos": [
+          2,
+          4,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          4
+        ],
+        "ventanas_oos": [
+          2,
+          3,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          5
+        ],
+        "ventanas_oos": [
+          2,
+          3,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          3
+        ],
+        "ventanas_oos": [
+          1,
+          4,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          4
+        ],
+        "ventanas_oos": [
+          1,
+          3,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          3,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          3,
+          4
+        ],
+        "ventanas_oos": [
+          1,
+          2,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          3,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          2,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          2,
+          3
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          2,
+          3
+        ],
+        "ventanas_oos": [
+          4,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          2,
+          4
+        ],
+        "ventanas_oos": [
+          3,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          2,
+          5
+        ],
+        "ventanas_oos": [
+          3,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          3,
+          4
+        ],
+        "ventanas_oos": [
+          2,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          3,
+          5
+        ],
+        "ventanas_oos": [
+          2,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          2,
+          3
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          3,
+          4
+        ],
+        "ventanas_oos": [
+          1,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          3,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          3
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          3,
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          2
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      }
+    ]
+  },
+  "riesgo_alto": {
+    "variantes_comparadas": [
+      "baseline",
+      "trend_efficiency",
+      "correlation_adjusted"
+    ],
+    "particiones_evaluadas": 20,
+    "veces_ganador_is_cae_en_mitad_inferior_oos": 3,
+    "pbo": 0.15,
+    "detalle": [
+      {
+        "ventanas_is": [
+          1,
+          2
+        ],
+        "ventanas_oos": [
+          3,
+          4,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          3
+        ],
+        "ventanas_oos": [
+          2,
+          4,
+          5
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 2,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          4
+        ],
+        "ventanas_oos": [
+          2,
+          3,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          5
+        ],
+        "ventanas_oos": [
+          2,
+          3,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          3
+        ],
+        "ventanas_oos": [
+          1,
+          4,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          4
+        ],
+        "ventanas_oos": [
+          1,
+          3,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 2,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          3,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          3,
+          4
+        ],
+        "ventanas_oos": [
+          1,
+          2,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          3,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          2,
+          4
+        ],
+        "ganador_is": "baseline",
+        "rank_ganador_en_oos": 3,
+        "de": 3,
+        "cuenta_como_overfitting": true
+      },
+      {
+        "ventanas_is": [
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          2,
+          3
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          2,
+          3
+        ],
+        "ventanas_oos": [
+          4,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          2,
+          4
+        ],
+        "ventanas_oos": [
+          3,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 3,
+        "de": 3,
+        "cuenta_como_overfitting": true
+      },
+      {
+        "ventanas_is": [
+          1,
+          2,
+          5
+        ],
+        "ventanas_oos": [
+          3,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          3,
+          4
+        ],
+        "ventanas_oos": [
+          2,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          3,
+          5
+        ],
+        "ventanas_oos": [
+          2,
+          4
+        ],
+        "ganador_is": "correlation_adjusted",
+        "rank_ganador_en_oos": 2,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          1,
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          2,
+          3
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          3,
+          4
+        ],
+        "ventanas_oos": [
+          1,
+          5
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          3,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          4
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      },
+      {
+        "ventanas_is": [
+          2,
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          3
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 3,
+        "de": 3,
+        "cuenta_como_overfitting": true
+      },
+      {
+        "ventanas_is": [
+          3,
+          4,
+          5
+        ],
+        "ventanas_oos": [
+          1,
+          2
+        ],
+        "ganador_is": "trend_efficiency",
+        "rank_ganador_en_oos": 1,
+        "de": 3,
+        "cuenta_como_overfitting": false
+      }
+    ]
+  }
+}

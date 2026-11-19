@@ -1,0 +1,62 @@
+{
+  "n_trials": 47,
+  "sigma_sr_trials": 0.7101,
+  "muestra_empirica_sharpe": [
+    0.67,
+    2.04,
+    1.52,
+    1.31,
+    0.87,
+    1.96,
+    0.71,
+    0.42,
+    0.28,
+    0.28,
+    -0.04,
+    2.0,
+    2.25,
+    1.75,
+    0.42,
+    1.33,
+    0.96,
+    1.49
+  ],
+  "buckets": {
+    "largo_plazo": {
+      "sharpe_harness_sin_filtro_adr0034": 0.7782,
+      "t_obs": 1052,
+      "skew": -0.2177,
+      "kurt_exceso": 1.4823,
+      "sigma_sr_hat": 0.0402,
+      "sr_0_esperado_por_azar": 1.5995,
+      "z": -20.4423,
+      "dsr": 0.0,
+      "sharpe_real_produccion_con_filtro_adr0034": 2.25,
+      "dsr_con_sharpe_real_produccion": {
+        "sr_0_esperado_por_azar": 1.5995,
+        "z": 8.6837,
+        "dsr": 1.0
+      }
+    },
+    "mediano_plazo": {
+      "sharpe_harness_sin_filtro_adr0034": 1.3861,
+      "t_obs": 1052,
+      "skew": 0.8665,
+      "kurt_exceso": 5.4992,
+      "sigma_sr_hat": 0.0569,
+      "sr_0_esperado_por_azar": 1.5995,
+      "z": -3.7521,
+      "dsr": 0.0001
+    },
+    "riesgo_alto": {
+      "sharpe_harness_sin_filtro_adr0034": 0.915,
+      "t_obs": 1052,
+      "skew": 3.133,
+      "kurt_exceso": 27.5534,
+      "sigma_sr_hat": 0.0641,
+      "sr_0_esperado_por_azar": 1.5995,
+      "z": -10.6794,
+      "dsr": 0.0
+    }
+  }
+}

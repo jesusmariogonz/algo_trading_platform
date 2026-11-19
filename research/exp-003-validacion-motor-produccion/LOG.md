@@ -152,3 +152,56 @@ ser distinguible de ruido en su conjunto.
 Suite completa: sin cambios de producción (Capa 5 no modifica
 `src/`). Pendiente: Capa 3 (DSR+PBO sobre el historial de los ADR),
 Capa 2 (sesgo de supervivencia).
+
+## 2026-11-19 — Capa 3
+
+**⚠ Hallazgo crítico, previo al resultado de esta capa**: leyendo
+`docs/adr/0001` a `0043` para catalogar el espacio de búsqueda, se
+confirmó (código fuente actual de `src/paper_trading/engine.py`) que
+`CROSS_SECTIONAL_FILTER_BUCKETS = {"largo_plazo"}` (ADR 0034) está
+ACTIVO en producción hoy, y que el harness compartido de EXP-003
+(`research/2026-11-filtros-sizing-adr0033/harness.py`) **nunca lo
+incluyó** — genera la señal de `largo_plazo` con
+`time_series_momentum` puro. Esto significa que el Sharpe 0.78 usado
+como "baseline de producción" de `largo_plazo` en las Capas 1, 4, 5,
+6 y 7 NO es la configuración real vigente — ADR 0034 reporta el
+Sharpe real con el filtro: 2.25. No afecta a `mediano_plazo` ni
+`riesgo_alto` (el filtro es exclusivo de `largo_plazo`). Documentado
+íntegro en `CAPA-3-dsr-pbo.md`, sección inicial — no se corrigieron
+las capas anteriores en este commit, queda como hallazgo abierto.
+
+**Catálogo de variantes** (Paso 1, `capa3_dsr_pbo.py`): se leyeron los
+43 ADR del repo, se catalogaron **47 configuraciones materialmente
+distintas** con Sharpe/retorno medido contra un control (desde el
+bucket de cripto descartado en ADR 0004/0006 hasta el swap
+estrategia×universo de ADR 0040) — lista completa con ADR de origen
+en el código y en `CAPA-3-dsr-pbo.md`.
+
+**DSR** (Paso 2): `sigma_SR` = 0.7101, estimado de los 18 valores de
+Sharpe realmente reportados en el catálogo (de los 47, solo 18 tienen
+Sharpe explícito). Con N=47, el máximo esperado por puro azar es
+SR₀≈1.60. Resultado: **mediano_plazo DSR=0.0001 (REJECTED),
+riesgo_alto DSR=0.0000 (REJECTED)**; `largo_plazo` da **DSR=0.0000
+(REJECTED) con el Sharpe del harness (0.78)** pero **DSR=1.0000
+(VALIDATED) con el Sharpe real de producción (2.25, ADR 0034)** — la
+ambigüedad del hallazgo de arriba se propaga directo al resultado.
+
+**PBO** (Paso 3, `capa3_pbo.py`): CSCV sobre las 3 variantes
+re-simulables de ADR 0040 (baseline/trend_efficiency/
+correlation_adjusted, 5 ventanas, 20 particiones por bucket) — los 3
+buckets dan PBO bajo (0.00/0.00/0.15), muy por debajo del umbral de
+0.5. Nota explícita: esto solo cubre 3 de las 47 variantes del
+catálogo, no contradice el DSR bajo sobre las 47 — son preguntas
+distintas.
+
+**Labels**: mediano_plazo REJECTED, riesgo_alto REJECTED,
+largo_plazo AMBIGUO (REJECTED o VALIDATED según qué Sharpe se use —
+sin resolver en esta capa). Consistente con Capa 4 (placebo, también
+REJECTED en los 3 con el mismo Sharpe del harness).
+
+Suite completa: 254/254 (sin cambios de producción — `capa3_dsr_pbo.py`
+y `capa3_pbo.py` solo leen datos ya existentes y el harness, no tocan
+`src/`). Pendiente: Capa 2 (sesgo de supervivencia) — última capa — y,
+fuera del alcance de EXP-003 en sí, decidir si se extiende el harness
+para incluir el filtro de ADR 0034 y se re-corren las Capas 1/4/6/7
+para `largo_plazo` con la configuración real completa.
