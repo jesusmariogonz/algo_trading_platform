@@ -138,5 +138,15 @@
     "precio": 134.807,
     "shares": 1.01773,
     "motivo": "financia la compra de IJR"
+  },
+  {
+    "bucket": "mediano_plazo",
+    "fecha": "2026-11-19",
+    "tipo": "compra",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 95.52,
+    "precio": 134.4841,
+    "shares": 0.710271,
+    "motivo": "producto de cerrar KO"
   }
 ]
