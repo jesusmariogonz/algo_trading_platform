@@ -54,3 +54,32 @@ de la mitad en los dos — pero se mantienen netos positivos). Esta es
 la primera capa de EXP-003 donde un bucket cruza la línea a REJECTED,
 y es justo el bucket (largo_plazo) que en la Capa 1 ya mostraba la
 ventana reciente más débil de los 3.
+
+## CORRECCIÓN (2026-11-19): largo_plazo con el filtro cross-sectional real de ADR 0034
+
+**El REJECTED de `largo_plazo` arriba corresponde a una configuración
+INCORRECTA** — el harness nunca implementó el filtro cross-sectional
+de ADR 0034 (activo en producción hoy, solo para `largo_plazo`; ver
+detalle completo en la corrección de CAPA-1-walk-forward.md).
+`mediano_plazo`/`riesgo_alto` no usan ese filtro, sus resultados
+arriba siguen vigentes.
+
+| | Baseline (fill close, fricción normal) | Pesimista (fill open+1, 2x fricción) |
+|---|---|---|
+| Sharpe | 0.92 | **0.18** |
+| Retorno | +59.52% | **+6.37%** |
+| Drawdown | 12.82% | 22.55% |
+| Trades | 89 | 91 |
+
+**Label corregido: VALIDATED** — con el filtro real de producción
+activo, `largo_plazo` SÍ sobrevive al escenario pesimista combinado
+(Sharpe y retorno se quedan positivos, aunque se degradan fuerte:
+Sharpe cae ~80%, igual de severo que el drawdown que sube a 22.55%).
+**Esto revierte el hallazgo original.** Hipótesis plausible sin
+verificar a fondo en esta capa (fuera de su alcance): el filtro
+cross-sectional, al exigir momentum relativo fuerte, selecciona un
+subconjunto de entradas de mejor calidad promedio — con suficiente
+margen para absorber el supuesto de ejecución más duro sin cruzar a
+pérdida neta, aunque por un margen bastante más delgado que el de los
+otros 2 buckets (Sharpe cae ~80%, la mayor degradación relativa de los
+3).

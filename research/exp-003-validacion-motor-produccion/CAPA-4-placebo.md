@@ -138,3 +138,38 @@ placebo, en `largo_plazo` por debajo de ella. Esta es la capa más
 severa de EXP-003 hasta ahora — a diferencia de Capa 7 (donde solo
 `largo_plazo` se revertía), aquí los 3 buckets caen del mismo lado de
 la línea.
+
+## CORRECCIÓN (2026-11-19): largo_plazo con el filtro cross-sectional real de ADR 0034
+
+**El resultado de `largo_plazo` arriba (Sharpe real 0.78, percentil
+27.67) corresponde a una configuración INCORRECTA** — mismo bug que en
+las demás capas (ver corrección en CAPA-1-walk-forward.md).
+`mediano_plazo`/`riesgo_alto` no usan el filtro cross-sectional, sus
+resultados arriba siguen vigentes.
+
+Se re-corrieron 300 réplicas nuevas (mismo diseño: bloques de 21 días,
+bootstrap conjunto, con el filtro cross-sectional aplicado a CADA
+réplica antes de simular). **Bug encontrado y corregido durante esta
+misma corrección** (documentado con transparencia, mismo estándar que
+el resto del proyecto): el primer cálculo del percentil usó
+`np.mean([1 for s in sharpes if s < real])`, que siempre da 1.0 (es
+la media de una lista que solo contiene unos, nunca divide por el
+total de réplicas) — dio un percentil falso de 100.0 (VALIDATED). Se
+corrigió a `count(s < real) / total * 100` y se re-corrió la capa
+completa para no dejar un número sabidamente mal en el registro.
+
+| Bucket | Sharpe real (con filtro) | Media placebo (std) | Percentil corregido | Label |
+|---|---|---|---|---|
+| largo_plazo | 0.92 | 0.921 (0.476) | **48.33** | **REJECTED** |
+
+**Label corregido: REJECTED — sin cambio respecto al resultado
+original.** Potencia confirmada (std 0.476, mismo orden que antes).
+El Sharpe real con el filtro (0.92) queda prácticamente EN la media
+de la distribución placebo (0.921) — percentil 48.33, consistente con
+`mediano_plazo` (49.33) y `riesgo_alto` (55.33). El filtro
+cross-sectional mejora el Sharpe absoluto de `largo_plazo` (0.78→0.92)
+pero no cambia la conclusión de esta capa: el orden temporal real de
+los retornos tampoco aporta, con el filtro activo, algo que un
+reordenamiento al azar de los mismos bloques mensuales no replique.
+**Los 3 buckets siguen REJECTED en esta capa, ahora con la
+configuración correcta de los 3.**

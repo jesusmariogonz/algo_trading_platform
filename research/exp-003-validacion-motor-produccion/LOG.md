@@ -205,3 +205,57 @@ y `capa3_pbo.py` solo leen datos ya existentes y el harness, no tocan
 fuera del alcance de EXP-003 en sí, decidir si se extiende el harness
 para incluir el filtro de ADR 0034 y se re-corren las Capas 1/4/6/7
 para `largo_plazo` con la configuración real completa.
+
+## 2026-11-19 — Corrección del filtro cross-sectional (largo_plazo)
+
+Se resolvió el hallazgo abierto de la Capa 3: se agregó
+`harness.apply_cross_sectional_filter` a
+`research/2026-11-filtros-sizing-adr0033/harness.py` — replica fiel
+de `_percentiles_cross_sectional_hoy` + la condición de
+`run_bucket_tick` en `engine.py` (`return_126d > 0 AND percentil >=
+0.70`), vía enmascarado de `signal` (se pone en 0 el día que no pasa
+el filtro) para que funcione con cualquier motor de simulación ya
+escrito (walk-forward, full-period, placebo) sin tocar cada uno por
+separado. `mediano_plazo`/`riesgo_alto` no se tocan.
+
+**Autoverificación contra ADR 0034** (Sharpe OOS 2.25 walk-forward
+rolling): no reprodujo esa magnitud (reconstruido: 0.76) — misma
+categoría de discrepancia ya documentada para el baseline sin filtro.
+**Full-period sí confirma la dirección esperada**: Sharpe 0.78→0.92,
+retorno +45.96%→+59.52%, DD 15.52%→12.82%, trades 96→89 — mejora
+real, de menor magnitud que la publicada en ADR 0034.
+
+Se re-corrieron las 5 capas afectadas SOLO para `largo_plazo`:
+
+| Capa | Label antes (config. incorrecta) | Label corregido | ¿Cambió? |
+|---|---|---|---|
+| 1 (walk-forward) | INCONCLUSIVE | INCONCLUSIVE | No (misma razón: ventana con <10 trades) |
+| 4 (placebo) | REJECTED (percentil 27.67) | REJECTED (percentil 48.33) | No |
+| 5 (leave-one-group-out) | VALIDATED | VALIDATED | No |
+| 6 (perturbación parámetros) | VALIDATED | VALIDATED | No |
+| 7 (ejecución realista) | **REJECTED** | **VALIDATED** | **Sí** |
+
+**Único cambio real: Capa 7.** Con el filtro real activo,
+`largo_plazo` sobrevive al escenario pesimista (fill open+1, 2x
+fricción): Sharpe 0.92→0.18, retorno +59.52%→+6.37% (se queda
+positivo, a diferencia de -9.28% sin el filtro). Las demás 4 capas
+mantienen la misma categoría de label, con números actualizados.
+
+**Bug encontrado y corregido durante esta misma corrección** (Capa 4):
+el primer cálculo del percentil usó `np.mean([1 for s in sharpes if s
+< real])`, que siempre da 1.0 sin importar el dato real (es la media
+de una lista que solo contiene unos) — dio un percentil falso de 100.0
+(VALIDATED). Se detectó por ser matemáticamente imposible dado que la
+media del placebo (0.921) era casi idéntica al Sharpe real (0.92). Se
+corrigió a `count(sharpe < real) / total * 100`, se agregó la lista
+cruda de Sharpes al JSON guardado (para poder auditar sin re-correr
+en el futuro), y se volvió a correr la capa completa (300 réplicas,
+~37 min) — percentil correcto: 48.33, REJECTED.
+
+Los 5 archivos `CAPA-N-*.md` tienen una sección "CORRECCIÓN
+(2026-11-19)" al final, con los números viejos (configuración
+incorrecta) visibles arriba, nunca borrados.
+
+Suite completa: 254/254 (sin cambios de producción — toda la
+corrección vive en `research/`). Pendiente: Capa 2 (sesgo de
+supervivencia) — última capa de EXP-003.

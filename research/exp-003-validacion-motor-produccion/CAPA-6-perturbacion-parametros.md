@@ -98,3 +98,28 @@ o la misma clase de riesgo de sobreajuste que ADR 0040 ya encontró al
 perseguir el mejor punto de una malla?) queda fuera del alcance de
 esta capa — el pre-registro de EXP-003 no autoriza usar este hallazgo
 para proponer un cambio de parámetro; solo lo documenta.
+
+## CORRECCIÓN (2026-11-19): largo_plazo con el filtro cross-sectional real de ADR 0034
+
+**La tabla de `largo_plazo`/`atr_stop_multiple` arriba (baseline
+Sharpe 0.78) corresponde a una configuración INCORRECTA** — mismo bug
+que en las demás capas (ver corrección en CAPA-1-walk-forward.md).
+`mediano_plazo`/`riesgo_alto` no usan el filtro cross-sectional, sus
+tablas arriba siguen vigentes.
+
+| Perturbación | Valor | Sharpe | Retorno | DD | Trades |
+|---|---|---|---|---|---|
+| -20% | 2.4 | 1.00 | +67.53% | 11.11% | 98 |
+| -10% | 2.7 | 1.11 | +80.87% | 16.13% | 99 |
+| **0% (producción)** | **3.0** | **0.92** | **+59.52%** | **12.82%** | **89** |
+| +10% | 3.3 | 0.82 | +50.02% | 11.39% | 89 |
+| +20% | 3.6 | 0.72 | +43.05% | 14.55% | 92 |
+
+**Label corregido: VALIDATED** (sin cambio de categoría — caída
+máxima dentro de ±10%: 10.9%, en +10%, muy por debajo del 50%). El
+patrón de fondo tampoco cambia cualitativamente: el valor de
+producción sigue sin ser el máximo de la malla (-10%, multiplicador
+2.7, da el mejor Sharpe: 1.11) — la pendiente es menos pronunciada que
+en la versión sin filtro (antes -20% casi duplicaba el Sharpe; ahora
+-10% lo mejora ~20%), pero la dirección del hallazgo original (el
+parámetro actual no está en un máximo local) se mantiene.

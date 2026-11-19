@@ -88,6 +88,62 @@ def signaled_universe(bucket_key: str) -> dict[str, pd.DataFrame]:
     return out
 
 
+CROSS_SECTIONAL_FILTER_BUCKETS = {"largo_plazo"}
+CROSS_SECTIONAL_PERCENTIL_MIN = 0.70
+
+
+def apply_cross_sectional_filter(
+    universe: dict[str, pd.DataFrame], percentil_min: float = CROSS_SECTIONAL_PERCENTIL_MIN
+) -> dict[str, pd.DataFrame]:
+    """Corrección (2026-11-19): el harness original de ADR 0040 nunca
+    implementó el filtro cross-sectional de entrada que ADR 0034 puso
+    en producción SOLO para `largo_plazo` (`CROSS_SECTIONAL_FILTER_
+    BUCKETS`/`CROSS_SECTIONAL_PERCENTIL_MIN` en
+    `src/paper_trading/engine.py`, reusado por `live_engine.py`) — las
+    Capas 1/4/5/6/7 de EXP-003 probaron `largo_plazo` con la
+    configuración VIEJA (pre-ADR-0034). Esta función replica fielmente
+    `_percentiles_cross_sectional_hoy` + la condición de
+    `run_bucket_tick` en `engine.py` (líneas ~384-400 y ~531-559): un
+    candidato con `signal==1` se descarta (se pone en 0) si NO cumple
+    `return_126d > 0 AND percentil(return_126d, mismo día, todo el
+    universo del bucket) >= percentil_min`. No toca `signal==-1`
+    (salidas nunca se filtran) ni símbolos sin `signal==1` ese día.
+
+    Opera sobre el universo COMO SEA (real o una réplica bootstrapeada
+    del placebo de Capa 4) — no depende de que los datos sean reales,
+    solo de que cada DataFrame tenga columnas `date`/`signal`/
+    `return_126d`, igual que la salida de `signaled_universe`."""
+    idx_in = {s: df.set_index("date") for s, df in universe.items()}
+    todas_fechas = sorted({d for df in idx_in.values() for d in df.index})
+
+    out = {s: df.copy() for s, df in universe.items()}
+    idx_out = {s: out[s].set_index("date", drop=False) for s in out}
+
+    for fecha in todas_fechas:
+        valores = {}
+        for s, df in idx_in.items():
+            if fecha not in df.index:
+                continue
+            ret = df.loc[fecha].get("return_126d")
+            if pd.notna(ret):
+                valores[s] = float(ret)
+        if not valores:
+            continue
+        percentiles = pd.Series(valores).rank(pct=True)
+        for s in idx_in:
+            if fecha not in idx_out[s].index:
+                continue
+            if idx_out[s].loc[fecha, "signal"] != 1:
+                continue
+            ret = valores.get(s)
+            perc = percentiles.get(s)
+            pasa = ret is not None and ret > 0 and perc is not None and perc >= percentil_min
+            if not pasa:
+                idx_out[s].loc[fecha, "signal"] = 0
+
+    return {s: df.reset_index(drop=True) for s, df in idx_out.items()}
+
+
 def rolling_windows(end_date: pd.Timestamp, n_windows: int = 5, train_months: int = 12,
                      test_months: int = 6, step_months: int = 4) -> list[dict]:
     """5 ventanas ancladas hacia atrás desde `end_date` (la fecha más

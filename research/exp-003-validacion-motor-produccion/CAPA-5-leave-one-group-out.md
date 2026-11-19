@@ -109,3 +109,26 @@ en los 3 buckets). Ambos resultados son compatibles entre sí: un
 resultado puede estar bien distribuido entre sectores Y seguir sin ser
 distinguible de ruido en su conjunto — esta capa no revierte ni
 confirma el hallazgo de la Capa 4, responde una pregunta ortogonal.
+
+## CORRECCIÓN (2026-11-19): largo_plazo con el filtro cross-sectional real de ADR 0034
+
+**La tabla de `largo_plazo` arriba (baseline Sharpe 0.78) corresponde
+a una configuración INCORRECTA** — mismo bug que en las demás capas
+(ver corrección en CAPA-1-walk-forward.md). `mediano_plazo`/
+`riesgo_alto` no usan el filtro cross-sectional, sus tablas arriba
+siguen vigentes.
+
+| Grupo quitado | Sharpe | Caída vs. baseline (0.92) |
+|---|---|---|
+| US_Equity | 0.91 | 1.1% |
+| Intl_Equity | 1.10 | -19.6% (mejora) |
+| Bonds | 0.92 | 0.0% |
+| REIT_US | 0.90 | 2.2% |
+| **Commodities** | 0.62 | **32.6%** (peor caída) |
+
+**Label corregido: VALIDATED** (sin cambio de categoría — la caída
+máxima, 32.6% al quitar Commodities, sigue por debajo del 40%, aunque
+ahora más cerca del límite que antes, 1.3%). El patrón de fondo se
+mantiene: ningún grupo individual sostiene el resultado completo,
+aunque con el filtro real Commodities pasa a ser más relevante para
+`largo_plazo` de lo que parecía con la configuración incorrecta.

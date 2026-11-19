@@ -68,3 +68,39 @@ revela — es riesgo_alto: con tan pocas operaciones por ventana, el
 bucket entero está, en la práctica, subdimensionado para que un
 walk-forward de este tipo pueda confirmar o refutar nada con
 confianza.
+
+## CORRECCIÓN (2026-11-19): largo_plazo con el filtro cross-sectional real de ADR 0034
+
+**El número de `largo_plazo` arriba (Sharpe OOS 0.76, INCONCLUSIVE)
+corresponde a una configuración INCORRECTA.** El harness de ADR 0040
+nunca implementó `CROSS_SECTIONAL_FILTER_BUCKETS`/
+`CROSS_SECTIONAL_PERCENTIL_MIN` (ADR 0034) — el filtro cross-sectional
+que SÍ está activo en producción hoy, solo para `largo_plazo`. Se
+corrigió el harness (`harness.apply_cross_sectional_filter`, replica
+fiel de `_percentiles_cross_sectional_hoy` + la condición de
+`engine.py`) y se re-corrió esta capa. `mediano_plazo`/`riesgo_alto`
+no usan este filtro — sus resultados arriba siguen vigentes tal cual.
+
+**Autoverificación contra ADR 0034** (Sharpe OOS 2.25, +19.14%, DD
+6.99%, 0/5 ventanas negativas, su propio walk-forward rolling): **no
+reprodujo esa magnitud** — el reconstruido da Sharpe OOS 0.76, misma
+categoría de discrepancia ya documentada arriba para el baseline sin
+filtro (ventanas/esquema de capital distinto al de la exploración
+original de ADR 0033/0034, causa exacta no identificada). Se reporta
+honesto en vez de forzarse.
+
+| Ventana | Período | Sharpe | Retorno | DD | Trades |
+|---|---|---|---|---|---|
+| 1 | 2025-01-17 → 2025-07-17 | 0.32 | +1.75% | 11.7% | 12 |
+| 2 | 2025-05-17 → 2025-11-17 | 2.85 | +21.01% | 5.8% | 9 |
+| 3 | 2025-09-17 → 2026-03-17 | 0.97 | +7.03% | 6.43% | 10 |
+| 4 | 2026-01-17 → 2026-07-17 | 0.20 | +0.94% | 8.65% | 18 |
+| 5 | 2026-05-17 → 2026-11-17 | -0.54 | -4.42% | 7.46% | 17 |
+
+**Label corregido: INCONCLUSIVE** (igual categoría que antes — ventana
+2 tiene solo 9 operaciones, por debajo del piso de 10 — pero ahora por
+la configuración correcta). El panorama de fondo no cambia: con o sin
+el filtro, 5 ventanas de 6 meses sobre ~26 ETFs siguen dando muestras
+demasiado chicas (9-18 operaciones) para que este diseño de
+walk-forward pueda confirmar o refutar nada con confianza en
+`largo_plazo`.
