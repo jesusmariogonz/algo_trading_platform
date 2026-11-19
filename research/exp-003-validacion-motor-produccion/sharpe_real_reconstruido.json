@@ -1,0 +1,14 @@
+{
+  "largo_plazo": {
+    "sharpe_real_reconstruido": 0.78,
+    "n_dias": 1252
+  },
+  "mediano_plazo": {
+    "sharpe_real_reconstruido": 1.39,
+    "n_dias": 1252
+  },
+  "riesgo_alto": {
+    "sharpe_real_reconstruido": 0.91,
+    "n_dias": 1252
+  }
+}

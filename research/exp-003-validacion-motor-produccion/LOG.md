@@ -71,3 +71,52 @@ fuera del alcance de esta capa. Ver `CAPA-6-perturbacion-parametros.md`.
 
 Suite completa: 249/249 (sin cambios de producción). Pendiente: Capa 4
 (placebo con potencia verificada).
+
+## 2026-11-19 — Capa 4
+
+**Capa 4** (`capa4_placebo.py` + `capa4_run_chunk.py` + `capa4_real_sharpe.py`):
+moving block bootstrap conjunto (bloque de 21 sesiones, misma
+secuencia de bloques para todo el universo + benchmark SPY en cada
+réplica), reconstruyendo el panel OHLCV crudo desde cero y recalculando
+indicadores/señales con las funciones REALES de producción
+(`compute_indicators`, `compute_relative_strength`) en cada réplica —
+no un reordenamiento superficial del resultado final.
+
+**Bug encontrado y corregido antes de poder correr nada**: `ROKU`
+tiene datos crudos corruptos (2 filas) y `WOLF` solo 287 filas —
+intersectar el calendario común contra TODO el universo de riesgo_alto
+sin excluirlos primero acotaba el calendario de los 43 símbolos buenos
+a casi nada. Se agregó un filtro de historia mínima (500 filas) antes
+de calcular la intersección.
+
+**Validación de la reconstrucción**: corriendo el mismo pipeline con
+la secuencia identidad (sin bootstrap) reproduce EXACTO el Sharpe de
+Capa 1/6/7 (0.78/1.39/0.91) — el pipeline de reconstrucción es fiel.
+
+**300 réplicas por bucket, no 1,000**: calibración empírica mostró
+costo proporcional al tamaño del universo (2.75-8.0s/réplica según
+bucket) — 1,000 réplicas de mediano_plazo (74 símbolos) habría tomado
+>2h. Se corrieron los 3 buckets en paralelo (4 núcleos) en 6 rondas de
+50, ~40 minutos totales — trade-off de tiempo documentado, no se forzó
+el número objetivo a costa de la sesión.
+
+**Potencia CONFIRMADA en los 3 buckets** (std del Sharpe placebo:
+0.45-0.50, nada parecido al caso degenerado de EXP-002).
+
+**Resultado — los 3 buckets REJECTED**: percentil del Sharpe real
+dentro de la distribución placebo: largo_plazo 27.67 (por DEBAJO de la
+mediana), mediano_plazo 49.33, riesgo_alto 55.33 (ambos prácticamente
+EN la mediana). Ninguno cerca del umbral de 80. El orden histórico
+real de los retornos no produjo, para ninguna de las 3 estrategias, un
+resultado distinguible de un reordenamiento al azar de los mismos
+bloques de ~1 mes. Ver `CAPA-4-placebo.md` para el detalle completo,
+incluyendo qué significa esto y qué NO significa (es un diseño
+específico de placebo, no una prueba definitiva cerrada).
+
+Esta es la capa más severa de EXP-003 hasta ahora: a diferencia de
+Capa 7 (solo largo_plazo se revertía), aquí los 3 buckets caen del
+mismo lado.
+
+Suite completa: 254/254 (sin cambios de producción). Pendiente: Capa 5
+(leave-one-group-out), Capa 3 (DSR+PBO), Capa 2 (sesgo de
+supervivencia).
