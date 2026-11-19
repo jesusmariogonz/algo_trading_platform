@@ -1,0 +1,197 @@
+{
+  "criterio": {
+    "VALIDATED": "Sharpe sin NINGUN grupo individual cae mas del 40% respecto al universo completo",
+    "INCONCLUSIVE": "el universo queda con menos de 3 grupos distinguibles",
+    "REJECTED": "quitar algun grupo individual hace caer el Sharpe >40% o lo vuelve negativo"
+  },
+  "resultado": {
+    "largo_plazo": {
+      "baseline": {
+        "sharpe": 0.78,
+        "return_pct": 45.96,
+        "max_dd_pct": 15.52,
+        "n_trades": 96
+      },
+      "n_grupos": 5,
+      "sin_grupo": {
+        "US_Equity": {
+          "sharpe": 0.98,
+          "return_pct": 68.41,
+          "max_dd_pct": 12.73,
+          "n_trades": 98
+        },
+        "Intl_Equity": {
+          "sharpe": 0.84,
+          "return_pct": 50.91,
+          "max_dd_pct": 14.28,
+          "n_trades": 91
+        },
+        "Bonds": {
+          "sharpe": 0.78,
+          "return_pct": 45.96,
+          "max_dd_pct": 15.52,
+          "n_trades": 96
+        },
+        "REIT_US": {
+          "sharpe": 0.78,
+          "return_pct": 45.96,
+          "max_dd_pct": 15.52,
+          "n_trades": 96
+        },
+        "Commodities": {
+          "sharpe": 0.77,
+          "return_pct": 41.31,
+          "max_dd_pct": 11.54,
+          "n_trades": 72
+        }
+      },
+      "simbolos_sin_senal_en_grupos": [],
+      "simbolos_sin_grupo_asignado": [],
+      "label": "VALIDATED"
+    },
+    "mediano_plazo": {
+      "baseline": {
+        "sharpe": 1.39,
+        "return_pct": 209.36,
+        "max_dd_pct": 18.53,
+        "n_trades": 130
+      },
+      "n_grupos": 10,
+      "sin_grupo": {
+        "Broad_Market_ETF": {
+          "sharpe": 1.63,
+          "return_pct": 307.44,
+          "max_dd_pct": 14.29,
+          "n_trades": 131
+        },
+        "Technology": {
+          "sharpe": 1.19,
+          "return_pct": 112.67,
+          "max_dd_pct": 11.77,
+          "n_trades": 96
+        },
+        "Communication_Services": {
+          "sharpe": 1.45,
+          "return_pct": 214.97,
+          "max_dd_pct": 16.16,
+          "n_trades": 122
+        },
+        "Consumer_Discretionary": {
+          "sharpe": 1.88,
+          "return_pct": 370.29,
+          "max_dd_pct": 17.81,
+          "n_trades": 107
+        },
+        "Consumer_Staples": {
+          "sharpe": 1.32,
+          "return_pct": 185.54,
+          "max_dd_pct": 18.81,
+          "n_trades": 125
+        },
+        "Financials": {
+          "sharpe": 1.34,
+          "return_pct": 177.1,
+          "max_dd_pct": 14.81,
+          "n_trades": 119
+        },
+        "Energy": {
+          "sharpe": 1.21,
+          "return_pct": 168.04,
+          "max_dd_pct": 20.96,
+          "n_trades": 128
+        },
+        "Healthcare": {
+          "sharpe": 1.73,
+          "return_pct": 344.08,
+          "max_dd_pct": 15.88,
+          "n_trades": 115
+        },
+        "Industrials": {
+          "sharpe": 1.33,
+          "return_pct": 195.36,
+          "max_dd_pct": 17.63,
+          "n_trades": 119
+        },
+        "Utilities": {
+          "sharpe": 0.97,
+          "return_pct": 110.01,
+          "max_dd_pct": 15.45,
+          "n_trades": 125
+        }
+      },
+      "simbolos_sin_senal_en_grupos": [],
+      "simbolos_sin_grupo_asignado": [],
+      "label": "VALIDATED"
+    },
+    "riesgo_alto": {
+      "baseline": {
+        "sharpe": 0.91,
+        "return_pct": 165.28,
+        "max_dd_pct": 26.19,
+        "n_trades": 44
+      },
+      "n_grupos": 9,
+      "sin_grupo": {
+        "Fintech_Crypto": {
+          "sharpe": 1.09,
+          "return_pct": 214.1,
+          "max_dd_pct": 24.15,
+          "n_trades": 36
+        },
+        "Enterprise_Software_Security": {
+          "sharpe": 1.14,
+          "return_pct": 248.37,
+          "max_dd_pct": 25.44,
+          "n_trades": 39
+        },
+        "Ecommerce_Marketplace": {
+          "sharpe": 1.22,
+          "return_pct": 269.93,
+          "max_dd_pct": 25.16,
+          "n_trades": 37
+        },
+        "Consumer_Internet_Media": {
+          "sharpe": 0.92,
+          "return_pct": 186.97,
+          "max_dd_pct": 26.95,
+          "n_trades": 47
+        },
+        "Hardware_Semis": {
+          "sharpe": 0.75,
+          "return_pct": 109.45,
+          "max_dd_pct": 26.17,
+          "n_trades": 43
+        },
+        "Gaming_Betting_Leisure": {
+          "sharpe": 0.91,
+          "return_pct": 160.05,
+          "max_dd_pct": 26.2,
+          "n_trades": 43
+        },
+        "EV_Auto": {
+          "sharpe": 0.92,
+          "return_pct": 165.49,
+          "max_dd_pct": 26.12,
+          "n_trades": 43
+        },
+        "Consumer_Staples_Beverage": {
+          "sharpe": 0.85,
+          "return_pct": 135.03,
+          "max_dd_pct": 26.23,
+          "n_trades": 43
+        },
+        "Mobility_Rideshare": {
+          "sharpe": 0.91,
+          "return_pct": 165.28,
+          "max_dd_pct": 26.19,
+          "n_trades": 44
+        }
+      },
+      "simbolos_sin_senal_en_grupos": [
+        "ROKU"
+      ],
+      "simbolos_sin_grupo_asignado": [],
+      "label": "VALIDATED"
+    }
+  }
+}

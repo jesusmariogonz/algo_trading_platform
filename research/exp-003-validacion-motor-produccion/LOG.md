@@ -120,3 +120,35 @@ mismo lado.
 Suite completa: 254/254 (sin cambios de producción). Pendiente: Capa 5
 (leave-one-group-out), Capa 3 (DSR+PBO), Capa 2 (sesgo de
 supervivencia).
+
+## 2026-11-19 — Capa 5
+
+**Capa 5** (`capa5_leave_one_group_out.py`): universo completo
+construido una vez por bucket (`harness.signaled_universe`), agrupado
+por clase de activo (largo_plazo) o sector GICS aproximado a mano
+(mediano_plazo/riesgo_alto, documentado íntegro en el código —
+`asset_types.py` es demasiado grueso para este propósito, casi todo
+cae en "Stock"). Para cada grupo se re-corre `simulate_bucket` sobre
+el universo menos ese grupo (sin recalcular señales — son por símbolo,
+no dependen del resto del universo del bucket).
+
+**Validación de la reconstrucción**: universo completo reproduce
+Sharpe/retorno idéntico a Capas 1/6/7 (0.78/+45.96%, 1.39/+209.36%,
+0.91/+165.28%).
+
+**Resultado — los 3 buckets VALIDATED**: la caída máxima de Sharpe al
+quitar cualquier grupo individual fue 1.3% (largo_plazo, Commodities),
+30.2% (mediano_plazo, Utilities), 17.6% (riesgo_alto, Hardware_Semis)
+— ninguna cruza el umbral de 40%, y varios grupos directamente MEJORAN
+el Sharpe al quitarse (dilución, no dependencia concentrada). Ver
+`CAPA-5-leave-one-group-out.md`.
+
+Nota explícita en el reporte: esto no contradice el REJECTED de la
+Capa 4 — responde una pregunta distinta ("¿depende de un sector
+específico?" vs. "¿el orden temporal aporta algo sobre el azar?").
+Un resultado puede estar bien distribuido entre sectores y seguir sin
+ser distinguible de ruido en su conjunto.
+
+Suite completa: sin cambios de producción (Capa 5 no modifica
+`src/`). Pendiente: Capa 3 (DSR+PBO sobre el historial de los ADR),
+Capa 2 (sesgo de supervivencia).
