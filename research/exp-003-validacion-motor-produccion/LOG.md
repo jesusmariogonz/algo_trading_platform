@@ -259,3 +259,41 @@ incorrecta) visibles arriba, nunca borrados.
 Suite completa: 254/254 (sin cambios de producción — toda la
 corrección vive en `research/`). Pendiente: Capa 2 (sesgo de
 supervivencia) — última capa de EXP-003.
+
+## 2026-11-20 — Capa 2 (sesgo de supervivencia) — ÚLTIMA capa de EXP-003
+
+Universo neutral: muestra estratificada de 168 símbolos (cada 3er
+símbolo alfabético) de los constituyentes ACTUALES del S&P 500 (fuente
+pública `github.com/datasets/s-and-p-500-companies`, accesible desde
+este entorno vía curl). Se descargaron y procesaron 146 símbolos
+nuevos (`--years 5`, mismo pipeline de siempre) para completar la
+muestra; 22 ya estaban en `data/processed/` por solaparse con universos
+existentes.
+
+Autoverificación: el universo curado reproduce exacto lo ya publicado
+(mediano_plazo Sharpe 1.39/retorno 209.36%; riesgo_alto Sharpe
+0.91/retorno 165.28%).
+
+Alcance: solo `mediano_plazo`/`riesgo_alto` (universos de acciones
+individuales — el tipo de sesgo de `roadmap.md`, selección manual con
+hindsight, aplica ahí). `largo_plazo` (ETFs de clase de activo) se
+documentó como INCONCLUSIVE con razón explícita — no es el mismo
+fenómeno, forzar una comparación de ETFs neutrales testearía
+concentración sectorial (ya cubierto por Capa 5), no esto.
+
+**Resultado**: `mediano_plazo` VALIDATED (retorno anual curado 30.92%
+vs. neutral 30.65%, diferencia 0.9% — su universo ya se parece a un
+corte representativo de empresas grandes, no a una lista de ganadores
+recientes). `riesgo_alto` **REJECTED** (retorno anual curado 26.21% vs.
+neutral 11.57%, diferencia 55.9%) — confirma cuantitativamente, por
+primera vez, la advertencia nunca resuelta de `roadmap.md` sobre
+NVDA/SMCI/AVGO/PLTR elegidos con el diario de lo que ya ganó. Nota
+documentada: como el universo neutral (S&P 500 large-cap) es
+estructuralmente más estable que el universo real de `riesgo_alto`
+(small/mid-cap alta volatilidad), el 55.9% medido es probablemente un
+PISO del sesgo real, no un techo.
+
+Suite completa: 254/254. Cero cambios de producción. Con esta capa se
+cierran las 7 capas pre-registradas de EXP-003 — la síntesis final
+(no un promedio, por diseño) queda para el coordinador con las 7
+visibles, según el pre-registro.

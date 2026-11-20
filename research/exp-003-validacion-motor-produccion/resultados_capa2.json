@@ -1,0 +1,53 @@
+{
+  "criterio": {
+    "VALIDATED": "diferencia de retorno anualizado entre universo curado y neutral <= 30% relativo",
+    "INCONCLUSIVE": "no se consigue un universo neutral reconstruible con esfuerzo razonable para ese tipo de sesgo",
+    "REJECTED": "diferencia > 30% relativo (sesgo material; el numero de produccion es cota superior, no estimador puntual)"
+  },
+  "mediano_plazo": {
+    "n_simbolos_curado": 74,
+    "n_simbolos_neutral": 165,
+    "curado": {
+      "sharpe": 1.39,
+      "return_pct": 209.36,
+      "return_anual_pct": 30.92,
+      "max_dd_pct": 18.53,
+      "n_trades": 130,
+      "n_years": 4.19
+    },
+    "neutral": {
+      "sharpe": 1.31,
+      "return_pct": 207.11,
+      "return_anual_pct": 30.65,
+      "max_dd_pct": 22.06,
+      "n_trades": 142,
+      "n_years": 4.2
+    },
+    "label": "VALIDATED (diferencia 0.9% relativo al retorno anualizado curado)"
+  },
+  "riesgo_alto": {
+    "n_simbolos_curado": 44,
+    "n_simbolos_neutral": 165,
+    "curado": {
+      "sharpe": 0.91,
+      "return_pct": 165.28,
+      "return_anual_pct": 26.21,
+      "max_dd_pct": 26.19,
+      "n_trades": 44,
+      "n_years": 4.19
+    },
+    "neutral": {
+      "sharpe": 0.59,
+      "return_pct": 58.34,
+      "return_anual_pct": 11.57,
+      "max_dd_pct": 22.33,
+      "n_trades": 31,
+      "n_years": 4.2
+    },
+    "label": "REJECTED (diferencia 55.9% relativo al retorno anualizado curado)"
+  },
+  "largo_plazo": {
+    "label": "INCONCLUSIVE (tipo de sesgo no aplica de la misma forma: universo de ETFs de clase de activo, no acciones individuales elegidas con hindsight - ver docstring del script)",
+    "razon": "El sesgo documentado en roadmap.md ('elegidos a mano porque HOY sabemos que fueron ganadores') describe elegir ACCIONES INDIVIDUALES especificas con el diario de lo que ya gano (NVDA, SMCI, AVGO, PLTR). El universo de largo_plazo es una lista de ETFs que representan clases de activo (SPY=equity US, AGG=bonos, GLD=oro, VNQ=REIT, etc.) - 'elegir que ETF representa cada clase de activo' no es el mismo fenomeno de seleccion con hindsight que 'elegir que accion individual ya gano'. Construir un universo neutral de ETFs (ej. todos los SPDR sectoriales + todos los iShares de pais) no testearia ese tipo de sesgo, testearia una pregunta distinta (concentracion sectorial de ETFs) ya cubierta por la Capa 5. Se documenta como limitacion explicita en vez de forzar una comparacion de bajo valor informativo."
+  }
+}
