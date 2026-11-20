@@ -1534,5 +1534,83 @@
       }
     },
     "alertas": []
+  },
+  {
+    "date": "2026-11-20",
+    "buckets": {
+      "largo_plazo": {
+        "date": "2026-11-20",
+        "equity": 403.8,
+        "cash": 174.84,
+        "unrealized_pnl": -4.06,
+        "open_count": 2,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -5.77,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 1.37,
+        "drawdown_pct": 7.26,
+        "daily_loss_breaker_tripped": true,
+        "suspended": true,
+        "suspended_reason": "Drawdown 7.3% alcanzó el límite de revisión (6%)",
+        "newly_suspended_today": true
+      },
+      "mediano_plazo": {
+        "date": "2026-11-20",
+        "equity": 349.61,
+        "cash": 146.29,
+        "unrealized_pnl": -2.97,
+        "open_count": 2,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -4.87,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 0.88,
+        "drawdown_pct": 5.33,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "riesgo_alto": {
+        "date": "2026-11-20",
+        "equity": 209.58,
+        "cash": 26.17,
+        "unrealized_pnl": 2.11,
+        "open_count": 3,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -0.97,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 2.2,
+        "drawdown_pct": 5.29,
+        "daily_loss_breaker_tripped": true,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      },
+      "benchmark_diversificado": {
+        "date": "2026-11-20",
+        "equity": 1623.89,
+        "cash": 1623.89,
+        "unrealized_pnl": 0.0,
+        "open_count": 0,
+        "closed_today": 0,
+        "realized_pnl_today": 0,
+        "cumulative_return_pct": -3.53,
+        "closed_today_detail": [],
+        "discarded_candidates_today": [],
+        "daily_loss_pct": 2.0,
+        "drawdown_pct": 3.53,
+        "daily_loss_breaker_tripped": false,
+        "suspended": false,
+        "suspended_reason": null,
+        "newly_suspended_today": false
+      }
+    },
+    "alertas": []
   }
 ]
