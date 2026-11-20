@@ -94,9 +94,9 @@
       "SPY": 712.8099975585938,
       "GLD": 327.2200012207031
     },
-    "suspended": true,
-    "suspended_reason": "Drawdown 7.3% alcanzó el límite de revisión (6%)",
-    "suspended_since": "2026-11-20"
+    "suspended": false,
+    "suspended_reason": null,
+    "suspended_since": null
   },
   "mediano_plazo": {
     "starting_capital": 367.5,
