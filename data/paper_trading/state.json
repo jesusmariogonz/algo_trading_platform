@@ -87,22 +87,22 @@
     "day_start_date": "2026-11-23",
     "daily_loss_tripped_today": false,
     "peak_equity": 435.43098527618366,
-    "last_equity": 405.2826377621673,
+    "last_equity": 406.7126304379486,
     "blend_last_price": 131.51450256910266,
     "blend_last_date": "2026-11-23",
     "blend_last_components": {
       "SPY": 714.1300048828125,
       "GLD": 335.81201171875
     },
-    "suspended": false,
-    "suspended_reason": null,
-    "suspended_since": null
+    "suspended": true,
+    "suspended_reason": "Drawdown 6.6% alcanzó el límite de revisión (6%)",
+    "suspended_since": "2026-11-23"
   },
   "mediano_plazo": {
     "starting_capital": 367.5,
     "start_date": "2026-10-31",
     "cash": 0.0,
-    "bench_shares": 1.127955075641789,
+    "bench_shares": 0.3981809794333345,
     "open_positions": [
       {
         "symbol": "XLP",
@@ -120,6 +120,15 @@
         "stop_price": 54.35,
         "initial_stop_price": 54.35,
         "shares": 2
+      },
+      {
+        "symbol": "KO",
+        "strategy": "trend_following",
+        "entry_date": "2026-11-23",
+        "entry_price": 95.98,
+        "stop_price": 91.12,
+        "initial_stop_price": 91.12,
+        "shares": 1
       }
     ],
     "closed_positions": [
@@ -180,7 +189,7 @@
     "day_start_date": "2026-11-23",
     "daily_loss_tripped_today": false,
     "peak_equity": 369.27973439817663,
-    "last_equity": 348.7524467260393,
+    "last_equity": 349.9265710012468,
     "blend_last_price": 131.51450256910266,
     "blend_last_date": "2026-11-23",
     "blend_last_components": {
@@ -227,7 +236,7 @@
     "day_start_date": "2026-11-23",
     "daily_loss_tripped_today": false,
     "peak_equity": 221.29331767832812,
-    "last_equity": 212.58418146934122,
+    "last_equity": 214.16417948569864,
     "blend_last_price": 130.57785304256083,
     "blend_last_date": "2026-11-23",
     "blend_last_components": {

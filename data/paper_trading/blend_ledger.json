@@ -158,5 +158,15 @@
     "precio": 129.6917,
     "shares": 0.715711,
     "motivo": "producto de cerrar VNQ"
+  },
+  {
+    "bucket": "mediano_plazo",
+    "fecha": "2026-11-23",
+    "tipo": "venta",
+    "simbolo": "BLEND_SPY_GLD",
+    "monto_usd": 95.98,
+    "precio": 131.5145,
+    "shares": 0.729774,
+    "motivo": "financia la compra de KO"
   }
 ]
