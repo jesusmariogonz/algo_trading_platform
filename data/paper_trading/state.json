@@ -83,16 +83,16 @@
         "reason": "stop_hit"
       }
     ],
-    "day_start_equity": 406.7126304379486,
-    "day_start_date": "2026-11-24",
-    "daily_loss_tripped_today": false,
+    "day_start_equity": 405.81791924460725,
+    "day_start_date": "2026-11-25",
+    "daily_loss_tripped_today": true,
     "peak_equity": 435.43098527618366,
-    "last_equity": 405.81791924460725,
-    "blend_last_price": 131.02768181430295,
-    "blend_last_date": "2026-11-24",
+    "last_equity": 393.53513046456595,
+    "blend_last_price": 126.23182726056568,
+    "blend_last_date": "2026-11-25",
     "blend_last_components": {
-      "SPY": 715.780029296875,
-      "GLD": 332.54998779296875
+      "SPY": 697.6699829101562,
+      "GLD": 316.6199951171875
     },
     "suspended": true,
     "suspended_reason": "Drawdown 6.8% alcanzó el límite de revisión (6%)",
@@ -126,7 +126,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-11-23",
         "entry_price": 95.98,
-        "stop_price": 92.78072002955845,
+        "stop_price": 93.38464491707938,
         "initial_stop_price": 91.12,
         "shares": 1
       }
@@ -185,16 +185,16 @@
         "reason": "stop_hit"
       }
     ],
-    "day_start_equity": 349.9265710012468,
-    "day_start_date": "2026-11-24",
+    "day_start_equity": 353.89273189840156,
+    "day_start_date": "2026-11-25",
     "daily_loss_tripped_today": false,
     "peak_equity": 369.27973439817663,
-    "last_equity": 353.89273189840156,
-    "blend_last_price": 131.02768181430295,
-    "blend_last_date": "2026-11-24",
+    "last_equity": 351.53811414015047,
+    "blend_last_price": 126.23182726056568,
+    "blend_last_date": "2026-11-25",
     "blend_last_components": {
-      "SPY": 715.780029296875,
-      "GLD": 332.54998779296875
+      "SPY": 697.6699829101562,
+      "GLD": 316.6199951171875
     }
   },
   "riesgo_alto": {
@@ -232,16 +232,16 @@
       }
     ],
     "closed_positions": [],
-    "day_start_equity": 214.16417948569864,
-    "day_start_date": "2026-11-24",
-    "daily_loss_tripped_today": false,
+    "day_start_equity": 215.92595983506834,
+    "day_start_date": "2026-11-25",
+    "daily_loss_tripped_today": true,
     "peak_equity": 221.29331767832812,
-    "last_equity": 215.92595983506834,
-    "blend_last_price": 130.09449943716737,
-    "blend_last_date": "2026-11-24",
+    "last_equity": 211.47335445179996,
+    "blend_last_price": 125.33280107768526,
+    "blend_last_date": "2026-11-25",
     "blend_last_components": {
-      "SPY": 715.780029296875,
-      "GLD": 332.54998779296875
+      "SPY": 697.6699829101562,
+      "GLD": 316.6199951171875
     }
   },
   "_blend_tracking": {
@@ -257,20 +257,20 @@
     "open_positions": [],
     "closed_positions": [],
     "peak_equity": 1683.23,
-    "day_start_equity": 1633.7061600479503,
-    "day_start_date": "2026-11-24",
+    "day_start_equity": 1632.7769428498461,
+    "day_start_date": "2026-11-25",
     "suspended": false,
     "suspended_reason": null,
     "suspended_since": null,
     "daily_loss_tripped_today": false,
-    "blend_last_price": 116.58757790519351,
-    "blend_last_date": "2026-11-24",
+    "blend_last_price": 114.57586468824844,
+    "blend_last_date": "2026-11-25",
     "blend_last_components": {
-      "SPY": 715.780029296875,
-      "AGG": 96.24500274658203,
-      "GLD": 332.54998779296875,
-      "VNQ": 93.52999877929688
+      "SPY": 697.6699829101562,
+      "AGG": 96.68499755859375,
+      "GLD": 316.6199951171875,
+      "VNQ": 94.53500366210938
     },
-    "last_equity": 1632.7769428498461
+    "last_equity": 1604.6034528840007
   }
 }
