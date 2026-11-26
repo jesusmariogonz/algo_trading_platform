@@ -29,8 +29,7 @@ from src.broker.ibkr_adapter import (
     conectar,
     desconectar,
     ejecutar_orden_mercado,
-    equity_de_cuenta,
-    equity_de_cuenta_usd,
+    equity_total_usd,
     posiciones_reales_con_costo,
 )
 from src.portfolio.allocation import BUCKETS, get_usd_mxn_rate
@@ -113,16 +112,10 @@ def _reiniciar_proceso_despues_de_responder() -> None:
 
 
 def _equity_usd_con_fallback(ib) -> float:
-    """La cuenta paper real de este proyecto no tiene segmento en USD
-    todavía (nunca se ha comprado nada en dólares) — solo reporta en
-    MXN. Si `equity_de_cuenta_usd` no encuentra el desglose en USD,
-    convierte el equity en MXN al tipo de cambio del día (misma fuente
-    que ya usa el dashboard, `allocation.get_usd_mxn_rate`)."""
-    try:
-        return equity_de_cuenta_usd(ib)
-    except RuntimeError:
-        equity_mxn = equity_de_cuenta(ib)
-        return equity_mxn / get_usd_mxn_rate()
+    """Equity total de la cuenta en USD (base MXN convertida al tipo de
+    cambio del día, `allocation.get_usd_mxn_rate`). No usa el segmento
+    USD: ver `equity_total_usd`."""
+    return equity_total_usd(ib, get_usd_mxn_rate)
 
 
 def _verificar_token(authorization: str | None) -> None:

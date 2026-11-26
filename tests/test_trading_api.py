@@ -115,13 +115,8 @@ def test_ejecutar_live_primera_corrida_reparte_equity_usd_por_buckets(client, mo
 
     monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
-    monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", lambda ib: 1000.0)
+    monkeypatch.setattr(trading_api, "equity_total_usd", lambda ib, tc: 1000.0)
     monkeypatch.setattr(live_engine, "load_state", lambda **kwargs: {})  # estado vacío: primera corrida
-    monkeypatch.setattr(
-        trading_api,
-        "equity_de_cuenta",
-        lambda ib: pytest.fail("no debería usarse MXN si equity_de_cuenta_usd ya respondió"),
-    )
 
     def run_daily_tick_live_falso(ib, capital_por_bucket, **kwargs):
         llamadas["ib"] = ib
@@ -141,34 +136,6 @@ def test_ejecutar_live_primera_corrida_reparte_equity_usd_por_buckets(client, mo
     assert set(llamadas["capital_por_bucket"]) == {"largo_plazo", "mediano_plazo", "riesgo_alto"}
 
 
-def test_ejecutar_live_sin_segmento_usd_convierte_desde_mxn(client, monkeypatch):
-    """La cuenta paper real de este proyecto no tiene segmento en USD
-    (nunca se ha comprado nada en dólares) — equity_de_cuenta_usd lanza
-    RuntimeError y el fallback debe convertir desde MXN."""
-    llamadas = {}
-
-    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
-    monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
-
-    def sin_segmento_usd(ib):
-        raise RuntimeError("No se encontró NetLiquidationByCurrency en USD")
-
-    monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", sin_segmento_usd)
-    monkeypatch.setattr(trading_api, "equity_de_cuenta", lambda ib: 18866.36)  # MXN
-    monkeypatch.setattr(trading_api, "get_usd_mxn_rate", lambda: 18.4)
-    monkeypatch.setattr(live_engine, "load_state", lambda **kwargs: {})
-
-    def run_daily_tick_live_falso(ib, capital_por_bucket, **kwargs):
-        llamadas["capital_por_bucket"] = capital_por_bucket
-        return {"date": "2026-11-04", "buckets": {}, "alertas": []}
-
-    monkeypatch.setattr(trading_api.live_engine, "run_daily_tick_live", run_daily_tick_live_falso)
-
-    r = client.post("/live/ejecutar", headers=HEADERS_OK)
-
-    assert r.status_code == 200
-    assert sum(llamadas["capital_por_bucket"].values()) == pytest.approx(18866.36 / 18.4)
-
 
 def test_ejecutar_live_corridas_siguientes_no_vuelve_a_pedir_equity(client, monkeypatch):
     llamadas = {}
@@ -176,10 +143,10 @@ def test_ejecutar_live_corridas_siguientes_no_vuelve_a_pedir_equity(client, monk
     monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
 
-    def equity_no_deberia_llamarse(ib):
+    def equity_no_deberia_llamarse(ib, tc):
         pytest.fail("no debería pedirse equity si el estado ya existe")
 
-    monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", equity_no_deberia_llamarse)
+    monkeypatch.setattr(trading_api, "equity_total_usd", equity_no_deberia_llamarse)
     monkeypatch.setattr(live_engine, "load_state", lambda: {"largo_plazo": {"open_positions": []}})
 
     def run_daily_tick_live_falso(ib, capital_por_bucket, **kwargs):
@@ -311,16 +278,11 @@ def test_equity_live_requiere_token(client):
     assert client.get("/live/equity").status_code == 401
 
 
-def test_equity_live_usa_usd_si_hay_segmento(client, monkeypatch):
+def test_equity_live_devuelve_el_equity_total_en_usd(client, monkeypatch):
     llamadas = {}
     monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", ib))
-    monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", lambda ib: 100000.0)
-    monkeypatch.setattr(
-        trading_api,
-        "equity_de_cuenta",
-        lambda ib: pytest.fail("no debería usarse MXN si equity_de_cuenta_usd ya respondió"),
-    )
+    monkeypatch.setattr(trading_api, "equity_total_usd", lambda ib, tc: 100000.0)
 
     r = client.get("/live/equity", headers=HEADERS_OK)
 
@@ -329,33 +291,16 @@ def test_equity_live_usa_usd_si_hay_segmento(client, monkeypatch):
     assert llamadas["desconectado"] == "ib-falso"
 
 
-def test_equity_live_cae_a_mxn_si_no_hay_segmento_usd(client, monkeypatch):
-    monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
-    monkeypatch.setattr(trading_api, "desconectar", lambda ib: None)
-
-    def sin_segmento_usd(ib):
-        raise RuntimeError("No se encontró NetLiquidationByCurrency en USD")
-
-    monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", sin_segmento_usd)
-    monkeypatch.setattr(trading_api, "equity_de_cuenta", lambda ib: 18866.36)
-    monkeypatch.setattr(trading_api, "get_usd_mxn_rate", lambda: 18.4)
-
-    r = client.get("/live/equity", headers=HEADERS_OK)
-
-    assert r.status_code == 200
-    assert r.json()["equity_usd"] == pytest.approx(18866.36 / 18.4)
-
 
 def test_equity_live_desconecta_aunque_falle(client, monkeypatch):
     llamadas = {}
     monkeypatch.setattr(trading_api, "conectar", lambda: "ib-falso")
     monkeypatch.setattr(trading_api, "desconectar", lambda ib: llamadas.setdefault("desconectado", True))
 
-    def falla(ib):
+    def falla(ib, tc):
         raise RuntimeError("boom")
 
-    monkeypatch.setattr(trading_api, "equity_de_cuenta_usd", falla)
-    monkeypatch.setattr(trading_api, "equity_de_cuenta", falla)
+    monkeypatch.setattr(trading_api, "equity_total_usd", falla)
 
     with pytest.raises(RuntimeError):
         client.get("/live/equity", headers=HEADERS_OK)
