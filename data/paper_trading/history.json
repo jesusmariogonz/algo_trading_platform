@@ -1949,7 +1949,7 @@
         "daily_loss_breaker_tripped": true,
         "suspended": true,
         "suspended_reason": "Drawdown 8.8% alcanzó el límite de revisión (6%)",
-        "newly_suspended_today": true
+        "newly_suspended_today": false
       },
       "mediano_plazo": {
         "date": "2026-11-25",
@@ -1969,6 +1969,17 @@
             "entry_price": 355.58,
             "stop_price": 335.51,
             "risk_per_share": 20.07,
+            "risk_amount": 7.06,
+            "shares_calculadas": 0,
+            "costo_estimado": 0.0
+          },
+          {
+            "symbol": "JNJ",
+            "strategy": "trend_following",
+            "reason": "capital_insuficiente",
+            "entry_price": 273.94,
+            "stop_price": 257.73,
+            "risk_per_share": 16.21,
             "risk_amount": 7.06,
             "shares_calculadas": 0,
             "costo_estimado": 0.0
