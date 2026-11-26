@@ -94,9 +94,10 @@ class _IBFalso:
 
 
 class _ItemResumenFalso:
-    def __init__(self, tag, value):
+    def __init__(self, tag, value, currency=""):
         self.tag = tag
         self.value = value
+        self.currency = currency
 
 
 class _AccountValueFalso:
@@ -233,6 +234,29 @@ def test_equity_de_cuenta_usd_lee_net_liquidation_by_currency_en_usd():
     ]
     ib = _IBFalso(_TradeFalso("Filled"), account_values=account_values)
     assert ibkr_adapter.equity_de_cuenta_usd(ib) == 1023.45
+
+
+def test_equity_total_usd_convierte_la_base_mxn_e_ignora_el_segmento_usd():
+    resumen = [_ItemResumenFalso("NetLiquidation", "100000.0", "MXN")]
+    account_values = [_AccountValueFalso("NetLiquidationByCurrency", "252.22", "USD")]
+    ib = _IBFalso(_TradeFalso("Filled"), resumen=resumen, account_values=account_values)
+    assert ibkr_adapter.equity_total_usd(ib, lambda: 20.0) == 5000.0
+
+
+def test_equity_total_usd_no_convierte_si_la_base_ya_es_usd():
+    ib = _IBFalso(_TradeFalso("Filled"), resumen=[_ItemResumenFalso("NetLiquidation", "1866.36", "USD")])
+    assert ibkr_adapter.equity_total_usd(ib, lambda: pytest.fail("no debe pedir tipo de cambio")) == 1866.36
+
+
+def test_equity_total_usd_lanza_error_con_moneda_base_desconocida():
+    ib = _IBFalso(_TradeFalso("Filled"), resumen=[_ItemResumenFalso("NetLiquidation", "100.0", "EUR")])
+    with pytest.raises(RuntimeError):
+        ibkr_adapter.equity_total_usd(ib, lambda: 20.0)
+
+
+def test_equity_total_usd_lanza_error_si_falta_net_liquidation():
+    with pytest.raises(RuntimeError):
+        ibkr_adapter.equity_total_usd(_IBFalso(_TradeFalso("Filled"), resumen=[]), lambda: 20.0)
 
 
 def test_equity_de_cuenta_usd_lanza_error_si_no_hay_desglose_en_usd():

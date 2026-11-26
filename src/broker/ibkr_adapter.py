@@ -96,6 +96,27 @@ def equity_de_cuenta_usd(ib: IB) -> float:
     raise RuntimeError("No se encontró NetLiquidationByCurrency en USD en accountValues()")
 
 
+def equity_total_usd(ib: IB, tipo_cambio_mxn) -> float:
+    """Equity TOTAL de la cuenta (NetLiquidation, moneda base) en USD.
+
+    A diferencia de `equity_de_cuenta_usd` (solo el segmento USD: en una
+    cuenta base MXN con acciones financiadas por margen en USD ese neto
+    es una fracción del total — $252 contra ~$5,400 el 2026-11-26), este
+    es el valor correcto para dimensionar capital. `tipo_cambio_mxn` es
+    un callable (USD→MXN) que solo se invoca si la base es MXN."""
+    for item in ib.accountSummary():
+        if item.tag != "NetLiquidation":
+            continue
+        valor = float(item.value)
+        moneda = getattr(item, "currency", "")
+        if moneda == "USD":
+            return valor
+        if moneda == "MXN":
+            return valor / tipo_cambio_mxn()
+        raise RuntimeError(f"Moneda base no soportada para convertir a USD: {moneda!r}")
+    raise RuntimeError("No se encontró NetLiquidation en accountSummary()")
+
+
 def precio_en_vivo(ib: IB, symbol: str) -> float | None:
     """Cotización de mercado en tiempo real para `symbol`, vía
     Gateway — mismo mecanismo que ejecutar_orden_mercado ya usa como
