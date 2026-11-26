@@ -12,6 +12,7 @@ no configurables desde fuera.
 
 from __future__ import annotations
 
+import math
 import time
 from dataclasses import dataclass
 
@@ -105,8 +106,13 @@ def precio_en_vivo(ib: IB, symbol: str) -> float | None:
     contrato = Stock(symbol, "SMART", "USD")
     ib.qualifyContracts(contrato)
     [ticker] = ib.reqTickers(contrato)
-    precio = ticker.marketPrice() or ticker.close
-    return float(precio) if precio else None
+    # marketPrice() devuelve NaN (no 0) cuando Gateway no tiene cotización,
+    # y NaN es "truthy": con `or` nunca caía al close, y el stop del motor
+    # comparaba NaN <= stop (siempre False) — ningún stop se disparaba.
+    for candidato in (ticker.marketPrice(), ticker.close):
+        if candidato is not None and math.isfinite(candidato) and candidato > 0:
+            return float(candidato)
+    return None
 
 
 def posiciones_reales(ib: IB) -> dict[str, int]:

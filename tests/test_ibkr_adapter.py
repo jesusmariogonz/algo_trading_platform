@@ -252,6 +252,16 @@ def test_precio_en_vivo_cae_al_close_del_ticker_si_no_hay_market_price():
     assert ibkr_adapter.precio_en_vivo(ib, "VOO") == 118.2
 
 
+def test_precio_en_vivo_cae_al_close_si_market_price_es_nan():
+    ib = _IBFalso(_TradeFalso("Filled"), ticker=_TickerFalso(market_price=float("nan"), close=118.2))
+    assert ibkr_adapter.precio_en_vivo(ib, "VOO") == 118.2
+
+
+def test_precio_en_vivo_devuelve_none_si_todo_es_nan():
+    ib = _IBFalso(_TradeFalso("Filled"), ticker=_TickerFalso(market_price=float("nan"), close=float("nan")))
+    assert ibkr_adapter.precio_en_vivo(ib, "VOO") is None
+
+
 def test_precio_en_vivo_devuelve_none_si_no_hay_ningun_precio_disponible():
     ib = _IBFalso(_TradeFalso("Filled"), ticker=_TickerFalso(market_price=0.0, close=0.0))
     assert ibkr_adapter.precio_en_vivo(ib, "VOO") is None
