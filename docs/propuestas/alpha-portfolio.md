@@ -4,9 +4,18 @@
 explícito del usuario — "solo que lo guardes como un experimento que
 quiero realizar, llámalo el Alpha portafolio". Nada de lo descrito
 aquí se ha construido, corrido ni asignado a ningún bucket real.
-Cuando se decida empezar, esto se convierte en el punto de partida de
-una carpeta `research/<AAAA-MM>-alpha-portfolio/` (ver convención en
-`research/README.md`) y, si sobrevive la validación, en su propio ADR.
+
+**Nombre:** nada de "ALPHA-01" — el usuario pidió explícitamente que
+no se le asigne un nombre propio aparte. Cuando se decida empezar,
+este experimento toma el **siguiente número EXP-NNN disponible en ese
+momento** (el mismo registro numerado que ya usa `pulso-research-lab`
+para EXP-000 a EXP-005, y que este repo ya usó para
+`research/exp-003-validacion-motor-produccion/`) — no un número fijado
+hoy, porque para cuando se ejecute puede que ya existan más
+experimentos numerados. La carpeta sigue la convención de
+`research/exp-0NN-alpha-portfolio/` (mismo patrón que exp-003, no el
+patrón `<AAAA-MM>-<slug>` de investigaciones menores — ver
+`research/README.md`), y si sobrevive la validación, en su propio ADR.
 
 ## Filosofía
 
@@ -149,15 +158,15 @@ vs. OOS 0.25 en el meta-modelo ML descartado). Se optimiza/evalúa por:
 
 ## Protocolo de validación antes de cualquier capital
 
-No se implementa directo a producción. Se construye como experimento
-(`ALPHA-01`) y se corre, en el **mismo período histórico exacto**,
-contra:
+No se implementa directo a producción. Se construye como el
+experimento EXP-NNN que le toque en turno (ver nota de nombre arriba)
+y se corre, en el **mismo período histórico exacto**, contra:
 
 1. Largo Plazo (configuración actual)
 2. Mediano Plazo (configuración actual)
 3. Riesgo Alto (configuración actual)
 4. Benchmark Diversificado
-5. Alpha-01
+5. Bucket Alpha (este experimento)
 
 Secuencia de validación, en orden, antes de asignarle capital de Paper
 (y mucho antes de capital real): **IS → OOS → Walk-Forward → Bootstrap
@@ -167,6 +176,6 @@ ganar" que el usuario pidió — diseñado para intentar ganar sin
 autoengañarse con un backtest bonito.
 
 La pregunta que este experimento tiene que contestar, en los términos
-del propio usuario: **¿Alpha-01 realmente genera más alpha, o
+del propio usuario: **¿Bucket Alpha realmente genera más alpha, o
 solamente estamos inventando otra estrategia bonita que funciona en
 backtest?**
