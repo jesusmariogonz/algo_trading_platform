@@ -195,6 +195,13 @@ completo sin partir.
 - [ ] Adaptador de broker real (Alpaca) para PAPER vía su API
 - [ ] Order Management, reconciliación contra broker real
 - [ ] Modos RESEARCH / BACKTEST / PAPER — LIVE permanece deshabilitado
+- [ ] **Idea guardada, sin empezar (26-nov-2026): Bucket Alpha** —
+      cuarto bucket experimental, selección extrema (3-5 posiciones,
+      score de entrada ≥80/100 por momentum+fuerza relativa+tendencia),
+      regime gate, sizing por riesgo constante, trailing ATR +
+      catastrophic stop. Ver propuesta completa en
+      `docs/propuestas/alpha-portfolio.md`. No construir ni correr
+      hasta que el usuario lo pida explícitamente.
 
 ## Fase 7 — Monitoring
 - API (FastAPI)
