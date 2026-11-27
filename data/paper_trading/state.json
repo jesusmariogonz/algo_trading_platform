@@ -208,7 +208,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-11-11",
         "entry_price": 23.8,
-        "stop_price": 21.324643543788365,
+        "stop_price": 21.325536591666086,
         "initial_stop_price": 20.14,
         "shares": 2
       },
