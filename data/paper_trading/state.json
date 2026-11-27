@@ -10,7 +10,7 @@
         "strategy": "time_series_momentum",
         "entry_date": "2026-11-18",
         "entry_price": 137.2,
-        "stop_price": 129.91811588832311,
+        "stop_price": 130.09928676060267,
         "initial_stop_price": 129.42,
         "shares": 1
       }
@@ -87,7 +87,7 @@
     "day_start_date": "2026-11-27",
     "daily_loss_tripped_today": false,
     "peak_equity": 435.43098527618366,
-    "last_equity": 409.1019486652203,
+    "last_equity": 410.05194561346246,
     "blend_last_price": 131.57231467932735,
     "blend_last_date": "2026-11-27",
     "blend_last_components": {
@@ -109,7 +109,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-11-04",
         "entry_price": 92.03,
-        "stop_price": 88.92553247724261,
+        "stop_price": 89.34428187779018,
         "shares": 1
       },
       {
@@ -117,7 +117,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-11-17",
         "entry_price": 57.13,
-        "stop_price": 54.553750446864534,
+        "stop_price": 54.648393630981445,
         "initial_stop_price": 54.35,
         "shares": 2
       },
@@ -189,7 +189,7 @@
     "day_start_date": "2026-11-27",
     "daily_loss_tripped_today": false,
     "peak_equity": 369.27973439817663,
-    "last_equity": 355.38959312532546,
+    "last_equity": 356.78959465120437,
     "blend_last_price": 131.57231467932735,
     "blend_last_date": "2026-11-27",
     "blend_last_components": {
@@ -208,7 +208,7 @@
         "strategy": "trend_following",
         "entry_date": "2026-11-11",
         "entry_price": 23.8,
-        "stop_price": 21.08964272907802,
+        "stop_price": 21.324643543788365,
         "initial_stop_price": 20.14,
         "shares": 2
       },
@@ -236,7 +236,7 @@
     "day_start_date": "2026-11-27",
     "daily_loss_tripped_today": false,
     "peak_equity": 221.29331767832812,
-    "last_equity": 218.08284125524594,
+    "last_equity": 219.5658429642303,
     "blend_last_price": 130.6352534135126,
     "blend_last_date": "2026-11-27",
     "blend_last_components": {
