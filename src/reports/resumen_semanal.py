@@ -278,6 +278,16 @@ def construir(fin: str, export: dict, paper_state: dict, paper_history: list[dic
             "candidatos": candidatos(export, paper_state)}
 
 
+def borrar_semanas_anteriores(conservar: Path) -> list[Path]:
+    """Solo se publica la última semana: elimina los demás <YYYY-MM-DD>.json de la carpeta."""
+    borradas = []
+    for archivo in sorted(conservar.parent.glob("????-??-??.json")):
+        if archivo != conservar:
+            archivo.unlink()
+            borradas.append(archivo)
+    return borradas
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--fin", required=True, help="viernes (o último día de mercado) de la semana, YYYY-MM-DD")
@@ -299,6 +309,8 @@ def main(argv=None):
         for d in resumen["mercado"]["dias"]:
             d["texto"] = textos.get(d["fecha"], "")
     destino.write_text(json.dumps(resumen, indent=2, ensure_ascii=False))
+    for viejo in borrar_semanas_anteriores(destino):
+        print(f"Semana anterior eliminada: {viejo.name}")
     print(f"Resumen semanal {resumen['semana']['inicio']} → {resumen['semana']['fin']} escrito en {destino}")
 
 

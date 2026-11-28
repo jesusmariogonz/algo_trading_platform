@@ -62,3 +62,11 @@ def test_activos_de_la_semana_cambio_ultimo_dia_y_semana():
     assert filas["BBB"]["cambio_ultimo_dia_pct"] == 0.0           # 22 -> 22 el último día
     assert filas["BBB"]["cambio_semana_pct"] == 10.0              # 22 contra el cierre previo a la semana (20)
     assert filas["AAA"]["cambio_semana_pct"] == -25.0             # comprada en la semana: 9 contra su precio de compra 12
+
+
+def test_borrar_semanas_anteriores_conserva_solo_la_ultima(tmp_path):
+    for nombre in ("2026-11-20.json", "2026-11-27.json", "otro.json"):
+        (tmp_path / nombre).write_text("{}")
+    borradas = rs.borrar_semanas_anteriores(tmp_path / "2026-11-27.json")
+    assert [b.name for b in borradas] == ["2026-11-20.json"]
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["2026-11-27.json", "otro.json"]
