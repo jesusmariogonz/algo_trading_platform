@@ -46,3 +46,19 @@ def test_activos_de_la_semana_pnl_total_desde_la_entrada():
     filas = rs.activos_de_la_semana(posiciones, cierres, dias, por_dia)
     assert filas[0]["pnl_total_usd"] == 3.0  # 22 - 19
     assert filas[0]["estado"] == "abierta"
+
+
+def test_activos_de_la_semana_cambio_ultimo_dia_y_semana():
+    cierres, idx = _cierres()
+    dias = list(idx[1:])  # 24, 25, 27; el día previo a la semana es el 23 (cierre 20.0 para BBB)
+    posiciones = [
+        {"bucket": "riesgo_alto", "symbol": "BBB", "shares": 1, "entry_date": "2026-11-20", "entry_price": 19.0,
+         "exit_date": None, "exit_price": None},
+        {"bucket": "riesgo_alto", "symbol": "AAA", "shares": 1, "entry_date": "2026-11-25", "entry_price": 12.0,
+         "exit_date": None, "exit_price": None},
+    ]
+    por_dia = rs.filas_por_dia(posiciones, cierres, dias, idx)
+    filas = {f["symbol"]: f for f in rs.activos_de_la_semana(posiciones, cierres, dias, por_dia, idx)}
+    assert filas["BBB"]["cambio_ultimo_dia_pct"] == 0.0           # 22 -> 22 el último día
+    assert filas["BBB"]["cambio_semana_pct"] == 10.0              # 22 contra el cierre previo a la semana (20)
+    assert filas["AAA"]["cambio_semana_pct"] == -25.0             # comprada en la semana: 9 contra su precio de compra 12

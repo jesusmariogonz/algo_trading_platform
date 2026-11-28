@@ -7,7 +7,7 @@ bajó cada cosa) la agrega la rutina del viernes con fuentes, en los campos
     python -m src.reports.resumen_semanal --fin 2026-11-27 \
         --export /tmp/export_vivo.json \
         --rw /home/user/pulso-research-lab/experiments/EXP-005-reverse-winners/run_paper_portfolio/paper_portfolio.json \
-        --salida /home/user/jesus-site/lib/resumen-semanal-trading.json
+        --salida-dir /home/user/jesus-site/lib/resumen-semanal
 """
 
 from __future__ import annotations
@@ -73,7 +73,7 @@ def filas_por_dia(posiciones: list[dict], cierres: dict[str, pd.Series], dias: l
 
 
 def activos_de_la_semana(posiciones: list[dict], cierres: dict[str, pd.Series], dias: list[pd.Timestamp],
-                         por_dia: dict[str, list[dict]]) -> list[dict]:
+                         por_dia: dict[str, list[dict]], calendario: pd.DatetimeIndex | None = None) -> list[dict]:
     """Una fila por activo que se tuvo en cartera durante la semana, con el
     P&L total desde su entrada (no solo de la semana) y el de la semana."""
     primero, ultimo = dias[0], dias[-1]
@@ -86,6 +86,14 @@ def activos_de_la_semana(posiciones: list[dict], cierres: dict[str, pd.Series], 
         actual = p["exit_price"] if sale is not None else float(cierres[p["symbol"]].iloc[-1])
         pnl_semana = sum(f["pnl_usd"] for fs in por_dia.values() for f in fs
                          if f["symbol"] == p["symbol"] and f["bucket"] == p["bucket"])
+        # Cambio del último día y de la semana (contra el cierre del viernes
+        # anterior, o contra el precio de compra si se compró durante la semana).
+        ultimo_dia = next((f for f in por_dia.get(ultimo.strftime("%Y-%m-%d"), [])
+                           if f["symbol"] == p["symbol"] and f["bucket"] == p["bucket"]), None)
+        previo_semana = None
+        if calendario is not None and calendario.get_loc(primero) > 0:
+            previo_semana = float(cierres[p["symbol"]].get(calendario[calendario.get_loc(primero) - 1], float("nan")))
+        ref_semana = p["entry_price"] if entrada >= primero or previo_semana is None or previo_semana != previo_semana else previo_semana
         filas.append({
             "symbol": p["symbol"],
             "bucket": p["bucket"],
@@ -98,6 +106,8 @@ def activos_de_la_semana(posiciones: list[dict], cierres: dict[str, pd.Series], 
             "pnl_total_usd": round(p["shares"] * (actual - p["entry_price"]), 2),
             "pnl_total_pct": round((actual / p["entry_price"] - 1) * 100, 2),
             "pnl_semana_usd": round(pnl_semana, 2),
+            "cambio_ultimo_dia_pct": ultimo_dia["cambio_pct"] if ultimo_dia else None,
+            "cambio_semana_pct": round((actual / ref_semana - 1) * 100, 2),
         })
     return sorted(filas, key=lambda f: f["pnl_total_usd"])
 
@@ -131,6 +141,23 @@ def _equity_por_dia(historias: dict[str, list[dict]], dias: list[pd.Timestamp]) 
     return filas
 
 
+def resumen_buckets(buckets: dict, historias: dict, fin: pd.Timestamp) -> list[dict]:
+    """Equity y retorno acumulado de cada bucket al último día de la semana."""
+    f = fin.strftime("%Y-%m-%d")
+    filas = []
+    for bucket in BUCKETS:
+        hist = [h for h in historias.get(bucket, []) if h["date"] <= f]
+        if not hist:
+            continue
+        b = buckets.get(bucket) or {}
+        capital = b.get("starting_capital")
+        equity = hist[-1]["equity"]
+        filas.append({"bucket": bucket, "equity": round(equity, 2),
+                      "retorno_acumulado_pct": round((equity / capital - 1) * 100, 2) if capital else None,
+                      "suspendido": bool(b.get("suspended"))})
+    return filas
+
+
 def motor(id_: str, nombre: str, buckets: dict, historias: dict, cierres, dias, calendario) -> dict:
     posiciones = _posiciones(buckets)
     for p in posiciones:
@@ -140,8 +167,13 @@ def motor(id_: str, nombre: str, buckets: dict, historias: dict, cierres, dias, 
     equity = _equity_por_dia(historias, dias)
     for fila in equity:
         fila["activos"] = por_dia.get(fila["fecha"], [])
+    total_semana = (round(sum(d["pnl_dia_usd"] or 0 for d in equity), 2) if equity else None)
+    base = (equity[0]["equity"] - (equity[0]["pnl_dia_usd"] or 0)) if equity else None
     return {"id": id_, "nombre": nombre, "dias": equity,
-            "activos_semana": activos_de_la_semana(posiciones, cierres, dias, por_dia)}
+            "buckets": resumen_buckets(buckets, historias, dias[-1]),
+            "pnl_semana_usd": total_semana,
+            "pnl_semana_pct": round(total_semana / base * 100, 2) if base else None,
+            "activos_semana": activos_de_la_semana(posiciones, cierres, dias, por_dia, calendario)}
 
 
 def motor_reverse_winners(ruta: Path, dias: list[pd.Timestamp]) -> dict:
@@ -161,7 +193,9 @@ def motor_reverse_winners(ruta: Path, dias: list[pd.Timestamp]) -> dict:
                       "pnl_dia_usd": round(eq - ant, 2) if ant is not None else None,
                       "pnl_dia_pct": round((eq / ant - 1) * 100, 2) if ant else None,
                       "compradas": len(compradas), "tickers_comprados": sorted(compradas)})
+    total = round(sum(f["pnl_dia_usd"] or 0 for f in filas), 2)
     return {"id": "reverse_winners", "nombre": "Reverse Winners (paper portfolio, EXP-005)", "dias": filas,
+            "pnl_semana_usd": total, "pnl_semana_pct": round(total / d["capital_inicial"] * 100, 2),
             "n_posiciones_abiertas": d["n_posiciones_abiertas"], "efectivo": d["efectivo"],
             "primeras_ventas_estimadas": "tras 30 sesiones de mercado desde cada compra (las del 27-nov, ≈ 12-ene-2027)"}
 
@@ -221,6 +255,10 @@ def construir(fin: str, export: dict, paper_state: dict, paper_history: list[dic
               historias_vivo, cierres, dias, calendario),
         motor("paper_simulado", "Paper trading simulado", paper_state, historias_paper, cierres, dias, calendario),
     ]
+    ultimo_paper = next((h for h in reversed(paper_history) if h["date"] <= dias[-1].strftime("%Y-%m-%d")), None)
+    bench = ((ultimo_paper or {}).get("buckets") or {}).get("benchmark_diversificado")
+    if bench:
+        motores[1]["benchmark"] = {"equity": bench["equity"], "retorno_acumulado_pct": bench.get("cumulative_return_pct")}
     if rw_path:
         motores.append(motor_reverse_winners(rw_path, dias))
     mercado = []
@@ -245,13 +283,23 @@ def main(argv=None):
     ap.add_argument("--fin", required=True, help="viernes (o último día de mercado) de la semana, YYYY-MM-DD")
     ap.add_argument("--export", required=True, help="JSON de /live/exportar")
     ap.add_argument("--rw", default=None, help="paper_portfolio.json de Reverse Winners")
-    ap.add_argument("--salida", required=True)
+    ap.add_argument("--salida-dir", required=True, help="carpeta; escribe <fin>.json (una página por semana)")
     args = ap.parse_args(argv)
     resumen = construir(args.fin, json.loads(Path(args.export).read_text()),
                         json.loads(PAPER_STATE.read_text()), json.loads(PAPER_HISTORY.read_text()),
                         Path(args.rw) if args.rw else None)
-    Path(args.salida).write_text(json.dumps(resumen, indent=2, ensure_ascii=False))
-    print(f"Resumen semanal {resumen['semana']['inicio']} → {resumen['semana']['fin']} escrito en {args.salida}")
+    destino = Path(args.salida_dir) / f"{resumen['semana']['fin']}.json"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    if destino.exists():  # no pisar la narrativa ya escrita si se regeneran solo las cifras
+        previo = json.loads(destino.read_text())
+        resumen["mercado"]["narrativa"] = previo.get("mercado", {}).get("narrativa", [])
+        resumen["mercado"]["fuentes"] = previo.get("mercado", {}).get("fuentes", [])
+        resumen["notas_activos"] = previo.get("notas_activos", {})
+        textos = {d["fecha"]: d.get("texto", "") for d in previo.get("mercado", {}).get("dias", [])}
+        for d in resumen["mercado"]["dias"]:
+            d["texto"] = textos.get(d["fecha"], "")
+    destino.write_text(json.dumps(resumen, indent=2, ensure_ascii=False))
+    print(f"Resumen semanal {resumen['semana']['inicio']} → {resumen['semana']['fin']} escrito en {destino}")
 
 
 if __name__ == "__main__":
